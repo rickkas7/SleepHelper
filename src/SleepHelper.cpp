@@ -20,93 +20,23 @@ SleepHelper::~SleepHelper() {
 
 void SleepHelper::setup() {
     // Call all setup functions
-    for(auto it = setupFunctions.begin(); it != setupFunctions.end(); ++it) {
-        (*it)(*this);
-    }
+    setupFunctions.forEach();
 }
 
 void SleepHelper::loop() {
     // Call all loop functions
-    for(auto it = loopFunctions.begin(); it != loopFunctions.end(); ++it) {
-        (*it)(*this);
-    }
+    loopFunctions.forEach();
 
     // Call the connection state handler
-    stateHandler(*this);
+    // stateHandler(*this); // TEMPORARY COMMENT OUT
 
 }
 
-bool SleepHelper::isSleepReady() {
-    bool sleepReady = true;
 
-    for(auto it = sleepReadyFunctions.begin(); it != sleepReadyFunctions.end(); ++it) {
-        sleepReady = (*it)(*this);
-        if (!sleepReady) {
-            break;
-        }
-    }
-
-    return sleepReady;
-}
-
-bool SleepHelper::shouldConnect() {
-
-    for(auto it = shouldConnectFunctions.begin(); it != shouldConnectFunctions.end(); ++it) {
-        ShouldConnectResult res = (*it)(*this);
-        switch(res) {
-            case ShouldConnectResult::FORCE_CONNECT:
-                return true;
-
-            case ShouldConnectResult::IF_TIME:
-                break;
-
-            case ShouldConnectResult::FORCE_NO_CONNECT:
-                return false;
-        }
-    }
-    
-    // TODO: Check time to connect here
-
-
-    return true;
-}
-
-bool SleepHelper::reachedMaximumTimeToConnect(long timeMs) {
-    // Default value is false so if there are no maximum time to connect handlers, it will try forever
-    bool res = false;
-
-    for(auto it = maximumTimeToConnectFunctions.begin(); it != maximumTimeToConnectFunctions.end(); ++it) {
-        bool res = (*it)(*this, timeMs);
-        if (!res) {
-            // This handler has not reached the minimum connected time yet, return false
-            break;
-        }
-        // res is currently true. If this is the last handler, return true
-    }
-
-    return res;
-}
-
-
-bool SleepHelper::reachedMinimumConnectedTime(long timeMs) {  
-    // Default value is false so if there are no minimum connected time handlers, you stay connected forever
-    bool res = false;
-
-    for(auto it = minimumConnectedTimeFunctions.begin(); it != minimumConnectedTimeFunctions.end(); ++it) {
-        bool res = (*it)(*this, timeMs);
-        if (!res) {
-            // This handler has not reached the minimum connected time yet, return false
-            break;
-        }
-        // res is currently true. If this is the last handler, return true
-    }
-
-    return res;
-}
 
 
 void SleepHelper::stateHandlerStart() {
-    if (!shouldConnect()) {
+    if (!shouldConnectFunctions.shouldConnect()) {
         // We should not connect, so wait in this state
         return;
     }
@@ -139,7 +69,7 @@ void SleepHelper::stateHandlerConnected() {
     unsigned long elapsedMs = millis() - connectedStartMillis;
     if (reachedMinimumConnectedTime(elapsedMs)) {
         // Reached the minimum connected time, we may want to disconnect and sleep
-        stateHandler = SleepHelper::stateHandlerPrepareToSleep;
+        stateHandler = &SleepHelper::stateHandlerPrepareToSleep;
         return;
     }
 }
@@ -151,6 +81,20 @@ void SleepHelper::stateHandlerReconnectWait() {
     }
 }
 
+/*
+    
+     * @brief Determine if it's a good time to go to sleep
+     * 
+     * The sleep ready functions registered with withSleepReadyFunction() are called. If any returns false (not ready)
+     * then this function returns false. If all return true (or there are no sleep ready functions) then this function
+     * returns true.
+    
+    bool isSleepReady() {
+        return sleepReadyFunctions.untilFalse(true);
+    }
+
+*/
+
 void SleepHelper::stateHandlerPrepareToSleep() {
 
     // Disconnect from the cloud
@@ -159,16 +103,19 @@ void SleepHelper::stateHandlerPrepareToSleep() {
 
     SystemSleepConfiguration sleepConfig;
 
+    // Default sleep mode is ULP. Can override by sleepConfigurationFunction
+    sleepConfig.mode(SystemSleepMode::ULTRA_LOW_POWER);
+
     // Calculate sleep duration
 
-    // Allow other sleep configuration to be overridden
-    for(auto it = sleepConfigurationFunctions.begin(); it != sleepConfigurationFunctions.end(); ++it) {
-        (*it)(*this);
-    }
+    // system_tick_t
+    // sleepConfig.duration();
 
+    // Allow other sleep configuration to be overridden
+    sleepConfigurationFunctions.forEach(sleepConfig);
 
     // Sleep!
-    
+    System.sleep(sleepConfig);
 
     // Woke from sleep
     stateHandler = &SleepHelper::stateHandlerStart;

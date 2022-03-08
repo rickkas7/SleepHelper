@@ -5,6 +5,8 @@
 
 #include <vector>
 
+
+
 /**
  * This class is a singleton; you do not create one as a global, on the stack, or with new.
  * 
@@ -23,12 +25,6 @@ public:
      */
     static SleepHelper &instance();
 
-    enum class ShouldConnectResult {
-        FORCE_CONNECT,
-        IF_TIME,
-        FORCE_NO_CONNECT
-    };
-
     class SleepTimeRecommendation {
     public:
         bool abortSleep = false;
@@ -37,54 +33,124 @@ public:
     };
 
 
-    SleepHelper &withSetupFunction(std::function<void(SleepHelper&)> fn) { 
-        setupFunctions.push_back(fn);
+    template<class... Types>
+    class AppCallback {
+    public:
+        void add(std::function<bool(Types... args)> callback) {
+            callbackFunctions.push_back(callback);
+        }
+
+        void forEach(Types... args) {
+            for(auto it = callbackFunctions.begin(); it != callbackFunctions.end(); ++it) {
+                (*it)(args...);
+            }
+        }
+        bool untilTrue(bool defaultResult, Types... args) {
+            bool res = defaultResult;
+            for(auto it = callbackFunctions.begin(); it != callbackFunctions.end(); ++it) {
+                res = (*it)(args...);
+                if (res) {
+                    break;
+                }
+            }
+            return res;
+        }
+
+        bool untilFalse(bool defaultResult, Types... args) {
+            bool res = defaultResult;
+            for(auto it = callbackFunctions.begin(); it != callbackFunctions.end(); ++it) {
+                res = (*it)(args...);
+                if (!res) {
+                    break;
+                }
+            }
+            return res;
+        }
+
+        std::vector<std::function<bool(Types... args)>> callbackFunctions;
+    };
+
+    class ShouldConnectAppCallback : public AppCallback<bool&, int&> {
+    public:
+        bool shouldConnect() {
+            bool connect;
+            int conviction;
+            int maxConnectConviction = 0;
+            int maxNoConnectConviction = 0;
+
+            for(auto it = callbackFunctions.begin(); it != callbackFunctions.end(); ++it) {
+                (*it)(connect, conviction);
+                if (connect) {
+                    if (conviction > maxConnectConviction) {
+                        conviction = maxConnectConviction;
+                    }
+                }
+                else {
+                    if (conviction > maxNoConnectConviction) {
+                        conviction = maxNoConnectConviction;
+                    }
+                }
+            }
+
+            return (maxConnectConviction >= maxNoConnectConviction);
+        }
+    };
+
+
+    SleepHelper &withSetupFunction(std::function<bool()> fn) { 
+        setupFunctions.add(fn);
         return *this;
     }
 
-    SleepHelper &withLoopFunction(std::function<void(SleepHelper&)> fn) { 
-        loopFunctions.push_back(fn); 
+    SleepHelper &withLoopFunction(std::function<bool()> fn) { 
+        loopFunctions.add(fn); 
         return *this;
     }
 
-    SleepHelper &withSleepConfigurationFunction(std::function<void(SleepHelper&, SystemSleepConfiguration &)> fn) { 
-        sleepConfigurationFunctions.push_back(fn); 
+    SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &)> fn) { 
+        sleepConfigurationFunctions.add(fn); 
         return *this;
     }
 
-    SleepHelper &withSleepReadyFunction(std::function<bool(SleepHelper&)> fn) {
-        sleepReadyFunctions.push_back(fn); 
+    SleepHelper &withSleepReadyFunction(std::function<bool()> fn) {
+        sleepReadyFunctions.add(fn); 
         return *this;
     }
 
-    SleepHelper &withShouldConnectFunction(std::function<ShouldConnectResult(SleepHelper&)> fn) { 
-        shouldConnectFunctions.push_back(fn); 
+    SleepHelper &withShouldConnectFunction(std::function<bool(bool &connect, int &conviction)> fn) { 
+        shouldConnectFunctions.add(fn); 
         return *this; 
     }
 
-    SleepHelper &withMaximumTimeToConnectFunction(std::function<bool(SleepHelper&, unsigned long ms)> fn) {
-        maximumTimeToConnectFunctions.push_back(fn); 
+    SleepHelper &withMaximumTimeToConnectFunction(std::function<bool(unsigned long ms)> fn) {
+        maximumTimeToConnectFunctions.add(fn); 
         return *this; 
     }
 
     SleepHelper &withMaximumTimeToConnect(std::chrono::milliseconds timeMs) { 
-        return withMaximumTimeToConnectFunction([timeMs](SleepHelper&, unsigned long ms) {
+        return withMaximumTimeToConnectFunction([timeMs](unsigned long ms) {
             return (ms >= timeMs.count());
         }); 
     }
 
 
-    SleepHelper &withMinimumConnectedTimeFunction(std::function<bool(SleepHelper&, unsigned long ms)> fn) {
-        minimumConnectedTimeFunctions.push_back(fn); 
+    SleepHelper &withMinimumConnectedTimeFunction(std::function<bool(unsigned long ms)> fn) {
+        minimumConnectedTimeFunctions.add(fn); 
         return *this; 
     }
 
     SleepHelper &withMinimumConnectedTime(std::chrono::milliseconds timeMs) { 
-        return withMinimumConnectedTimeFunction([timeMs](SleepHelper&, unsigned long ms) {
+        return withMinimumConnectedTimeFunction([timeMs](unsigned long ms) {
             return (ms >= timeMs.count());
         }); 
     }
 
+    /*
+    SleepHelper &withSleepTimeRecommendationFunction(std::function<bool(SleepTimeRecommendation &)> fn) { 
+        sleepTimeRecommendationFunctions.add(fn); 
+        return *this; 
+    }
+    */
 
     /**
      * @brief Perform setup operations; call this from global application setup()
@@ -99,17 +165,6 @@ public:
      * You typically use SleepHelper::instance().loop();
      */
     void loop();
-
-    /**
-     * @brief Determine if it's a good time to go to sleep
-     * 
-     * The sleep ready functions registered with withSleepReadyFunction() are called. If any returns false (not ready)
-     * then this function returns false. If all return true (or there are no sleep ready functions) then this function
-     * returns true.
-     */
-    bool isSleepReady();
-
-    bool shouldConnect();
 
 protected:
     /**
@@ -134,10 +189,13 @@ protected:
      */
     SleepHelper& operator=(const SleepHelper&) = delete;
 
+    bool reachedMaximumTimeToConnect(long timeMs) {
+        return maximumTimeToConnectFunctions.untilFalse(false, timeMs);
+    }
 
-    bool reachedMaximumTimeToConnect(long timeMs);
-
-    bool reachedMinimumConnectedTime(long timeMs);
+    bool reachedMinimumConnectedTime(long timeMs) {
+        return minimumConnectedTimeFunctions.untilFalse(false, timeMs);
+    }
 
 
     void stateHandlerStart();
@@ -150,19 +208,21 @@ protected:
 
     void stateHandlerPrepareToSleep();
 
-    std::vector<std::function<void(SleepHelper&)>> setupFunctions;
+    AppCallback<> setupFunctions;
 
-    std::vector<std::function<void(SleepHelper&)>> loopFunctions;
+    AppCallback<> loopFunctions;
 
-    std::vector<std::function<void(SleepHelper&, SystemSleepConfiguration &)>> sleepConfigurationFunctions;
+    AppCallback<SystemSleepConfiguration &> sleepConfigurationFunctions;
 
-    std::vector<std::function<bool(SleepHelper&)>> sleepReadyFunctions;
+    AppCallback<> sleepReadyFunctions;
 
-    std::vector<std::function<ShouldConnectResult(SleepHelper&)>> shouldConnectFunctions;
+    ShouldConnectAppCallback shouldConnectFunctions;
 
-    std::vector<std::function<bool(SleepHelper&, unsigned long ms)>> maximumTimeToConnectFunctions;
+    AppCallback<unsigned long> maximumTimeToConnectFunctions;
 
-    std::vector<std::function<bool(SleepHelper&, unsigned long ms)>> minimumConnectedTimeFunctions;
+    AppCallback<unsigned long> minimumConnectedTimeFunctions;
+
+
 
 
     std::function<void(SleepHelper&)> stateHandler = &SleepHelper::stateHandlerStart;
