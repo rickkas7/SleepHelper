@@ -73,7 +73,6 @@ void settingsTest() {
 
 	settings.setValuesJson("{\"t1\":9999}");
 
-	settings.save();
 }
 
 int main(int argc, char *argv[]) {

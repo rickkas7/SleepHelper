@@ -247,6 +247,8 @@ bool SleepHelper::SettingsFile::save() {
 }
 
 bool SleepHelper::SettingsFile::setValuesJson(const char *inputJson) {
+    std::vector<String> updatedKeys;
+
     WITH_LOCK(*this) {
         JsonParserStatic<particle::protocol::MAX_EVENT_DATA_LENGTH, 50> inputParser;
         inputParser.addString(inputJson);
@@ -277,8 +279,6 @@ bool SleepHelper::SettingsFile::setValuesJson(const char *inputJson) {
             int valueLen = valueToken->end - valueToken->start;
             int oldValueLen = oldValueToken->end - oldValueToken->start;
 
-            printf("existing key %s size=%d\n", key.c_str(), oldValueLen);
-
             if (valueToken->type != oldValueToken->type || 
                 valueLen != oldValueLen ||
                 memcmp(inputParser.getBuffer() + valueToken->start, parser.getBuffer() + oldValueToken->start, valueLen) != 0) {
@@ -293,21 +293,40 @@ bool SleepHelper::SettingsFile::setValuesJson(const char *inputJson) {
 
                 modifier.finish();
 
-                settingChangeFunctions.forEach(key);
-
-                printf("changed\n");
-            }
-            else {
-                printf("unchanged\n");
+                updatedKeys.push_back(key);
             }
                 
         }
-
-
     }
+
+    if (!updatedKeys.empty()) {
+        for(auto it = updatedKeys.begin(); it != updatedKeys.end(); ++it) {
+            settingChangeFunctions.forEach(*it);
+        }
+
+        save();
+    }
+
+
     return true;
 }
 
+
+bool SleepHelper::SettingsFile::getValuesJson(String &json) {
+    WITH_LOCK(*this) {
+        // This annoying code is necessary because String does not have a method to set the
+        // string by pointer and length
+        json = "";
+        size_t size = parser.getOffset();
+        json.reserve(size);
+        for(size_t ii = 0; ii < size; ii++) {
+            char ch = parser.getBuffer()[ii];
+            json.concat(ch);
+        }
+    }
+
+    return true;
+}
 
 
 

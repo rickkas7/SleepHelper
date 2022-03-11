@@ -83,6 +83,18 @@ public:
             }
             return finalRes;
         }
+
+        /**
+         * @brief Remove all registered callbacks
+         * 
+         * You normally will never use this. It's used by the automated test suite. There's no function 
+         * to remove a single callback since they're typically lambas and it would be difficult to
+         * specify which one to remove.
+         */
+        void removeAll() {
+            callbackFunctions.clear();
+        }
+
         std::vector<std::function<bool(Types... args)>> callbackFunctions;
     };
 
@@ -169,6 +181,8 @@ public:
     	template<class T>
 	    bool setValue(const char *name, const T &value) {
             bool result = true;
+            bool changed = false;
+
             WITH_LOCK(*this) {
                 T oldValue;
                 bool getResult = parser.getOuterValueByKey(name, oldValue);
@@ -176,12 +190,15 @@ public:
                     JsonModifier modifier(parser);
 
                     modifier.insertOrUpdateKeyValue(parser.getOuterObject(), name, value);
-                }
-                else {
-                    printf("not changed\n");
+                    changed = true;
                 }
 
             };
+
+            if (changed) {
+                settingChangeFunctions.forEach(name);
+                save();
+            }
             return result;
         }
 
@@ -207,6 +224,7 @@ public:
 
         bool setValuesJson(const char *json);
 
+        bool getValuesJson(String &json);
 
         static constexpr const char * const SETTINGS_PATH = 
 #ifndef UNITTEST

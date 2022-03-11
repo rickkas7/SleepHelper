@@ -3,3 +3,4 @@ build
 target
 *.bin
 lib
+.DS_Store
