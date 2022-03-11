@@ -74,3 +74,21 @@ uint32_t HAL_RNG_GetRandomNumber(void) {
 	// but for testing this will be fine.
 	return (uint32_t) rand();
 }
+
+/*
+Logger::Logger(const char *name) :name(name) {
+}
+
+void Logger::trace(const char *fmt, ...) {
+
+}
+void Logger::info(const char *fmt, ...) {
+
+}
+void Logger::warn(const char *fmt, ...) {
+
+}
+void Logger::error(const char *fmt, ...) {
+
+}
+*/

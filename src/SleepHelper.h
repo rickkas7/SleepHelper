@@ -3,6 +3,7 @@
 
 #include "Particle.h"
 #include "LocalTimeRK.h"
+#include "JsonParserGeneratorRK.h"
 #include <vector>
 
 
@@ -122,6 +123,12 @@ public:
          */
         static SettingsFile &instance();
 
+        SettingsFile &withSettingChangeFunction(std::function<bool(const char *)> fn) { 
+            settingChangeFunctions.add(fn);
+            return *this;
+        }
+
+
         /**
          * @brief Load the settings file. You normally do not need to call this; it will be loaded automatically.
          * 
@@ -138,7 +145,75 @@ public:
          */
         bool save();
 
-        static constexpr const char * const SETTINGS_PATH = "/usr/sleepSettings.json";
+    	template<class T>
+	    bool getValue(const char *name, T &value) const {
+            bool result = false;
+            WITH_LOCK(*this) {
+                result = parser.getOuterValueByKey(name, result);
+            };
+            return result;
+        }
+
+        /**
+         * @brief Sets the value of a key to a bool, int, double, or String value
+         * 
+         * @tparam T 
+         * @param name 
+         * @param value 
+         * @return true 
+         * @return false
+         * 
+         * This call returns quickly if the value does not change and does not write to
+         * the file system if the value is unchanged.
+         */
+    	template<class T>
+	    bool setValue(const char *name, const T &value) {
+            bool result = true;
+            WITH_LOCK(*this) {
+                T oldValue;
+                bool getResult = parser.getOuterValueByKey(name, oldValue);
+                if (!getResult || oldValue != value) {
+                    JsonModifier modifier(parser);
+
+                    modifier.insertOrUpdateKeyValue(parser.getOuterObject(), name, value);
+                }
+                else {
+                    printf("not changed\n");
+                }
+
+            };
+            return result;
+        }
+
+        /**
+         * @brief Set the value of a key to a constant string
+         * 
+         * @param name 
+         * @param value 
+         * @return true 
+         * @return false 
+         * 
+         * This call returns quickly if the value does not change.
+         * 
+         * This specific overload is required because the templated version above can't get the
+         * value to see if it changed into a const char *. Making a copy of it in a string
+         * solves this issue.
+         */
+	    bool setValue(const char *name, const char *value) {
+            String tempStr(value);
+
+            return setValue(name, tempStr);
+        }
+
+        bool setValuesJson(const char *json);
+
+
+        static constexpr const char * const SETTINGS_PATH = 
+#ifndef UNITTEST
+            "/usr/sleepSettings.json";
+#else
+            "./sleepSettings.json";
+#endif
 
     protected:
         /**
@@ -163,6 +238,9 @@ public:
          */
         SettingsFile& operator=(const SettingsFile&) = delete;
 
+        JsonParserStatic<particle::protocol::MAX_EVENT_DATA_LENGTH, 50> parser;
+
+        AppCallback<const char *> settingChangeFunctions;
 
         static SettingsFile *_settingsFile;
     };

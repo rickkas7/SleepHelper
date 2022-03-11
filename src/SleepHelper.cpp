@@ -182,6 +182,8 @@ void SleepHelper::stateHandlerPrepareToSleep() {
     // Sleep!
     SystemSleepResult sleepResult = System.sleep(sleepConfig);
 
+    wakeFunctions.forEach(sleepResult);
+
     // Woke from sleep
     stateHandler = &SleepHelper::stateHandlerStart;
 
@@ -204,23 +206,108 @@ SleepHelper::SettingsFile &SleepHelper::SettingsFile::instance() {
 
 bool SleepHelper::SettingsFile::load() {
     WITH_LOCK(*this) {
+        bool loaded = false;
+
+        size_t dataSize = 0;
 
         int fd = open(SETTINGS_PATH, O_RDONLY);
         if (fd != -1) {
-            
+            dataSize = read(fd, parser.getBuffer(), parser.getBufferLen());
+            if (dataSize > 0) {                
+                parser.setOffset(dataSize);
+                if (parser.parse()) {
+                    loaded = true;
+                }
+            }
             close(fd);
         }
         
+        if (!loaded) {
+            parser.addString("{}");
+            parser.parse();
+        }
     }
+
     return true;
 }
 
 bool SleepHelper::SettingsFile::save() {
     WITH_LOCK(*this) {
+        int fd = open(SETTINGS_PATH, O_RDWR | O_CREAT | O_TRUNC);
+        if (fd != -1) {            
+            write(fd, parser.getBuffer(), parser.getOffset());
+            close(fd);
+        }
+        else {            
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool SleepHelper::SettingsFile::setValuesJson(const char *inputJson) {
+    WITH_LOCK(*this) {
+        JsonParserStatic<particle::protocol::MAX_EVENT_DATA_LENGTH, 50> inputParser;
+        inputParser.addString(inputJson);
+        inputParser.parse();
+
+        const JsonParserGeneratorRK::jsmntok_t *keyToken;
+		const JsonParserGeneratorRK::jsmntok_t *valueToken;
+
+        for(size_t index = 0; ; index++) {
+    		if (!inputParser.getKeyValueTokenByIndex(inputParser.getOuterObject(), keyToken, valueToken, index)) {
+                break;
+            }
+
+            String key;
+            inputParser.getTokenValue(keyToken, key);
+
+            JsonModifier modifier(parser);
+
+            // Does this item exist?
+    		const JsonParserGeneratorRK::jsmntok_t *oldValueToken;
+            if (!parser.getValueTokenByKey(parser.getOuterObject(), key, oldValueToken)) {
+                // Key does not exist, insert a dummy key/value
+                modifier.insertOrUpdateKeyValue(parser.getOuterObject(), key, (int)0);
+
+                parser.getValueTokenByKey(parser.getOuterObject(), key, oldValueToken);
+            }
+
+            int valueLen = valueToken->end - valueToken->start;
+            int oldValueLen = oldValueToken->end - oldValueToken->start;
+
+            printf("existing key %s size=%d\n", key.c_str(), oldValueLen);
+
+            if (valueToken->type != oldValueToken->type || 
+                valueLen != oldValueLen ||
+                memcmp(inputParser.getBuffer() + valueToken->start, parser.getBuffer() + oldValueToken->start, valueLen) != 0) {
+
+                const JsonParserGeneratorRK::jsmntok_t expandedValueToken = modifier.tokenWithQuotes(valueToken);
+                const JsonParserGeneratorRK::jsmntok_t expandedOldValueToken = modifier.tokenWithQuotes(oldValueToken);
+                modifier.startModify(&expandedOldValueToken);
+                
+                for(int ii = expandedValueToken.start; ii < expandedValueToken.end; ii++) {
+                    modifier.insertChar(inputParser.getBuffer()[ii]);
+                }
+
+                modifier.finish();
+
+                settingChangeFunctions.forEach(key);
+
+                printf("changed\n");
+            }
+            else {
+                printf("unchanged\n");
+            }
+                
+        }
+
 
     }
     return true;
 }
+
 
 
 

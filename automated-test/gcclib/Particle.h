@@ -49,10 +49,106 @@ public:
 #define WITH_LOCK(x)
 #define TRY_LOCK(x)
 
+
+typedef enum LogLevel {
+    LOG_LEVEL_ALL = 1, // Log all messages
+    LOG_LEVEL_TRACE = 1,
+    LOG_LEVEL_INFO = 30,
+    LOG_LEVEL_WARN = 40,
+    LOG_LEVEL_ERROR = 50,
+    LOG_LEVEL_PANIC = 60,
+    LOG_LEVEL_NONE = 70 // Do not log any messages
+} LogLevel;
+
 class Logger {
 public:
-	Logger(const char *app) {};
+	Logger(const char *name) : name(name) {};
+
+    void trace(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) { // First argument is implicit 'this'
+        va_list ap;
+        va_start(ap, fmt);
+        vprintf(LOG_LEVEL_TRACE, fmt, ap);
+        va_end(ap);
+    }
+    /*!
+        \brief Generates info message.
+        \param fmt Format string.
+    */
+    void info(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
+        va_list ap;
+        va_start(ap, fmt);
+        vprintf(LOG_LEVEL_INFO, fmt, ap);
+        va_end(ap);
+    }
+    /*!
+        \brief Generates warning message.
+        \param fmt Format string.
+    */
+    void warn(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
+        va_list ap;
+        va_start(ap, fmt);
+        vprintf(LOG_LEVEL_WARN, fmt, ap);
+        va_end(ap);
+    }
+    /*!
+        \brief Generates error message.
+        \param fmt Format string.
+    */
+    void error(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
+        va_list ap;
+        va_start(ap, fmt);
+        vprintf(LOG_LEVEL_ERROR, fmt, ap);
+        va_end(ap);
+    }
+
+    void log(LogLevel level, const char *fmt, ...) const __attribute__((format(printf, 3, 4))) {
+        va_list ap;
+        va_start(ap, fmt);
+        vprintf(level, fmt, ap);
+        va_end(ap);
+    }
+    
+    void vprintf(LogLevel level, const char *fmt, va_list ap) const {
+        char buf[512];
+        vsnprintf(buf, sizeof(buf), fmt, ap);
+        const char *levelStr;
+        switch(level) {
+            case LOG_LEVEL_TRACE:
+                levelStr = "TRACE";
+                break;
+            case LOG_LEVEL_INFO:
+                levelStr = "INFO";
+                break;
+            case LOG_LEVEL_WARN:
+                levelStr = "WARN";
+                break;
+            case LOG_LEVEL_ERROR:
+                levelStr = "ERROR";
+                break;
+            case LOG_LEVEL_PANIC:
+                levelStr = "PANIC";
+                break; 
+            default:
+                levelStr = "UNKNOWN";
+                break;               
+        }
+
+        ::printf("%s %s: %s\n", name.c_str(), levelStr, buf);
+    }
+
+    String name;
 };
 
+namespace particle { namespace protocol {
+    const size_t MAX_OPTION_DELTA_LENGTH = 12;
+    const size_t MAX_FUNCTION_KEY_LENGTH = 64;
+    const size_t MAX_VARIABLE_KEY_LENGTH = 64;
+    const size_t MAX_EVENT_NAME_LENGTH = 64;
+
+    const size_t MAX_EVENT_DATA_LENGTH = 1024;
+    const size_t MAX_FUNCTION_ARG_LENGTH = 1024;
+    const size_t MAX_VARIABLE_VALUE_LENGTH = 1024;
+
+}};
 
 #endif /* __PARTICLE_H */

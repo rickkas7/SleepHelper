@@ -9,6 +9,7 @@ SYSTEM_THREAD(ENABLED);
 SYSTEM_MODE(SEMI_AUTOMATIC);
 
 const pin_t BUTTON_PIN = D2;
+bool wokeByPin = false;
 
 void setup() {
     // For counting button clicks while awake
@@ -32,7 +33,17 @@ void setup() {
                 pin_t whichPin = sleepResult.wakeupPin();
                 Log.info("wake by pin %d", whichPin);
                 if (whichPin == BUTTON_PIN) {
+                    wokeByPin = true;
                 }
+                else {
+                    wokeByPin = false;
+                }
+            }
+            return true;
+        })
+        .withShouldConnectFunction([](int &connectConviction, int &noConnectConviction) {
+            if (wokeByPin) {
+                noConnectConviction = 100;
             }
             return true;
         })
