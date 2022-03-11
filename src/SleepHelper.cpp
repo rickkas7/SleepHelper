@@ -1,6 +1,6 @@
 #include "SleepHelper.h"
 
-static Logger _log("app.sleep");
+#include <fcntl.h>
 
 SleepHelper *SleepHelper::_instance;
 
@@ -12,34 +12,80 @@ SleepHelper &SleepHelper::instance() {
     return *_instance;
 }
 
-SleepHelper::SleepHelper() {
+SleepHelper::SleepHelper() : appLog("app.sleep") {
 }
 
 SleepHelper::~SleepHelper() {
 }
 
+#ifndef UNITTEST
 void SleepHelper::setup() {
+    // Register for system events
+    System.on(firmware_update | firmware_update_pending | reset | out_of_memory, systemEventHandlerStatic);
+
     // Call all setup functions
     setupFunctions.forEach();
+
+    // Called from setup(), and also after waking from sleep
+    wakeOrBootFunctions.forEach();
 }
 
 void SleepHelper::loop() {
+    // TODO: Check outOfMemory and reset here
+
     // Call all loop functions
     loopFunctions.forEach();
 
     // Call the connection state handler
-    // stateHandler(*this); // TEMPORARY COMMENT OUT
+    stateHandler(*this);
 
 }
 
+void SleepHelper::systemEventHandler(system_event_t event, int param) {
+    switch(event) {
+        case firmware_update:
+            switch(param) {
+                case firmware_update_begin:
+                    break;
 
+                case firmware_update_progress:
+                    break;
+
+                case firmware_update_complete:
+                    break;
+
+                case firmware_update_failed: 
+                    break;
+            }
+            break;
+
+        case firmware_update_pending:
+            break;
+
+        case reset:
+            sleepOrResetFunctions.forEach(true);
+            break;
+
+        case out_of_memory:
+            outOfMemory = true;
+            break;
+    }
+}
+
+// [static]
+void SleepHelper::systemEventHandlerStatic(system_event_t event, int param) {
+    SleepHelper::instance().systemEventHandler(event, param);
+}
 
 
 void SleepHelper::stateHandlerStart() {
     if (!shouldConnectFunctions.shouldConnect()) {
-        // We should not connect, so wait in this state
+        // We should not connect, so go into no connection state
+        appLog.info("running in no connection mode");
+        stateHandler = &SleepHelper::stateHandlerNoConnection;
         return;
     }
+    appLog.info("connecting to cloud");
 
     Particle.connect();    
     stateHandler = &SleepHelper::stateHandlerConnectWait;
@@ -53,9 +99,11 @@ void SleepHelper::stateHandlerConnectWait() {
         stateHandler = &SleepHelper::stateHandlerConnected;
         return;
     }
-    unsigned long elapsedMs = millis() - connectAttemptStartMillis;
-    if (reachedMaximumTimeToConnect(elapsedMs)) {
-        stateHandler = &SleepHelper::stateHandlerPrepareToSleep;
+    system_tick_t elapsedMs = millis() - connectAttemptStartMillis;
+
+    if (maximumTimeToConnectFunctions.untilFalse(false, elapsedMs)) {
+        appLog.info("timed out connecting to cloud");
+        stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
         return;
     }
 
@@ -66,12 +114,19 @@ void SleepHelper::stateHandlerConnected() {
         stateHandler = &SleepHelper::stateHandlerReconnectWait;
         return;        
     }
-    unsigned long elapsedMs = millis() - connectedStartMillis;
-    if (reachedMinimumConnectedTime(elapsedMs)) {
-        // Reached the minimum connected time, we may want to disconnect and sleep
-        stateHandler = &SleepHelper::stateHandlerPrepareToSleep;
+
+    appLog.info("connected to cloud");
+
+    whileConnectedFunctions.forEach();
+
+    system_tick_t elapsedMs = millis() - connectedStartMillis;
+    if (sleepReadyFunctions.untilFalse(true, elapsedMs)) {
+        // Ready to sleep, go into prepare to sleep state
+        stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
         return;
     }
+    
+
 }
 
 void SleepHelper::stateHandlerReconnectWait() {
@@ -81,45 +136,90 @@ void SleepHelper::stateHandlerReconnectWait() {
     }
 }
 
-/*
-    
-     * @brief Determine if it's a good time to go to sleep
-     * 
-     * The sleep ready functions registered with withSleepReadyFunction() are called. If any returns false (not ready)
-     * then this function returns false. If all return true (or there are no sleep ready functions) then this function
-     * returns true.
-    
-    bool isSleepReady() {
-        return sleepReadyFunctions.untilFalse(true);
+void SleepHelper::stateHandlerNoConnection() {
+
+    if (!noConnectionFunctions.whileAnyTrue(false)) {
+        // No more noConnectionFunctions need time, so go to sleep now
+        stateHandler = &SleepHelper::stateHandlerPrepareToSleep;
+        return;
     }
+    
+    // Stay in this state while any noConnectionFunction returns true
+    return;
+}
 
-*/
+void SleepHelper::stateHandlerDisconnectBeforeSleep() {
 
-void SleepHelper::stateHandlerPrepareToSleep() {
+    appLog.info("disconnecting from cloud");
 
     // Disconnect from the cloud
+    Particle.disconnect();
 
     // Do we need to power down the cellular modem?
+    stateHandler = &SleepHelper::stateHandlerPrepareToSleep;
+}
+
+
+void SleepHelper::stateHandlerPrepareToSleep() {
+    appLog.info("stateHandlerPrepareToSleep");
+    sleepOrResetFunctions.forEach(false);
 
     SystemSleepConfiguration sleepConfig;
 
     // Default sleep mode is ULP. Can override by sleepConfigurationFunction
     sleepConfig.mode(SystemSleepMode::ULTRA_LOW_POWER);
 
-    // Calculate sleep duration
-
-    // system_tick_t
-    // sleepConfig.duration();
+    // Calculate sleep duration (default to 15 minutes)
+    std::chrono::milliseconds sleepTime = 15min;
+    //sleepTimeRecommendationFunctions.forEach(sleepTime);
 
     // Allow other sleep configuration to be overridden
-    sleepConfigurationFunctions.forEach(sleepConfig);
+    sleepConfigurationFunctions.forEach(sleepConfig, sleepTime);
+    sleepConfig.duration(sleepTime);
+
+    appLog.info("sleeping for %d sec", (int)(sleepTime.count() / 1000));
 
     // Sleep!
-    System.sleep(sleepConfig);
+    SystemSleepResult sleepResult = System.sleep(sleepConfig);
 
     // Woke from sleep
     stateHandler = &SleepHelper::stateHandlerStart;
 
+    wakeOrBootFunctions.forEach();
+}
+#endif // UNITTEST
+
+//
+// SettingsFile
+//
+SleepHelper::SettingsFile *SleepHelper::SettingsFile::_settingsFile;
+
+
+SleepHelper::SettingsFile &SleepHelper::SettingsFile::instance() {
+    if (!_settingsFile) {
+        _settingsFile = new SleepHelper::SettingsFile();
+    }
+    return *_settingsFile;
+}
+
+bool SleepHelper::SettingsFile::load() {
+    WITH_LOCK(*this) {
+
+        int fd = open(SETTINGS_PATH, O_RDONLY);
+        if (fd != -1) {
+            
+            close(fd);
+        }
+        
+    }
+    return true;
+}
+
+bool SleepHelper::SettingsFile::save() {
+    WITH_LOCK(*this) {
+
+    }
+    return true;
 }
 
 
