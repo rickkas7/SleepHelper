@@ -57,7 +57,8 @@ void _assertTime(const char *msg, time_t got, const char *expected, int line) {
 }
 
 void settingsTest() {
-	SleepHelper::SettingsFile &settings = SleepHelper::SettingsFile::instance();
+	
+	SleepHelper::SettingsFile &settings = SleepHelper::instance().settingsFile;
 
 	settings.load();
 
@@ -72,7 +73,6 @@ void settingsTest() {
 	settings.setValue("t4", false);
 
 	settings.setValuesJson("{\"t1\":9999}");
-
 }
 
 int main(int argc, char *argv[]) {

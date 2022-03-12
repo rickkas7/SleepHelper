@@ -2,6 +2,13 @@
 
 #include <fcntl.h>
 
+static constexpr const char * const SETTINGS_PATH = 
+#ifndef UNITTEST
+    "/usr/sleepSettings.json";
+#else
+    "./sleepSettings.json";
+#endif    
+
 SleepHelper *SleepHelper::_instance;
 
 // [static]
@@ -12,7 +19,7 @@ SleepHelper &SleepHelper::instance() {
     return *_instance;
 }
 
-SleepHelper::SleepHelper() : appLog("app.sleep") {
+SleepHelper::SleepHelper() : appLog("app.sleep"), settingsFile(SETTINGS_PATH) {
 }
 
 SleepHelper::~SleepHelper() {
@@ -194,15 +201,6 @@ void SleepHelper::stateHandlerPrepareToSleep() {
 //
 // SettingsFile
 //
-SleepHelper::SettingsFile *SleepHelper::SettingsFile::_settingsFile;
-
-
-SleepHelper::SettingsFile &SleepHelper::SettingsFile::instance() {
-    if (!_settingsFile) {
-        _settingsFile = new SleepHelper::SettingsFile();
-    }
-    return *_settingsFile;
-}
 
 bool SleepHelper::SettingsFile::load() {
     WITH_LOCK(*this) {
@@ -210,7 +208,7 @@ bool SleepHelper::SettingsFile::load() {
 
         size_t dataSize = 0;
 
-        int fd = open(SETTINGS_PATH, O_RDONLY);
+        int fd = open(path, O_RDONLY);
         if (fd != -1) {
             dataSize = read(fd, parser.getBuffer(), parser.getBufferLen());
             if (dataSize > 0) {                
@@ -233,7 +231,7 @@ bool SleepHelper::SettingsFile::load() {
 
 bool SleepHelper::SettingsFile::save() {
     WITH_LOCK(*this) {
-        int fd = open(SETTINGS_PATH, O_RDWR | O_CREAT | O_TRUNC);
+        int fd = open(path, O_RDWR | O_CREAT | O_TRUNC);
         if (fd != -1) {            
             write(fd, parser.getBuffer(), parser.getOffset());
             close(fd);

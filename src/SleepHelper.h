@@ -125,21 +125,54 @@ public:
      * 
      * You must not access the settings file at global constructor time. Only use it from
      * setup() or later. You can access it from worker threads.
+     * 
+     * Settings are limited to the size of a publish, function, or variable data payload, 
+     * typically 1024 bytes on Gen 3 devices. 
+     * 
+     * If you have more data than that, you should store it in your own file. You can 
+     * also create more than one SettingsFile object for your own settings, but it won't
+     * be connected to the built-in function and variable support.
      */
     class SettingsFile : public Mutex {
     public:
         /**
-         * @brief Get the singleton instance of the SettingsFile class. Do not call at global construction time!
+         * @brief Default constructor. Use withPath() to set the pathname if using this constructor
+         */
+        SettingsFile() {};
+
+        /**
+         * @brief Constructor that thats a pathname to the settings file
          * 
+         * @param path 
+         */
+        SettingsFile(const char *path) : path(path) {};
+
+        /**
+         * @brief Destructor
+         */
+        virtual ~SettingsFile() {};
+
+        /**
+         * @brief Sets the path to the settings file on the file system
+         * 
+         * @param path 
          * @return SettingsFile& 
          */
-        static SettingsFile &instance();
-
+        SettingsFile &withPath(const char *path) { 
+            this->path = path; 
+            return *this; 
+        };
+        
+        /**
+         * @brief Register a function to be called when a settings value is changed
+         * 
+         * @param fn a function or lamba to call
+         * @return SettingsFile& 
+         */
         SettingsFile &withSettingChangeFunction(std::function<bool(const char *)> fn) { 
             settingChangeFunctions.add(fn);
             return *this;
         }
-
 
         /**
          * @brief Load the settings file. You normally do not need to call this; it will be loaded automatically.
@@ -156,7 +189,19 @@ public:
          * @return false 
          */
         bool save();
-
+        
+        /**
+         * @brief Get a value from the settings file
+         * 
+         * @tparam T 
+         * @param name 
+         * @param value 
+         * @return true 
+         * @return false 
+         * 
+         * The values are cached in RAM, so this is normally fast. Note that you must request the same data type as 
+         * the original data in the JSON file - it does not coerce types.
+         */
     	template<class T>
 	    bool getValue(const char *name, T &value) const {
             bool result = false;
@@ -177,6 +222,9 @@ public:
          * 
          * This call returns quickly if the value does not change and does not write to
          * the file system if the value is unchanged.
+         * 
+         * You should use the same data type as was originally in the JSON data beacause
+         * the change detection does not coerce data types.
          */
     	template<class T>
 	    bool setValue(const char *name, const T &value) {
@@ -221,46 +269,34 @@ public:
 
             return setValue(name, tempStr);
         }
-
+        
+        /**
+         * @brief Merges multiple values from JSON data into the settings
+         * 
+         * @param json 
+         * @return true 
+         * @return false 
+         * 
+         */
         bool setValuesJson(const char *json);
 
         bool getValuesJson(String &json);
 
-        static constexpr const char * const SETTINGS_PATH = 
-#ifndef UNITTEST
-            "/usr/sleepSettings.json";
-#else
-            "./sleepSettings.json";
-#endif
-
     protected:
         /**
-         * @brief The constructor is protected because the class is a singleton
-         * 
-         * Use SleepHelper::SettingsFile::instance() to instantiate the singleton.
-         */
-        SettingsFile() {};
-
-        /**
-         * @brief The destructor is protected because the class is a singleton and cannot be deleted
-         */
-        virtual ~SettingsFile() {};
-
-        /**
-         * This class is a singleton and cannot be copied
+         * This class cannot be copied
          */
         SettingsFile(const SettingsFile&) = delete;
 
         /**
-         * This class is a singleton and cannot be copied
+         * This class cannot be copied
          */
         SettingsFile& operator=(const SettingsFile&) = delete;
 
         JsonParserStatic<particle::protocol::MAX_EVENT_DATA_LENGTH, 50> parser;
 
         AppCallback<const char *> settingChangeFunctions;
-
-        static SettingsFile *_settingsFile;
+        String path;
     };
 
 
@@ -361,7 +397,11 @@ public:
         }); 
     }
 
-
+    SleepHelper &withSettingChangeFunction(std::function<bool(const char *)> fn) { 
+        withSettingChangeFunction.withSettingChangeFunction(fn);
+        return *this;
+    }
+    
     
 #if HAL_PLATFORM_POWER_MANAGEMENT
     /**
@@ -465,6 +505,7 @@ public:
 
 #endif // UNITTEST
 
+    SettingsFile settingsFile;
 
 protected:
     /**
@@ -539,6 +580,7 @@ protected:
     system_tick_t connectAttemptStartMillis = 0;
     system_tick_t connectedStartMillis = 0;
     bool outOfMemory = false;
+
 #endif // UNITTEST
 
     Logger appLog;
