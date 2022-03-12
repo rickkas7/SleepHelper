@@ -75,7 +75,15 @@ void settingsTest() {
 	settings.setValuesJson("{\"t1\":9999}");
 }
 
+void persistentDataTest() {
+	SleepHelper::PersistentData data;
+	data.withPath("./persistentData.dat");
+	data.load();
+	data.save();
+}
+
 int main(int argc, char *argv[]) {
 	settingsTest();
+	persistentDataTest();
 	return 0;
 }

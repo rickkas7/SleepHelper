@@ -206,7 +206,7 @@ bool SleepHelper::SettingsFile::load() {
     WITH_LOCK(*this) {
         bool loaded = false;
 
-        size_t dataSize = 0;
+        int dataSize = 0;
 
         int fd = open(path, O_RDONLY);
         if (fd != -1) {
@@ -327,4 +327,59 @@ bool SleepHelper::SettingsFile::getValuesJson(String &json) {
 }
 
 
+//
+// SettingsFile
+//
+
+bool SleepHelper::PersistentData::load() {
+    WITH_LOCK(*this) {
+        bool loaded = false;
+
+        int dataSize = 0;
+
+        int fd = open(path, O_RDONLY);
+        if (fd != -1) {
+            dataSize = read(fd, &savedData, sizeof(savedData));
+            if (dataSize >= 12 && 
+                savedData.magic == SAVED_DATA_MAGIC && 
+                savedData.version == SAVED_DATA_VERSION &&
+                savedData.size <= dataSize) {                
+                if (dataSize < sizeof(savedData)) {
+                    // Structure is larger than what's in the file; pad with zero bytes
+                    uint8_t *p = (uint8_t *)&savedData;
+                    for(size_t ii = (size_t)dataSize; ii < sizeof(savedData); ii++) {
+                        p[ii] = 0;
+                    }
+                }
+                savedData.size = (uint16_t) sizeof(savedData);
+                loaded = true;
+            }
+            close(fd);
+        }
+        
+        if (!loaded) {
+            memset(&savedData, 0, sizeof(savedData));
+            savedData.magic = SAVED_DATA_MAGIC;
+            savedData.version = SAVED_DATA_VERSION;
+            savedData.size = (uint16_t) sizeof(savedData);
+        }
+    }
+
+    return true;
+}
+
+bool SleepHelper::PersistentData::save() {
+    WITH_LOCK(*this) {
+        int fd = open(path, O_RDWR | O_CREAT | O_TRUNC);
+        if (fd != -1) {            
+            write(fd, &savedData, sizeof(savedData));
+            close(fd);
+        }
+        else {            
+            return false;
+        }
+    }
+
+    return true;
+}
 

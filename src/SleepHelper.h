@@ -300,6 +300,91 @@ public:
     };
 
 
+    /**
+     * @brief Class for managing small persistent data
+     * 
+     * You must not access the persistent at global constructor time. Only use it from
+     * setup() or later. You can access it from worker threads.
+     * 
+     */
+    class PersistentData : public Mutex {
+    public:
+        class SavedData {
+        public:
+            uint32_t magic;                 //!< SAVED_DATA_MAGIC = 0xd87cb6ce;
+            uint32_t version;               //!< SAVED_DATA_VERSION = 1
+            uint16_t size;                  //!< sizeof(SavedData)
+            uint16_t reserved1;             //!< currently 0
+            uint32_t nextUpdateCheck;
+            uint32_t nextPublish;
+            uint32_t nextQuickWake;
+            uint32_t reserved2[24];         //!< For future use
+        };
+
+        /**
+         * @brief Default constructor. Use withPath() to set the pathname if using this constructor
+         */
+        PersistentData() {};
+
+        /**
+         * @brief Constructor that thats a pathname to the persistent data file
+         * 
+         * @param path 
+         */
+        PersistentData(const char *path) : path(path) {};
+
+        /**
+         * @brief Destructor
+         */
+        virtual ~PersistentData() {};
+
+        /**
+         * @brief Sets the path to the persistent data file on the file system
+         * 
+         * @param path 
+         * @return PersistentData& 
+         */
+        PersistentData &withPath(const char *path) { 
+            this->path = path; 
+            return *this; 
+        };
+        
+        /**
+         * @brief Load the persistent data file. You normally do not need to call this; it will be loaded automatically.
+         * 
+         * @return true 
+         * @return false 
+         */
+        bool load();
+
+        /**
+         * @brief Save the persistent data file. You normally do not need to call this; it will be saved automatically.
+         * 
+         * @return true 
+         * @return false 
+         */
+        bool save();
+
+        SavedData savedData;
+
+        static const uint32_t SAVED_DATA_MAGIC = 0xd87cb6ce;
+        static const uint16_t SAVED_DATA_VERSION = 1; 
+
+    protected:
+        /**
+         * This class cannot be copied
+         */
+        PersistentData(const SettingsFile&) = delete;
+
+        /**
+         * This class cannot be copied
+         */
+        PersistentData& operator=(const SettingsFile&) = delete;
+
+        String path;
+    };
+
+
 #ifndef UNITTEST
     SleepHelper &withSetupFunction(std::function<bool()> fn) { 
         setupFunctions.add(fn);
@@ -401,7 +486,7 @@ public:
         withSettingChangeFunction.withSettingChangeFunction(fn);
         return *this;
     }
-    
+
     
 #if HAL_PLATFORM_POWER_MANAGEMENT
     /**
