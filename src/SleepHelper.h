@@ -25,7 +25,76 @@ public:
      */
     static SleepHelper &instance();
 
-    
+    /**
+     * @brief This is a wrapper around a recursive mutex, similar to Device OS RecursiveMutex
+     * 
+     * There are two differences:
+     * 
+     * - The mutex is created on first lock, instead of from the constructor. This is done because it's
+     * not save to call os_mutex_recursive_create from a global constructor, and by delaying 
+     * construction it makes it possible to safely construct the class as a global object.
+     * - The lock/trylock/unlock methods are declared const and the mutex handle mutable. This allows the
+     * mutex to be locked from a const method.
+     */
+#ifndef UNITTEST
+    class SleepHelperRecursiveMutex
+    {
+        mutable os_mutex_recursive_t handle_;
+
+    public:
+        /**
+         * Creates a shared mutex.
+         */
+        SleepHelperRecursiveMutex(os_mutex_recursive_t handle) : handle_(handle) {
+        }
+
+        SleepHelperRecursiveMutex() : handle_(nullptr) {
+        }
+
+        ~SleepHelperRecursiveMutex() {
+            dispose();
+        }
+
+        void dispose() {
+            if (handle_) {
+                os_mutex_recursive_destroy(handle_);
+                handle_ = nullptr;
+            }
+        }
+
+        void lock() const { 
+            if (!handle_) {
+                os_mutex_recursive_create(&handle_);
+            }
+            os_mutex_recursive_lock(handle_); 
+        }
+        bool trylock() const { 
+            if (!handle_) {
+                os_mutex_recursive_create(&handle_);
+            }
+            return os_mutex_recursive_trylock(handle_)==0; 
+        }
+        bool try_lock() const { 
+            return trylock(); 
+        }
+        void unlock() const { 
+            os_mutex_recursive_unlock(handle_); 
+        }
+    };
+#else
+    class SleepHelperRecursiveMutex {
+    public:
+        void lock() const {};
+        bool trylock() const { 
+            return true;
+        }
+        bool try_lock() const { 
+            return trylock(); 
+        }
+        void unlock() const { 
+        }
+    };
+#endif
 
     template<class... Types>
     class AppCallback {
@@ -133,7 +202,7 @@ public:
      * also create more than one SettingsFile object for your own settings, but it won't
      * be connected to the built-in function and variable support.
      */
-    class SettingsFile : public Mutex {
+    class SettingsFile : public SleepHelperRecursiveMutex {
     public:
         /**
          * @brief Default constructor. Use withPath() to set the pathname if using this constructor
@@ -173,6 +242,13 @@ public:
             settingChangeFunctions.add(fn);
             return *this;
         }
+        /**
+         * @brief Initialize this object for use in SleepHelper
+         * 
+         * This is used from SleepHeler::setup(). You should not use this if you are creating your
+         * own SettingsFile object; this is only used to hook this class into SleepHelper/
+         */
+        void setup();
 
         /**
          * @brief Load the settings file. You normally do not need to call this; it will be loaded automatically.
@@ -307,18 +383,31 @@ public:
      * setup() or later. You can access it from worker threads.
      * 
      */
-    class PersistentData : public Mutex {
+    class PersistentData : public SleepHelperRecursiveMutex {
     public:
+        /**
+         * @brief Structure saved to the persistent data file (binary)
+         * 
+         * You must not change the first two fields (magic, version) and the data
+         * structure must always be >= 12 bytes (including size and flags).
+         * 
+         * You can expand the structure later without incrementing the
+         * version number. Added fields will be initialized to 0. The size is 
+         * limited to 65536 bytes (uint16_t maximum value).
+         * 
+         * Since the SavedData structure is always stored in RAM, you should not
+         * make it excessively large
+         */
         class SavedData {
         public:
             uint32_t magic;                 //!< SAVED_DATA_MAGIC = 0xd87cb6ce;
             uint32_t version;               //!< SAVED_DATA_VERSION = 1
             uint16_t size;                  //!< sizeof(SavedData)
-            uint16_t reserved1;             //!< currently 0
+            uint16_t flags;                 //!< currently 0
             uint32_t nextUpdateCheck;
             uint32_t nextPublish;
             uint32_t nextQuickWake;
-            uint32_t reserved2[24];         //!< For future use
+            // OK to add more fields here later without incremeting version
         };
 
         /**
@@ -350,6 +439,33 @@ public:
         };
         
         /**
+         * @brief Sets the wait to save delay. Default is 1000 milliseconds.
+         * 
+         * @param value Value is milliseconds, or 0
+         * @return PersistentData& 
+         * 
+         * Normally, if the value is changed by a set call, then about
+         * one second later the change will be saved to disk from the loop thread. The
+         * savedData is also saved before sleep or reset if changed.
+         * 
+         * You can change the save delay by using withSaveDelayMs(). If you set it to 0, then
+         * the data is saved within the setValue call immediately, which will make all set calls
+         * run more slowly.
+         */
+        PersistentData &withSaveDelayMs(uint32_t value) {
+            saveDelayMs = value;
+            return *this;
+        }
+
+        /**
+         * @brief Initialize this object for use in SleepHelper
+         * 
+         * This is used from SleepHelper::setup(). You should not use this if you are creating your
+         * own PersistentData object; this is only used to hook this class into SleepHelper/
+         */
+        void setup();
+
+        /**
          * @brief Load the persistent data file. You normally do not need to call this; it will be loaded automatically.
          * 
          * @return true 
@@ -365,7 +481,81 @@ public:
          */
         bool save();
 
-        SavedData savedData;
+        /**
+         * @brief Write the settings to disk if changed and the wait to save time has expired
+         * 
+         * @param force Pass true to ignore the wait to save time and save immediately if necessary. This
+         * is used when you're about to sleep or reset, for example.
+         * 
+         * This call is fast if a save is not required so you can call it frequently, even every loop.
+         */
+        void flush(bool force);
+
+        /**
+         * @brief Get the value nextUpdateCheck (Unix time, UTC)
+         * 
+         * @return time_t Unix time at UTC, like the value of Time.now()
+         * 
+         * This is the clock time when we should next stay online long enough for a software update check
+         */
+        time_t getValue_nextUpdateCheck() const {
+            return (time_t) getValue_uint32(offsetof(SavedData, nextUpdateCheck));
+        }
+
+        void setValue_nextUpdateCheck(time_t value) {
+            setValue_uint32(offsetof(SavedData, nextUpdateCheck), (uint32_t) value);
+        }
+
+        /**
+         * @brief Get the value nextPublish (Unix time, UTC)
+         * 
+         * @return time_t Unix time at UTC, like the value of Time.now()
+         */
+        time_t getValue_nextPublish() const {
+            return (time_t) getValue_uint32(offsetof(SavedData, nextPublish));
+        }
+        void setValue_nextPublish(time_t value) {
+            setValue_uint32(offsetof(SavedData, nextPublish), (uint32_t)value);
+        }
+
+        /**
+         * @brief Get the value nextQuickWake (Unix time, UTC)
+         * 
+         * @return time_t Unix time at UTC, like the value of Time.now()
+         */
+        time_t getValue_nextQuickWake() const {
+            return (time_t) getValue_uint32(offsetof(SavedData, nextQuickWake));
+        }
+        void setValue_nextQuickWake(time_t value) {
+            setValue_uint32(offsetof(SavedData, nextQuickWake), (uint32_t)value);
+        }
+
+        /**
+         * @brief Gets a value from the savedData
+         * 
+         * @param offset Offset in bytes into savedData, typically offsetof(SavedData, fieldName)
+         * @return uint32_t The value
+         * 
+         * This is a fast operation. It obtains a lock, but reads the value out of RAM.
+         */
+        uint32_t getValue_uint32(size_t offset) const;
+
+        /**
+         * @brief Sets a value in savedData
+         * 
+         * @param offset Offset in bytes into savedData, typically offsetof(SavedData, fieldName)
+         * @param value The value to set
+         * 
+         * This method sets a value in the structure. Normally, if the value changed, then about
+         * one second later the change will be saved to disk from the loop thread. The
+         * savedData is also saved before sleep or reset if changed.
+         * 
+         * You can change the save delay by using withSaveDelayMs(). If you set it to 0, then
+         * the data is saved within the setValue call immediately, which will make all set calls
+         * run more slowly.
+         */
+        void setValue_uint32(size_t offset, uint32_t value);
+        
 
         static const uint32_t SAVED_DATA_MAGIC = 0xd87cb6ce;
         static const uint16_t SAVED_DATA_VERSION = 1; 
@@ -381,11 +571,26 @@ public:
          */
         PersistentData& operator=(const SettingsFile&) = delete;
 
+        SavedData savedData;
+
+        uint32_t lastUpdate = 0;
+        uint32_t saveDelayMs = 1000;
+
         String path;
     };
-
-
+    
 #ifndef UNITTEST
+    SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, std::chrono::milliseconds&)> fn) { 
+        sleepConfigurationFunctions.add(fn); 
+        return *this;
+    }
+
+    SleepHelper &withWakeFunction(std::function<bool(const SystemSleepResult &)> fn) { 
+        wakeFunctions.add(fn); 
+        return *this;
+    }
+#endif
+
     SleepHelper &withSetupFunction(std::function<bool()> fn) { 
         setupFunctions.add(fn);
         return *this;
@@ -396,11 +601,25 @@ public:
         return *this;
     }
 
-    SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, std::chrono::milliseconds&)> fn) { 
-        sleepConfigurationFunctions.add(fn); 
-        return *this;
-    }
-
+    /**
+     * @brief Determine if it's OK to sleep now, when in connected state
+     * 
+     * @param fn 
+     * @return SleepHelper& 
+     * 
+     * The sleep ready function prototype is:
+     * 
+     * bool callback(system_tick_t connecteTimeMs)
+     * 
+     * Return true if your situation is OK to sleep now. This does not guaranteed that sleep will
+     * actually occur, because there can be many sleep ready functions and other calculations.
+     * 
+     * Return false if you still have things to do before it's OK to sleep.
+     * 
+     * This callback is only called when connected. Scanning the list stops when the first
+     * callback return false, so you should not use this callback for periodic actions. Use
+     * withWhileConnectedFunction() instead.
+     */
     SleepHelper &withSleepReadyFunction(std::function<bool(system_tick_t)> fn) {
         sleepReadyFunctions.add(fn); 
         return *this;
@@ -410,12 +629,6 @@ public:
         shouldConnectFunctions.add(fn); 
         return *this; 
     }
-
-    SleepHelper &withWakeFunction(std::function<bool(const SystemSleepResult &)> fn) { 
-        wakeFunctions.add(fn); 
-        return *this;
-    }
-
 
     SleepHelper &withWakeOrBootFunction(std::function<bool()> fn) { 
         wakeOrBootFunctions.add(fn); 
@@ -483,7 +696,7 @@ public:
     }
 
     SleepHelper &withSettingChangeFunction(std::function<bool(const char *)> fn) { 
-        withSettingChangeFunction.withSettingChangeFunction(fn);
+        settingsFile.withSettingChangeFunction(fn);
         return *this;
     }
 
@@ -529,6 +742,7 @@ public:
         })
     }
 #endif
+
 
     /**
      * @brief Sets the time configuration string for local time calculations
@@ -588,9 +802,9 @@ public:
      */
     void loop();
 
-#endif // UNITTEST
 
     SettingsFile settingsFile;
+    PersistentData persistentData;
 
 protected:
     /**
@@ -634,18 +848,22 @@ protected:
 
     void stateHandlerPrepareToSleep();
 
+    AppCallback<SystemSleepConfiguration &, std::chrono::milliseconds&> sleepConfigurationFunctions;
+
+    AppCallback<const SystemSleepResult &> wakeFunctions;
+
+#endif // UNITTEST
+
 
     AppCallback<> setupFunctions;
 
     AppCallback<> loopFunctions;
 
-    AppCallback<SystemSleepConfiguration &, std::chrono::milliseconds&> sleepConfigurationFunctions;
 
     AppCallback<system_tick_t> sleepReadyFunctions;
 
     ShouldConnectAppCallback shouldConnectFunctions;
 
-    AppCallback<const SystemSleepResult &> wakeFunctions;
 
     AppCallback<> wakeOrBootFunctions;
 
@@ -660,12 +878,12 @@ protected:
     LocalTimeConvert::Schedule sleepSchedule;
     LocalTimeConvert::Schedule publishSchedule;
 
+#ifndef UNITTEST
     std::function<void(SleepHelper&)> stateHandler = &SleepHelper::stateHandlerStart;
 
     system_tick_t connectAttemptStartMillis = 0;
     system_tick_t connectedStartMillis = 0;
     bool outOfMemory = false;
-
 #endif // UNITTEST
 
     Logger appLog;

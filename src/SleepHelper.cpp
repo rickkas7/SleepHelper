@@ -2,12 +2,6 @@
 
 #include <fcntl.h>
 
-static constexpr const char * const SETTINGS_PATH = 
-#ifndef UNITTEST
-    "/usr/sleepSettings.json";
-#else
-    "./sleepSettings.json";
-#endif    
 
 SleepHelper *SleepHelper::_instance;
 
@@ -19,7 +13,10 @@ SleepHelper &SleepHelper::instance() {
     return *_instance;
 }
 
-SleepHelper::SleepHelper() : appLog("app.sleep"), settingsFile(SETTINGS_PATH) {
+SleepHelper::SleepHelper() : 
+    settingsFile("/usr/sleepSettings.json"), 
+    persistentData("/usr/sleepData.dat"),
+    appLog("app.sleep") {
 }
 
 SleepHelper::~SleepHelper() {
@@ -30,11 +27,21 @@ void SleepHelper::setup() {
     // Register for system events
     System.on(firmware_update | firmware_update_pending | reset | out_of_memory, systemEventHandlerStatic);
 
+    settingsFile.setup();
+    persistentData.setup();
+
     // Call all setup functions
     setupFunctions.forEach();
 
     // Called from setup(), and also after waking from sleep
     wakeOrBootFunctions.forEach();
+
+    // Always wait until we have a valid RTC time before sleeping if cloud connected
+    withSleepReadyFunction([](system_tick_t) {
+        // Return true if it's OK to sleep or false if not.
+        return Time.isValid();
+    });
+
 }
 
 void SleepHelper::loop() {
@@ -202,6 +209,9 @@ void SleepHelper::stateHandlerPrepareToSleep() {
 // SettingsFile
 //
 
+void SleepHelper::SettingsFile::setup() {
+}
+
 bool SleepHelper::SettingsFile::load() {
     WITH_LOCK(*this) {
         bool loaded = false;
@@ -328,8 +338,24 @@ bool SleepHelper::SettingsFile::getValuesJson(String &json) {
 
 
 //
-// SettingsFile
+// PersistentData
 //
+
+void SleepHelper::PersistentData::setup() {
+    // Load data at boot
+    load();
+
+    SleepHelper::instance().withLoopFunction([this]() {
+        // Handle deferred save
+        flush(false);
+        return true;
+    });
+    SleepHelper::instance().withSleepOrResetFunction([this](bool) {
+        // Make sure data is saved before sleep or reset
+        flush(true);
+        return true;
+    });
+}
 
 bool SleepHelper::PersistentData::load() {
     WITH_LOCK(*this) {
@@ -343,8 +369,8 @@ bool SleepHelper::PersistentData::load() {
             if (dataSize >= 12 && 
                 savedData.magic == SAVED_DATA_MAGIC && 
                 savedData.version == SAVED_DATA_VERSION &&
-                savedData.size <= dataSize) {                
-                if (dataSize < sizeof(savedData)) {
+                savedData.size <= (uint16_t) dataSize) {                
+                if ((size_t)dataSize < sizeof(savedData)) {
                     // Structure is larger than what's in the file; pad with zero bytes
                     uint8_t *p = (uint8_t *)&savedData;
                     for(size_t ii = (size_t)dataSize; ii < sizeof(savedData); ii++) {
@@ -383,3 +409,41 @@ bool SleepHelper::PersistentData::save() {
     return true;
 }
 
+void SleepHelper::PersistentData::flush(bool force) {
+    if (lastUpdate) {
+        if (force || (millis() - lastUpdate >= saveDelayMs)) {
+            save();
+            lastUpdate = 0;
+        }
+    }
+}
+
+uint32_t SleepHelper::PersistentData::getValue_uint32(size_t offset) const {
+    uint32_t result = 0;
+
+    WITH_LOCK(*this) {
+        if (offset <= (sizeof(savedData) - sizeof(uint32_t))) {
+            uint8_t *p = (uint8_t *)&savedData;
+            result = *p;
+        }
+    }
+    return result;
+}
+
+void SleepHelper::PersistentData::setValue_uint32(size_t offset, uint32_t value)  {
+    WITH_LOCK(*this) {
+        if (offset <= (sizeof(savedData) - sizeof(uint32_t))) {
+            uint8_t *p = (uint8_t *)&savedData;
+            uint32_t oldValue = *p;
+            if (oldValue != value) {
+                *(uint32_t *)&p[offset] = value;
+                if (saveDelayMs) {
+                    lastUpdate = millis();
+                }
+                else {
+                    save();
+                }
+            }
+        }
+    }
+}

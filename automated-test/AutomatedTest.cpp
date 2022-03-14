@@ -58,8 +58,8 @@ void _assertTime(const char *msg, time_t got, const char *expected, int line) {
 
 void settingsTest() {
 	
-	SleepHelper::SettingsFile &settings = SleepHelper::instance().settingsFile;
-
+	SleepHelper::SettingsFile settings;
+	settings.withPath("./sleepSettings.json");
 	settings.load();
 
 	settings.withSettingChangeFunction([](const char *key) {
