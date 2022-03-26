@@ -508,6 +508,9 @@ public:
          */
         PersistentDataBase &withSaveDelayMs(uint32_t value) {
             saveDelayMs = value;
+            if (saveDelayMs == 0) {
+                flush(true);
+            }
             return *this;
         }
 
@@ -559,8 +562,9 @@ public:
 
             WITH_LOCK(*this) {
                 if (offset <= (savedDataSize - sizeof(T))) {
-                    uint8_t *p = (uint8_t *)savedDataHeader;
-                    result = *p;
+                    const uint8_t *p = (uint8_t *)savedDataHeader;
+                    p += offset;
+                    result = *(const T *)p;
                 }
             }
             return result;
@@ -578,9 +582,11 @@ public:
             WITH_LOCK(*this) {
                 if (offset <= (savedDataSize - sizeof(T))) {
                     uint8_t *p = (uint8_t *)savedDataHeader;
-                    T oldValue = *p;
+                    p += offset;
+
+                    T oldValue = *(T *)p;
                     if (oldValue != value) {
-                        *(T *)&p[offset] = value;
+                        *(T *)p = value;
                         if (saveDelayMs) {
                             lastUpdate = millis();
                         }
@@ -591,6 +597,11 @@ public:
                 }
             }
         }
+
+        bool getValueString(size_t offset, size_t size, String &value) const;
+
+        bool setValueString(size_t offset, size_t size, const char *value);
+        
 
         static const uint32_t SAVED_DATA_MAGIC = 0xd87cb6ce;
         static const uint16_t SAVED_DATA_VERSION = 1; 

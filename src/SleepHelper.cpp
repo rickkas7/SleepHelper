@@ -396,7 +396,7 @@ bool SleepHelper::PersistentDataBase::load() {
 
 bool SleepHelper::PersistentDataBase::save() {
     WITH_LOCK(*this) {
-        int fd = open(path, O_RDWR | O_CREAT | O_TRUNC);
+        int fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0666);
         if (fd != -1) {            
             write(fd, savedDataHeader, savedDataSize);
             close(fd);
@@ -417,3 +417,43 @@ void SleepHelper::PersistentDataBase::flush(bool force) {
         }
     }
 }
+
+
+bool SleepHelper::PersistentDataBase::getValueString(size_t offset, size_t size, String &value) const {
+    bool result = false;
+
+    WITH_LOCK(*this) {
+        if (offset <= (savedDataSize - (size - 1))) {
+            const char *p = (const char *)savedDataHeader;
+            p += offset;
+            value = p;
+            result = true;
+        }
+    }
+    return result;
+}
+
+bool SleepHelper::PersistentDataBase::setValueString(size_t offset, size_t size, const char *value) {
+    bool result = false;
+
+    WITH_LOCK(*this) {
+        if (offset <= (savedDataSize - (size - 1)) && strlen(value) < size) {
+            char *p = (char *)savedDataHeader;
+            p += offset;
+
+            if (strcmp(value, p) != 0) {
+                memset(p, 0, size);
+                strcpy(p, value);
+                if (saveDelayMs) {
+                    lastUpdate = millis();
+                }
+                else {
+                    save();
+                }
+            }
+            result = true;
+        }
+    }
+    return result;
+}
+
