@@ -456,55 +456,30 @@ public:
 
 
     /**
-     * @brief Class for managing small persistent data
+     * @brief Base class for storing persistent binary data to a file
      * 
-     * You must not access the persistent at global constructor time. Only use it from
-     * setup() or later. You can access it from worker threads.
-     * 
+     * This class is separate from PersistentData so you can subclass it to hold your own application-specific
+     * data as well.
      */
-    class PersistentData : public SleepHelperRecursiveMutex {
+    class PersistentDataBase : public SleepHelperRecursiveMutex {
     public:
-        /**
-         * @brief Structure saved to the persistent data file (binary)
-         * 
-         * You must not change the first two fields (magic, version) and the data
-         * structure must always be >= 12 bytes (including size and flags).
-         * 
-         * You can expand the structure later without incrementing the
-         * version number. Added fields will be initialized to 0. The size is 
-         * limited to 65536 bytes (uint16_t maximum value).
-         * 
-         * Since the SavedData structure is always stored in RAM, you should not
-         * make it excessively large
-         */
-        class SavedData {
+        class SavedDataHeader { // 20 bytes
         public:
             uint32_t magic;                 //!< SAVED_DATA_MAGIC = 0xd87cb6ce;
             uint32_t version;               //!< SAVED_DATA_VERSION = 1
-            uint16_t size;                  //!< sizeof(SavedData)
+            uint16_t size;                  //!< size of the whole structure, including the user data after it
             uint16_t flags;                 //!< currently 0
-            uint32_t nextUpdateCheck;
-            uint32_t nextPublish;
-            uint32_t nextQuickWake;
-            // OK to add more fields here later without incremeting version
+            uint32_t reserved2;             //!< reserved for future use
+            uint32_t reserved1;             //!< reserved for future use
+            // You cannot change the size of this structure!
         };
 
-        /**
-         * @brief Default constructor. Use withPath() to set the pathname if using this constructor
-         */
-        PersistentData() {};
+        PersistentDataBase(SavedDataHeader *savedDataHeader, size_t savedDataSize) : savedDataHeader(savedDataHeader), savedDataSize(savedDataSize) {
+        };
 
-        /**
-         * @brief Constructor that thats a pathname to the persistent data file
-         * 
-         * @param path 
-         */
-        PersistentData(const char *path) : path(path) {};
+        PersistentDataBase(SavedDataHeader *savedDataHeader, size_t savedDataSize, const char *path) : savedDataHeader(savedDataHeader), savedDataSize(savedDataSize), path(path) {
+        };
 
-        /**
-         * @brief Destructor
-         */
-        virtual ~PersistentData() {};
 
         /**
          * @brief Sets the path to the persistent data file on the file system
@@ -512,7 +487,7 @@ public:
          * @param path 
          * @return PersistentData& 
          */
-        PersistentData &withPath(const char *path) { 
+        PersistentDataBase &withPath(const char *path) { 
             this->path = path; 
             return *this; 
         };
@@ -525,13 +500,13 @@ public:
          * 
          * Normally, if the value is changed by a set call, then about
          * one second later the change will be saved to disk from the loop thread. The
-         * savedData is also saved before sleep or reset if changed.
+         * sleepHelperData is also saved before sleep or reset if changed.
          * 
          * You can change the save delay by using withSaveDelayMs(). If you set it to 0, then
          * the data is saved within the setValue call immediately, which will make all set calls
          * run more slowly.
          */
-        PersistentData &withSaveDelayMs(uint32_t value) {
+        PersistentDataBase &withSaveDelayMs(uint32_t value) {
             saveDelayMs = value;
             return *this;
         }
@@ -569,45 +544,7 @@ public:
          * This call is fast if a save is not required so you can call it frequently, even every loop.
          */
         void flush(bool force);
-
-        /**
-         * @brief Get the value nextUpdateCheck (Unix time, UTC)
-         * 
-         * @return time_t Unix time at UTC, like the value of Time.now()
-         * 
-         * This is the clock time when we should next stay online long enough for a software update check
-         */
-        time_t getValue_nextUpdateCheck() const {
-            return (time_t) getValue<uint32_t>(offsetof(SavedData, nextUpdateCheck));
-        }
-
-        void setValue_nextUpdateCheck(time_t value) {
-            setValue<uint32_t>(offsetof(SavedData, nextUpdateCheck), (uint32_t) value);
-        }
-
-        /**
-         * @brief Get the value nextPublish (Unix time, UTC)
-         * 
-         * @return time_t Unix time at UTC, like the value of Time.now()
-         */
-        time_t getValue_nextPublish() const {
-            return (time_t) getValue<uint32_t>(offsetof(SavedData, nextPublish));
-        }
-        void setValue_nextPublish(time_t value) {
-            setValue<uint32_t>(offsetof(SavedData, nextPublish), (uint32_t)value);
-        }
-
-        /**
-         * @brief Get the value nextQuickWake (Unix time, UTC)
-         * 
-         * @return time_t Unix time at UTC, like the value of Time.now()
-         */
-        time_t getValue_nextQuickWake() const {
-            return (time_t) getValue<uint32_t>(offsetof(SavedData, nextQuickWake));
-        }
-        void setValue_nextQuickWake(time_t value) {
-            setValue<uint32_t>(offsetof(SavedData, nextQuickWake), (uint32_t)value);
-        }
+    
 
         /**
          * @brief Templated class for getting integral values (uint32_t, float, double, etc.)
@@ -621,8 +558,8 @@ public:
             T result = 0;
 
             WITH_LOCK(*this) {
-                if (offset <= (sizeof(savedData) - sizeof(T))) {
-                    uint8_t *p = (uint8_t *)&savedData;
+                if (offset <= (savedDataSize - sizeof(T))) {
+                    uint8_t *p = (uint8_t *)savedDataHeader;
                     result = *p;
                 }
             }
@@ -639,8 +576,8 @@ public:
         template<class T>
         void setValue(size_t offset, T value)  {
             WITH_LOCK(*this) {
-                if (offset <= (sizeof(savedData) - sizeof(T))) {
-                    uint8_t *p = (uint8_t *)&savedData;
+                if (offset <= (savedDataSize - sizeof(T))) {
+                    uint8_t *p = (uint8_t *)savedDataHeader;
                     T oldValue = *p;
                     if (oldValue != value) {
                         *(T *)&p[offset] = value;
@@ -662,19 +599,111 @@ public:
         /**
          * This class cannot be copied
          */
-        PersistentData(const SettingsFile&) = delete;
+        PersistentDataBase(const PersistentDataBase&) = delete;
 
         /**
          * This class cannot be copied
          */
-        PersistentData& operator=(const SettingsFile&) = delete;
+        PersistentDataBase& operator=(const PersistentDataBase&) = delete;
 
-        SavedData savedData;
-
+        SavedDataHeader *savedDataHeader = 0;
+        uint32_t savedDataSize = 0;
+        
         uint32_t lastUpdate = 0;
         uint32_t saveDelayMs = 1000;
 
         String path;
+    };
+
+    /**
+     * @brief Class for managing small persistent data
+     * 
+     * You must not access the persistent at global constructor time. Only use it from
+     * setup() or later. You can access it from worker threads.
+     * 
+     */
+    class PersistentData : public PersistentDataBase {
+    public:
+        /**
+         * @brief Structure saved to the persistent data file (binary)
+         * 
+         * It must always begin with the SavedDataHeader (20 bytes)!
+         * 
+         * You can expand the structure later without incrementing the
+         * version number. Added fields will be initialized to 0. The size is 
+         * limited to 65536 bytes (uint16_t maximum value).
+         * 
+         * Since the SleepHelperData structure is always stored in RAM, you should not
+         * make it excessively large.
+         */
+        class SleepHelperData {
+        public:
+            SavedDataHeader header;
+            uint32_t nextUpdateCheck;
+            uint32_t nextPublish;
+            uint32_t nextQuickWake;
+            // OK to add more fields here later without incremeting version
+        };
+
+        /**
+         * @brief Default constructor. Use withPath() to set the pathname if using this constructor
+         */
+        PersistentData() : PersistentDataBase(&sleepHelperData.header, sizeof(SleepHelperData)) {};
+
+        /**
+         * @brief Constructor that thats a pathname to the persistent data file
+         * 
+         * @param path 
+         */
+        PersistentData(const char *path) : PersistentDataBase(&sleepHelperData.header, sizeof(SleepHelperData), path) {};
+
+        /**
+         * @brief Destructor
+         */
+        virtual ~PersistentData() {};
+
+
+        /**
+         * @brief Get the value nextUpdateCheck (Unix time, UTC)
+         * 
+         * @return time_t Unix time at UTC, like the value of Time.now()
+         * 
+         * This is the clock time when we should next stay online long enough for a software update check
+         */
+        time_t getValue_nextUpdateCheck() const {
+            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, nextUpdateCheck));
+        }
+
+        void setValue_nextUpdateCheck(time_t value) {
+            setValue<uint32_t>(offsetof(SleepHelperData, nextUpdateCheck), (uint32_t) value);
+        }
+
+        /**
+         * @brief Get the value nextPublish (Unix time, UTC)
+         * 
+         * @return time_t Unix time at UTC, like the value of Time.now()
+         */
+        time_t getValue_nextPublish() const {
+            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, nextPublish));
+        }
+        void setValue_nextPublish(time_t value) {
+            setValue<uint32_t>(offsetof(SleepHelperData, nextPublish), (uint32_t)value);
+        }
+
+        /**
+         * @brief Get the value nextQuickWake (Unix time, UTC)
+         * 
+         * @return time_t Unix time at UTC, like the value of Time.now()
+         */
+        time_t getValue_nextQuickWake() const {
+            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, nextQuickWake));
+        }
+        void setValue_nextQuickWake(time_t value) {
+            setValue<uint32_t>(offsetof(SleepHelperData, nextQuickWake), (uint32_t)value);
+        }
+
+    protected:
+        SleepHelperData sleepHelperData;
     };
     
 #ifndef UNITTEST

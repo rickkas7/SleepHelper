@@ -341,7 +341,7 @@ bool SleepHelper::SettingsFile::getValuesJson(String &json) {
 // PersistentData
 //
 
-void SleepHelper::PersistentData::setup() {
+void SleepHelper::PersistentDataBase::setup() {
     // Load data at boot
     load();
 
@@ -357,7 +357,7 @@ void SleepHelper::PersistentData::setup() {
     });
 }
 
-bool SleepHelper::PersistentData::load() {
+bool SleepHelper::PersistentDataBase::load() {
     WITH_LOCK(*this) {
         bool loaded = false;
 
@@ -365,40 +365,40 @@ bool SleepHelper::PersistentData::load() {
 
         int fd = open(path, O_RDONLY);
         if (fd != -1) {
-            dataSize = read(fd, &savedData, sizeof(savedData));
+            dataSize = read(fd, savedDataHeader, savedDataSize);
             if (dataSize >= 12 && 
-                savedData.magic == SAVED_DATA_MAGIC && 
-                savedData.version == SAVED_DATA_VERSION &&
-                savedData.size <= (uint16_t) dataSize) {                
-                if ((size_t)dataSize < sizeof(savedData)) {
+                savedDataHeader->magic == SAVED_DATA_MAGIC && 
+                savedDataHeader->version == SAVED_DATA_VERSION &&
+                savedDataHeader->size <= (uint16_t) dataSize) {                
+                if ((size_t)dataSize < savedDataSize) {
                     // Structure is larger than what's in the file; pad with zero bytes
-                    uint8_t *p = (uint8_t *)&savedData;
-                    for(size_t ii = (size_t)dataSize; ii < sizeof(savedData); ii++) {
+                    uint8_t *p = (uint8_t *)savedDataHeader;
+                    for(size_t ii = (size_t)dataSize; ii < savedDataSize; ii++) {
                         p[ii] = 0;
                     }
                 }
-                savedData.size = (uint16_t) sizeof(savedData);
+                savedDataHeader->size = (uint16_t) savedDataSize;
                 loaded = true;
             }
             close(fd);
         }
         
         if (!loaded) {
-            memset(&savedData, 0, sizeof(savedData));
-            savedData.magic = SAVED_DATA_MAGIC;
-            savedData.version = SAVED_DATA_VERSION;
-            savedData.size = (uint16_t) sizeof(savedData);
+            memset(savedDataHeader, 0, savedDataSize);
+            savedDataHeader->magic = SAVED_DATA_MAGIC;
+            savedDataHeader->version = SAVED_DATA_VERSION;
+            savedDataHeader->size = (uint16_t) savedDataSize;
         }
     }
 
     return true;
 }
 
-bool SleepHelper::PersistentData::save() {
+bool SleepHelper::PersistentDataBase::save() {
     WITH_LOCK(*this) {
         int fd = open(path, O_RDWR | O_CREAT | O_TRUNC);
         if (fd != -1) {            
-            write(fd, &savedData, sizeof(savedData));
+            write(fd, savedDataHeader, savedDataSize);
             close(fd);
         }
         else {            
@@ -409,7 +409,7 @@ bool SleepHelper::PersistentData::save() {
     return true;
 }
 
-void SleepHelper::PersistentData::flush(bool force) {
+void SleepHelper::PersistentDataBase::flush(bool force) {
     if (lastUpdate) {
         if (force || (millis() - lastUpdate >= saveDelayMs)) {
             save();
