@@ -25,6 +25,7 @@ public:
      */
     static SleepHelper &instance();
 
+#ifndef UNITTEST
     /**
      * @brief This is a wrapper around a recursive mutex, similar to Device OS RecursiveMutex
      * 
@@ -36,7 +37,6 @@ public:
      * - The lock/trylock/unlock methods are declared const and the mutex handle mutable. This allows the
      * mutex to be locked from a const method.
      */
-#ifndef UNITTEST
     class SleepHelperRecursiveMutex
     {
         mutable os_mutex_recursive_t handle_;
@@ -94,20 +94,48 @@ public:
         void unlock() const { 
         }
     };
-#endif
+#endif /* UNITTEST */
 
+    /**
+     * @brief Base class for a list of zero or more callback functions
+     * 
+     * @tparam Types 
+     */
     template<class... Types>
     class AppCallback {
     public:
+        /**
+         * @brief Adds a callback function. Zero or more callbacks can be defined.
+         * 
+         * @param callback 
+         * 
+         * The callback always returns a bool, but the parameters are defined by the template.
+         */
         void add(std::function<bool(Types... args)> callback) {
             callbackFunctions.push_back(callback);
         }
 
+        /**
+         * @brief Calls all callbacks, regardless of return value returned.
+         * 
+         * @param args 
+         */
         void forEach(Types... args) {
             for(auto it = callbackFunctions.begin(); it != callbackFunctions.end(); ++it) {
                 (*it)(args...);
             }
         }
+
+        /**
+         * @brief Calls callbacks until the first one returns true. The others are not called.
+         * 
+         * @param defaultResult The value to return if all callbacks return false.
+         * @param args 
+         * @return true If any callback returned true
+         * @return false If all callbacks returned false
+         * 
+         * This is fast return true, see also whileAnyTrue.
+         */
         bool untilTrue(bool defaultResult, Types... args) {
             bool res = defaultResult;
             for(auto it = callbackFunctions.begin(); it != callbackFunctions.end(); ++it) {
@@ -119,6 +147,14 @@ public:
             return res;
         }
 
+        /**
+         * @brief Calls all callbacks. Returns true if any returns true, but all are still called.
+         * 
+         * @param defaultResult The value to return if all callbacks return false.
+         * @param args 
+         * @return true 
+         * @return false 
+         */
         bool whileAnyTrue(bool defaultResult, Types... args) {
             bool finalRes = defaultResult;
 
@@ -131,6 +167,16 @@ public:
             return finalRes;
         }
 
+        /**
+         * @brief Calls all callbacks until the first one returns false, then returns without calling others.
+         * 
+         * @param defaultResult The value to return if all callbacks return true.
+         * @param args 
+         * @return true 
+         * @return false 
+         * 
+         * This is fast return false. See also whileAnyFalse.
+         */
         bool untilFalse(bool defaultResult, Types... args) {
             bool res = defaultResult;
             for(auto it = callbackFunctions.begin(); it != callbackFunctions.end(); ++it) {
@@ -142,6 +188,14 @@ public:
             return res;
         }
 
+        /**
+         * @brief Calls all callbacks. If any returns false then returns false, but all are still called.
+         * 
+         * @param defaultResult The value to return if all callbacks return true.
+         * @param args 
+         * @return true 
+         * @return false 
+         */
         bool whileAnyFalse(bool defaultResult, Types... args) {
             bool finalRes = defaultResult;
             for(auto it = callbackFunctions.begin(); it != callbackFunctions.end(); ++it) {
@@ -157,16 +211,40 @@ public:
          * @brief Remove all registered callbacks
          * 
          * You normally will never use this. It's used by the automated test suite. There's no function 
-         * to remove a single callback since they're typically lambas and it would be difficult to
+         * to remove a single callback since they're typically lambdas and it would be difficult to
          * specify which one to remove.
          */
         void removeAll() {
             callbackFunctions.clear();
         }
 
+        /**
+         * @brief Vector of all callbacks, limited only by available RAM.
+         */
         std::vector<std::function<bool(Types... args)>> callbackFunctions;
     };
 
+    /**
+     * @brief Class for ShouldConnect application callback
+     * 
+     * The prototype for the function or lambda is:
+     * 
+     * bool callback(int &connectConviction, int &noConnectConviction)
+     * 
+     * If you believe you should connect set connectConviction to a value between 1 and 100. The
+     * value defaults 0 which means "I don't care". If you absolutely must connect to the cloud 
+     * now, set the value to a high value.
+     * 
+     * If you do not want to connect, set the noConnectConviction to a value between 1 and 100.
+     * For example, if you definitely do not have enough battery power to successfully connect
+     * a high value is used.
+     * 
+     * All of the ShouldConnect callbacks are called, and the maximum values for connectConviction
+     * and noConnectConviction are saved. If connectConviction >= noConnectConviction then
+     * a connection is attempted.
+     * 
+     * The bool result is ignored by this callback.
+     */
     class ShouldConnectAppCallback : public AppCallback<int&, int&> {
     public:
         bool shouldConnect() {
@@ -356,6 +434,7 @@ public:
          */
         bool setValuesJson(const char *json);
 
+
         bool getValuesJson(String &json);
 
     protected:
@@ -499,11 +578,11 @@ public:
          * This is the clock time when we should next stay online long enough for a software update check
          */
         time_t getValue_nextUpdateCheck() const {
-            return (time_t) getValue_uint32(offsetof(SavedData, nextUpdateCheck));
+            return (time_t) getValue<uint32_t>(offsetof(SavedData, nextUpdateCheck));
         }
 
         void setValue_nextUpdateCheck(time_t value) {
-            setValue_uint32(offsetof(SavedData, nextUpdateCheck), (uint32_t) value);
+            setValue<uint32_t>(offsetof(SavedData, nextUpdateCheck), (uint32_t) value);
         }
 
         /**
@@ -512,10 +591,10 @@ public:
          * @return time_t Unix time at UTC, like the value of Time.now()
          */
         time_t getValue_nextPublish() const {
-            return (time_t) getValue_uint32(offsetof(SavedData, nextPublish));
+            return (time_t) getValue<uint32_t>(offsetof(SavedData, nextPublish));
         }
         void setValue_nextPublish(time_t value) {
-            setValue_uint32(offsetof(SavedData, nextPublish), (uint32_t)value);
+            setValue<uint32_t>(offsetof(SavedData, nextPublish), (uint32_t)value);
         }
 
         /**
@@ -524,38 +603,57 @@ public:
          * @return time_t Unix time at UTC, like the value of Time.now()
          */
         time_t getValue_nextQuickWake() const {
-            return (time_t) getValue_uint32(offsetof(SavedData, nextQuickWake));
+            return (time_t) getValue<uint32_t>(offsetof(SavedData, nextQuickWake));
         }
         void setValue_nextQuickWake(time_t value) {
-            setValue_uint32(offsetof(SavedData, nextQuickWake), (uint32_t)value);
+            setValue<uint32_t>(offsetof(SavedData, nextQuickWake), (uint32_t)value);
         }
 
         /**
-         * @brief Gets a value from the savedData
+         * @brief Templated class for getting integral values (uint32_t, float, double, etc.)
          * 
-         * @param offset Offset in bytes into savedData, typically offsetof(SavedData, fieldName)
-         * @return uint32_t The value
-         * 
-         * This is a fast operation. It obtains a lock, but reads the value out of RAM.
+         * @tparam T 
+         * @param offset 
+         * @return T 
          */
-        uint32_t getValue_uint32(size_t offset) const;
+        template<class T>
+        T getValue(size_t offset) const {
+            T result = 0;
+
+            WITH_LOCK(*this) {
+                if (offset <= (sizeof(savedData) - sizeof(T))) {
+                    uint8_t *p = (uint8_t *)&savedData;
+                    result = *p;
+                }
+            }
+            return result;
+        }
 
         /**
-         * @brief Sets a value in savedData
+         * @brief Templated class for setting integral values (uint32_t, float, double, etc.)
          * 
-         * @param offset Offset in bytes into savedData, typically offsetof(SavedData, fieldName)
-         * @param value The value to set
-         * 
-         * This method sets a value in the structure. Normally, if the value changed, then about
-         * one second later the change will be saved to disk from the loop thread. The
-         * savedData is also saved before sleep or reset if changed.
-         * 
-         * You can change the save delay by using withSaveDelayMs(). If you set it to 0, then
-         * the data is saved within the setValue call immediately, which will make all set calls
-         * run more slowly.
+         * @tparam T 
+         * @param offset 
+         * @return T 
          */
-        void setValue_uint32(size_t offset, uint32_t value);
-        
+        template<class T>
+        void setValue(size_t offset, T value)  {
+            WITH_LOCK(*this) {
+                if (offset <= (sizeof(savedData) - sizeof(T))) {
+                    uint8_t *p = (uint8_t *)&savedData;
+                    T oldValue = *p;
+                    if (oldValue != value) {
+                        *(T *)&p[offset] = value;
+                        if (saveDelayMs) {
+                            lastUpdate = millis();
+                        }
+                        else {
+                            save();
+                        }
+                    }
+                }
+            }
+        }
 
         static const uint32_t SAVED_DATA_MAGIC = 0xd87cb6ce;
         static const uint16_t SAVED_DATA_VERSION = 1; 
@@ -802,8 +900,19 @@ public:
      */
     void loop();
 
-
+    /**
+     * @brief Class for managing the settings file
+     * 
+     * The settings file is stored as a file in the flash file system and is a JSON object
+     * that is flat (one level deep, no sub-objects or arrays). 
+     */
     SettingsFile settingsFile;
+
+    /**
+     * @brief Class for managing persistent data
+     * 
+     * Persistent data is stored as a file in the flash file system,
+     */
     PersistentData persistentData;
 
 protected:

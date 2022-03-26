@@ -417,33 +417,3 @@ void SleepHelper::PersistentData::flush(bool force) {
         }
     }
 }
-
-uint32_t SleepHelper::PersistentData::getValue_uint32(size_t offset) const {
-    uint32_t result = 0;
-
-    WITH_LOCK(*this) {
-        if (offset <= (sizeof(savedData) - sizeof(uint32_t))) {
-            uint8_t *p = (uint8_t *)&savedData;
-            result = *p;
-        }
-    }
-    return result;
-}
-
-void SleepHelper::PersistentData::setValue_uint32(size_t offset, uint32_t value)  {
-    WITH_LOCK(*this) {
-        if (offset <= (sizeof(savedData) - sizeof(uint32_t))) {
-            uint8_t *p = (uint8_t *)&savedData;
-            uint32_t oldValue = *p;
-            if (oldValue != value) {
-                *(uint32_t *)&p[offset] = value;
-                if (saveDelayMs) {
-                    lastUpdate = millis();
-                }
-                else {
-                    save();
-                }
-            }
-        }
-    }
-}
