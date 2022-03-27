@@ -250,7 +250,7 @@ void customPersistentDataTest() {
 void eventCombinerTest() {
 	{
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value(123);
 			priority = 10;
 			return true;
@@ -262,7 +262,7 @@ void eventCombinerTest() {
 	}
 	{
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value("test");
 			priority = 10;
 			return true;
@@ -277,7 +277,7 @@ void eventCombinerTest() {
 	{
 		// Just barely fits
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value("test12");
 			priority = 10;
 			return true;
@@ -292,7 +292,7 @@ void eventCombinerTest() {
 	{
 		// Edge case
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value("test123");
 			priority = 10;
 			return true;
@@ -304,7 +304,7 @@ void eventCombinerTest() {
 	{
 		// Make sure you can't overflow the buffer if a single write is larger than the buffer
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value("test12345678");
 			priority = 10;
 			return true;
@@ -316,12 +316,12 @@ void eventCombinerTest() {
 	{
 		// Discard data
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value(123);
 			priority = 10;
 			return true;
 		});
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("b").value(true);
 			priority = 10;
 			return true;
@@ -341,12 +341,12 @@ void eventCombinerTest() {
 	{
 		// Higher priority first with discard
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value(123);
 			priority = 10;
 			return true;
 		});
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("b").value(true);
 			priority = 20;
 			return true;
@@ -359,12 +359,12 @@ void eventCombinerTest() {
 	{
 		// Generate two events
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value(123);
 			priority = 60;
 			return true;
 		});
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("b").value(true);
 			priority = 60;
 			return true;
@@ -379,7 +379,7 @@ void eventCombinerTest() {
 	{
 		// Complex event
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+		t1.withCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value(123);
 			jw.name("b").value("test");
 			jw.name("c").value(true);

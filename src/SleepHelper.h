@@ -768,7 +768,7 @@ public:
          * 
          * The callback function has this prototype:
          * 
-         * bool callback(spark::JSONWriter &writer, int &priority)
+         * bool callback(JSONWriter &writer, int &priority)
          * 
          * The return value is ignored; you should return true.
          * 
@@ -780,7 +780,7 @@ public:
          * If you have a priority < 50 and the event is full, then your data will be discarded to 
          * avoid generating another event.
          */
-        EventCombiner &withCallback(std::function<bool(spark::JSONWriter &, int &)> fn) { 
+        EventCombiner &withCallback(std::function<bool(JSONWriter &, int &)> fn) { 
             callbacks.add(fn); 
             return *this;
         }
@@ -818,7 +818,7 @@ public:
          */
         EventCombiner& operator=(const EventCombiner&) = delete;
 
-        AppCallback<spark::JSONWriter &, int &> callbacks; //!< Callback functions
+        AppCallback<JSONWriter &, int &> callbacks; //!< Callback functions
 
     };
 
@@ -896,7 +896,7 @@ public:
      * 
      * The callback function has this prototype:
      * 
-     * bool callback(spark::JSONWriter &writer, int &priority)
+     * bool callback(JSONWriter &writer, int &priority)
      * 
      * The return value is ignored; you should return true.
      * 
@@ -908,7 +908,7 @@ public:
      * If you have a priority < 50 and the event is full, then your data will be discarded to 
      * avoid generating another event.
      */
-    SleepHelper &withWakeEventFunction(std::function<bool(spark::JSONWriter &, int &)> fn) {
+    SleepHelper &withWakeEventFunction(std::function<bool(JSONWriter &, int &)> fn) {
         wakeEventFunctions.withCallback(fn);
         return *this;
     }

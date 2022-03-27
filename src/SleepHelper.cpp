@@ -480,7 +480,7 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
     for(auto it = callbacks.callbackFunctions.begin(); it != callbacks.callbackFunctions.end(); ++it) {
         // 
         memset(buf, 0, maxSize);
-        spark::JSONBufferWriter writer(buf, maxSize);
+        JSONBufferWriter writer(buf, maxSize);
 
         int priority = 0;
 
