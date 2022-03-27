@@ -1,7 +1,7 @@
 #include "SleepHelper.h"
 
 #include <fcntl.h>
-
+#include <algorithm> // std::sort
 
 SleepHelper *SleepHelper::_instance;
 
@@ -426,7 +426,7 @@ bool SleepHelper::PersistentDataBase::getValueString(size_t offset, size_t size,
         if (offset <= (savedDataSize - (size - 1))) {
             const char *p = (const char *)savedDataHeader;
             p += offset;
-            value = p;
+            value = p; // copies string
             result = true;
         }
     }
@@ -456,4 +456,100 @@ bool SleepHelper::PersistentDataBase::setValueString(size_t offset, size_t size,
     }
     return result;
 }
+
+//
+// EventCombiner
+//
+void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events) {
+    size_t maxSize = particle::protocol::MAX_EVENT_DATA_LENGTH;
+
+    // TODO: Also use Particle.maxEventDataSize() (available in 3.1 and later) to limit event size
+    generateEvents(events, maxSize);
+}
+
+void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, size_t maxSize) {
+    
+    events.clear();
+
+    std::vector<EventInfo> infoArray;
+    char *buf = (char *)malloc(maxSize + 1);
+    if (!buf) {
+        return;
+    }
+
+    for(auto it = callbacks.callbackFunctions.begin(); it != callbacks.callbackFunctions.end(); ++it) {
+        // 
+        memset(buf, 0, maxSize);
+        spark::JSONBufferWriter writer(buf, maxSize);
+
+        int priority = 0;
+
+        writer.beginObject();
+        (*it)(writer, priority);
+        writer.endObject();
+
+        if (writer.dataSize() <= writer.bufferSize()) {
+            // Callback data was not truncated 
+
+            // Remove the } at the end of the object
+            buf[strlen(buf) - 1] = 0;
+
+            if (priority > 0 && strlen(buf) > 2) {
+                infoArray.push_back(EventInfo(&buf[1], priority));
+            }
+        }
+    }
+
+    if (infoArray.empty()) {
+        free(buf);
+        return;
+    }
+
+    // Sort highest priority first
+    std::sort(infoArray.begin(), infoArray.end(), [](EventInfo a, EventInfo b) {
+        return a.priority > b.priority;
+    });
+
+    // 
+    char *cur = buf;
+    char *end = &buf[maxSize - 2]; // Room for leading , and trailing }
+
+    *cur++ = '{';
+    bool firstEventBuffer = true;
+
+    for(auto it = infoArray.begin(); it != infoArray.end(); ++it) {
+        
+        if (&cur[strlen(it->json)] >= end) {
+            // Buffer is full
+            if (cur > &buf[1]) {
+                *cur++ = '}';
+                *cur = 0;
+                events.push_back(buf);
+                cur = &buf[1];
+            }
+            firstEventBuffer = false;
+        }
+
+        if (!firstEventBuffer && it->priority < 50) {
+            break;
+        }        
+
+        if (cur != &buf[1]) {
+            *cur++ = ',';
+        }
+
+        strcpy(cur, it->json);
+        cur += strlen(cur);
+    }
+
+    if (cur > &buf[1]) {
+        // Write out last object
+        *cur++ = '}';
+        *cur = 0;
+        events.push_back(buf);
+    }
+
+    free(buf);
+}
+
 

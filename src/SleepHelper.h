@@ -653,7 +653,8 @@ public:
             uint32_t nextUpdateCheck;
             uint32_t nextPublish;
             uint32_t nextQuickWake;
-            // OK to add more fields here later without incremeting version
+            // OK to add more fields here later without incremeting version.
+            // New fields will be zero-initialized.
         };
 
         /**
@@ -716,7 +717,112 @@ public:
     protected:
         SleepHelperData sleepHelperData;
     };
-    
+
+    /**
+     * @brief Class to handle building JSON events from multiple callbacks with priority 
+     * and the ability to generate multiple events if necessary
+     * 
+     * The idea is that you want to combine all of the data into a single event if possible
+     * to minimize data operations. Sometimes you have unimportant data that would be nice
+     * to include if there's space but omit if not. And sometimes you have important 
+     * data that must be sent, and it's OK to send multiple events if necessary.
+     */
+    class EventCombiner {
+    public:
+        /**
+         * @brief Container to hold a JSON fragment and a priority value 0 - 100.
+         * 
+         * Note that this is only a fragment, basically an object without the surrounding {}!
+         */
+        class EventInfo {
+        public:
+            /**
+             * @brief Default constructor 
+             */
+            EventInfo() {};
+
+            /**
+             * @brief Constructor with values to fill int
+             * 
+             * @param jsonStr The fragment of JSON to save 
+             * @param priority The priority 0 - 100
+             */
+            EventInfo(const char *jsonStr, int priority) : json(jsonStr), priority(priority) {};
+
+            String json; //!< JSON fragment, an object without the surrounding {}
+            int priority = 0; //!< Priority 0 - 100 inclusive.
+        };
+
+        /**
+         * @brief Default constructor
+         * 
+         * Use withCallback to add callback functions
+         */
+        EventCombiner() {};
+
+        /**
+         * @brief Adds a callback function to generate JSON data
+         * 
+         * @param fn 
+         * @return EventCombiner& 
+         * 
+         * The callback function has this prototype:
+         * 
+         * bool callback(spark::JSONWriter &writer, int &priority)
+         * 
+         * The return value is ignored; you should return true.
+         * 
+         * writer is the JSONWriter to store the data into
+         * priority should be set to a value from 1 to 100. If you leave it at zero your data will not be saved!
+         * 
+         * Items are added to the event in priority order, largest first.
+         * 
+         * If you have a priority < 50 and the event is full, then your data will be discarded to 
+         * avoid generating another event.
+         */
+        EventCombiner &withCallback(std::function<bool(spark::JSONWriter &, int &)> fn) { 
+            callbacks.add(fn); 
+            return *this;
+        }
+
+        /**
+         * @brief Generate one or more events based on the maximum event size
+         * 
+         * @param events vector of String objects to fill in with event data
+         * 
+         * The events vector you pass into this method will be cleared. It will be returned filled in
+         * with zero or more Strings, each containing event data in valid JSON format.
+         */
+        void generateEvents(std::vector<String> &events);
+
+        /**
+         * @brief generate one or more events based on desired size
+         * 
+         * @param events vector of String objects to fill in with event data
+         * @param maxSize Maximum size of each even in bytes
+         * 
+         * The events vector you pass into this method will be cleared. It will be returned filled in
+         * with zero or more Strings, each containing event data in valid JSON format.
+         */
+        void generateEvents(std::vector<String> &events, size_t maxSize);
+
+
+    protected:
+        /**
+         * This class cannot be copied
+         */
+        EventCombiner(const EventCombiner&) = delete;
+
+        /**
+         * This class cannot be copied
+         */
+        EventCombiner& operator=(const EventCombiner&) = delete;
+
+        AppCallback<spark::JSONWriter &, int &> callbacks; //!< Callback functions
+
+    };
+
+
 #ifndef UNITTEST
     SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, std::chrono::milliseconds&)> fn) { 
         sleepConfigurationFunctions.add(fn); 
@@ -770,6 +876,40 @@ public:
 
     SleepHelper &withWakeOrBootFunction(std::function<bool()> fn) { 
         wakeOrBootFunctions.add(fn); 
+        return *this;
+    }
+
+    /**
+     * @brief Add a callback to add to an event published on wake
+     * 
+     * @param fn Callback function
+     * @return SleepHelper& 
+     * 
+     * This is used to efficiently publish data on each full wake with cloud connect. You can register
+     * a callback to add data to a JSON object. There is a priority ordering and the ability to split
+     * JSON data across multiple publishes if it does not fit, or discard unimportant data. This allows
+     * multiple parts of your code to efficiently combine data into a single publish without having
+     * to worry about size limits.
+     * 
+     * Wake event functions are only called when a full cloud connect is already planned, you can
+     * influence this using a shouldConnect callback.
+     * 
+     * The callback function has this prototype:
+     * 
+     * bool callback(spark::JSONWriter &writer, int &priority)
+     * 
+     * The return value is ignored; you should return true.
+     * 
+     * writer is the JSONWriter to store the data into
+     * priority should be set to a value from 1 to 100. If you leave it at zero your data will not be saved!
+     * 
+     * Items are added to the event in priority order, largest first.
+     * 
+     * If you have a priority < 50 and the event is full, then your data will be discarded to 
+     * avoid generating another event.
+     */
+    SleepHelper &withWakeEventFunction(std::function<bool(spark::JSONWriter &, int &)> fn) {
+        wakeEventFunctions.withCallback(fn);
         return *this;
     }
 
@@ -1024,8 +1164,10 @@ protected:
 
     AppCallback<> whileConnectedFunctions;
 
-    LocalTimeConvert::Schedule sleepSchedule;
-    LocalTimeConvert::Schedule publishSchedule;
+    EventCombiner wakeEventFunctions;
+
+    LocalTimeSchedule sleepSchedule;
+    LocalTimeSchedule publishSchedule;
 
 #ifndef UNITTEST
     std::function<void(SleepHelper&)> stateHandler = &SleepHelper::stateHandlerStart;

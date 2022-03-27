@@ -247,9 +247,162 @@ void customPersistentDataTest() {
 
 }
 
+void eventCombinerTest() {
+	{
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 10;
+			return true;
+		});
+		std::vector<String> events;
+		t1.generateEvents(events, 16);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"a\":123}");
+	}
+	{
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("a").value("test");
+			priority = 10;
+			return true;
+		});
+		std::vector<String> events;
+		t1.generateEvents(events, 16);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"a\":\"test\"}");
+		// {"a":"test"}
+		// 12345678901234567890
+	}
+	{
+		// Just barely fits
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("a").value("test12");
+			priority = 10;
+			return true;
+		});
+		std::vector<String> events;
+		t1.generateEvents(events, 16);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"a\":\"test12\"}");
+		// {"a":"test12"}
+		// 12345678901234567890
+	}
+	{
+		// Edge case
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("a").value("test123");
+			priority = 10;
+			return true;
+		});
+		std::vector<String> events;
+		t1.generateEvents(events, 16);
+		assertInt("", events.size(), 0);
+	}
+	{
+		// Make sure you can't overflow the buffer if a single write is larger than the buffer
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("a").value("test12345678");
+			priority = 10;
+			return true;
+		});
+		std::vector<String> events;
+		t1.generateEvents(events, 16);
+		assertInt("", events.size(), 0);
+	}
+	{
+		// Discard data
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 10;
+			return true;
+		});
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("b").value(true);
+			priority = 10;
+			return true;
+		});
+		std::vector<String> events;
+		t1.generateEvents(events, 20);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"a\":123,\"b\":true}");
+
+		// {"a":123,"b":true}
+		// 12345678901234567890
+
+		t1.generateEvents(events, 18);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"a\":123}");
+	}
+	{
+		// Higher priority first with discard
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 10;
+			return true;
+		});
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("b").value(true);
+			priority = 20;
+			return true;
+		});
+		std::vector<String> events;
+		t1.generateEvents(events, 18);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"b\":true}");
+	}
+	{
+		// Generate two events
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 60;
+			return true;
+		});
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("b").value(true);
+			priority = 60;
+			return true;
+		});
+		std::vector<String> events;
+
+		t1.generateEvents(events, 18);
+		assertInt("", events.size(), 2);
+		assertStr("", events[0].c_str(), "{\"a\":123}");
+		assertStr("", events[1].c_str(), "{\"b\":true}");
+	}
+	{
+		// Complex event
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](spark::JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			jw.name("b").value("test");
+			jw.name("c").value(true);
+			jw.name("d").beginArray().value(1).value(2).value(3).endArray();
+			priority = 60;
+			return true;
+		});
+		std::vector<String> events;
+
+		t1.generateEvents(events, 100);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"a\":123,\"b\":\"test\",\"c\":true,\"d\":[1,2,3]}");
+
+	}
+
+	// 
+
+}
+
 int main(int argc, char *argv[]) {
 	settingsTest();
 	persistentDataTest();
 	customPersistentDataTest();
+	eventCombinerTest();
 	return 0;
 }
