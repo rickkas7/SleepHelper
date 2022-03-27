@@ -104,21 +104,173 @@ void _assertFile(const char *msg, const char *gotPath, const char *expectedPath,
 
 void settingsTest() {
 	
-	SleepHelper::SettingsFile settings;
-	settings.withPath("./sleepSettings.json");
-	settings.load();
+	const char *testPath = "settings1.json";
 
-	settings.withSettingChangeFunction([](const char *key) {
-		printf("setting changed %s!\n", key);
-		return true;
-	});
+	{
+		unlink(testPath);
 
-	settings.setValue("t1", 1234);
-	settings.setValue("t2", "testing 2!");
-	settings.setValue("t3", -5.5);
-	settings.setValue("t4", false);
+		SleepHelper::SettingsFile settings;
+		settings.withPath(testPath);
+		settings.load();
 
-	settings.setValuesJson("{\"t1\":9999}");
+		String keyChanged;
+		bool bResult;
+		int intValue;
+		bool boolValue;
+		double doubleValue;
+		String stringValue;
+
+		settings.withSettingChangeFunction([&keyChanged](const char *key) {
+			// printf("setting changed %s!\n", key);
+			keyChanged = key;
+			return true;
+		});
+
+		assertStr("", keyChanged, "");
+
+		settings.setValue("t1", 1234);
+		assertStr("", keyChanged, "t1");
+
+		settings.setValue("t2", "testing 2!");
+		assertStr("", keyChanged, "t2");
+
+		settings.setValue("t3", -5.5);
+		assertStr("", keyChanged, "t3");
+
+		settings.setValue("t4", false);
+		assertStr("", keyChanged, "t4");
+
+		bResult = settings.getValue("t1", intValue);
+		assertInt("", bResult, true);
+		assertInt("", intValue, 1234);
+
+		bResult = settings.getValue("t2", stringValue);
+		assertInt("", bResult, true);
+		assertStr("", stringValue, "testing 2!");
+
+		bResult = settings.getValue("t3", doubleValue);
+		assertInt("", bResult, true);
+		assertDouble("", doubleValue, -5.5, 0.001);
+
+		bResult = settings.getValue("t4", boolValue);
+		assertInt("", bResult, true);
+		assertInt("", boolValue, false);
+
+
+		settings.updateValuesJson("{\"t1\":9999}");
+		assertStr("", keyChanged, "t1");
+		keyChanged = "";
+
+		settings.updateValuesJson("{\"t1\":9999}");
+		assertStr("", keyChanged, "");
+
+		SleepHelper::SettingsFile settings2;
+		settings2.withPath(testPath);
+		settings2.load();
+
+		intValue = 0;
+		bResult = settings2.getValue("t1", intValue);
+		assertInt("", bResult, true);
+		assertInt("", intValue, 9999);
+
+		stringValue = "";
+		bResult = settings2.getValue("t2", stringValue);
+		assertInt("", bResult, true);
+		assertStr("", stringValue, "testing 2!");
+
+		doubleValue = 0;
+		bResult = settings2.getValue("t3", doubleValue);
+		assertInt("", bResult, true);
+		assertDouble("", doubleValue, -5.5, 0.001);
+
+		boolValue = true;
+		bResult = settings2.getValue("t4", boolValue);
+		assertInt("", bResult, true);
+		assertInt("", boolValue, false);
+
+		unlink(testPath);
+	}
+
+	{
+		// Default values on initial set
+		unlink(testPath);
+
+		SleepHelper::SettingsFile settings;
+		settings.withPath(testPath);
+		settings.withDefaultValues("{\"t1\":1234,\"t2\":\"testing 2!\",\"t3\":-5.5,\"t4\":false}");
+		settings.load();
+
+		String keyChanged;
+		bool bResult;
+		int intValue;
+		bool boolValue;
+		double doubleValue;
+		String stringValue;
+
+		settings.withSettingChangeFunction([&keyChanged](const char *key) {
+			// printf("setting changed %s!\n", key);
+			keyChanged = key;
+			return true;
+		});
+
+		assertStr("", keyChanged, "");
+
+		bResult = settings.getValue("t1", intValue);
+		assertInt("", bResult, true);
+		assertInt("", intValue, 1234);
+
+		bResult = settings.getValue("t2", stringValue);
+		assertInt("", bResult, true);
+		assertStr("", stringValue, "testing 2!");
+
+		bResult = settings.getValue("t3", doubleValue);
+		assertInt("", bResult, true);
+		assertDouble("", doubleValue, -5.5, 0.001);
+
+		bResult = settings.getValue("t4", boolValue);
+		assertInt("", bResult, true);
+		assertInt("", boolValue, false);
+
+
+		// Make sure default values do not override
+		SleepHelper::SettingsFile settings2;
+		settings2.withPath(testPath);
+		settings2.withDefaultValues("{\"t1\":999,\"t2\":\"testing!\",\"t3\":-3.1,\"t4\":true,\"t5\":555}");
+		settings2.load();
+
+		intValue = 0;
+		bResult = settings2.getValue("t1", intValue);
+		assertInt("", bResult, true);
+		assertInt("", intValue, 1234);
+
+		stringValue = "";
+		bResult = settings2.getValue("t2", stringValue);
+		assertInt("", bResult, true);
+		assertStr("", stringValue, "testing 2!");
+
+		doubleValue = 0;
+		bResult = settings2.getValue("t3", doubleValue);
+		assertInt("", bResult, true);
+		assertDouble("", doubleValue, -5.5, 0.001);
+
+		boolValue = true;
+		bResult = settings2.getValue("t4", boolValue);
+		assertInt("", bResult, true);
+		assertInt("", boolValue, false);
+
+		intValue = 0;
+		bResult = settings2.getValue("t5", intValue);
+		assertInt("", bResult, true);
+		assertInt("", intValue, 555);
+
+
+		unlink(testPath);
+
+	}
+
+
+
+
 }
 
 void persistentDataTest() {
@@ -132,7 +284,7 @@ void persistentDataTest() {
 
 		assertFile("", persistentDataPath, "testfiles/test01.dat");
 
-		data.setValue_nextUpdateCheck(123);
+		data.setValue_lastUpdateCheck(123);
 	}
 
 	{

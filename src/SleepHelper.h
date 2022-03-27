@@ -311,6 +311,17 @@ public:
         };
         
         /**
+         * @brief Default values 
+         * 
+         * @param defaultValues 
+         * @return SettingsFile& 
+         */
+        SettingsFile &withDefaultValues(const char *defaultValues) {
+            this->defaultValues = defaultValues;
+            return *this;
+        }
+
+        /**
          * @brief Register a function to be called when a settings value is changed
          * 
          * @param fn a function or lamba to call
@@ -360,7 +371,7 @@ public:
 	    bool getValue(const char *name, T &value) const {
             bool result = false;
             WITH_LOCK(*this) {
-                result = parser.getOuterValueByKey(name, result);
+                result = parser.getOuterValueByKey(name, value);
             };
             return result;
         }
@@ -431,10 +442,35 @@ public:
          * @return true 
          * @return false 
          * 
+         * This is a merge; values that are not included in json but already exist in the settings
+         * will be left unchanged.
          */
-        bool setValuesJson(const char *json);
+        bool updateValuesJson(const char *json);
 
+        /**
+         * @brief Merge in default values
+         * 
+         * @param inputJson 
+         * @return true 
+         * @return false 
+         * 
+         * This is like updateValuesJson but only updates the values from inputJson if the 
+         * value does not already exist in the settings. This allows the initial set of default
+         * settings to be created. It's also used on every load, so if you add a new default
+         * setting in defaultValues, then that value will be added to the settings.
+         */
+        bool addDefaultValues(const char *inputJson);
 
+        /**
+         * @brief Get all of the current settings as a JSON string
+         * 
+         * @param json 
+         * @return true 
+         * @return false 
+         * 
+         * If you are getting a single value you should use getValue instead. This method is used
+         * so the cloud can get all settings from a calculated variable.
+         */
         bool getValuesJson(String &json);
 
     protected:
@@ -452,6 +488,7 @@ public:
 
         AppCallback<const char *> settingChangeFunctions;
         String path;
+        const char *defaultValues = 0;
     };
 
 
@@ -650,9 +687,9 @@ public:
         class SleepHelperData {
         public:
             SavedDataHeader header;
-            uint32_t nextUpdateCheck;
-            uint32_t nextPublish;
-            uint32_t nextQuickWake;
+            uint32_t lastUpdateCheck;
+            uint32_t lastPublish;
+            uint32_t lastQuickWake;
             // OK to add more fields here later without incremeting version.
             // New fields will be zero-initialized.
         };
@@ -676,42 +713,42 @@ public:
 
 
         /**
-         * @brief Get the value nextUpdateCheck (Unix time, UTC)
+         * @brief Get the value lastUpdateCheck (Unix time, UTC)
          * 
          * @return time_t Unix time at UTC, like the value of Time.now()
          * 
          * This is the clock time when we should next stay online long enough for a software update check
          */
-        time_t getValue_nextUpdateCheck() const {
-            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, nextUpdateCheck));
+        time_t getValue_lastUpdateCheck() const {
+            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, lastUpdateCheck));
         }
 
-        void setValue_nextUpdateCheck(time_t value) {
-            setValue<uint32_t>(offsetof(SleepHelperData, nextUpdateCheck), (uint32_t) value);
-        }
-
-        /**
-         * @brief Get the value nextPublish (Unix time, UTC)
-         * 
-         * @return time_t Unix time at UTC, like the value of Time.now()
-         */
-        time_t getValue_nextPublish() const {
-            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, nextPublish));
-        }
-        void setValue_nextPublish(time_t value) {
-            setValue<uint32_t>(offsetof(SleepHelperData, nextPublish), (uint32_t)value);
+        void setValue_lastUpdateCheck(time_t value) {
+            setValue<uint32_t>(offsetof(SleepHelperData, lastUpdateCheck), (uint32_t) value);
         }
 
         /**
-         * @brief Get the value nextQuickWake (Unix time, UTC)
+         * @brief Get the value lastPublish (Unix time, UTC)
          * 
          * @return time_t Unix time at UTC, like the value of Time.now()
          */
-        time_t getValue_nextQuickWake() const {
-            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, nextQuickWake));
+        time_t getValue_lastPublish() const {
+            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, lastPublish));
         }
-        void setValue_nextQuickWake(time_t value) {
-            setValue<uint32_t>(offsetof(SleepHelperData, nextQuickWake), (uint32_t)value);
+        void setValue_lastPublish(time_t value) {
+            setValue<uint32_t>(offsetof(SleepHelperData, lastPublish), (uint32_t)value);
+        }
+
+        /**
+         * @brief Get the value lastQuickWake (Unix time, UTC)
+         * 
+         * @return time_t Unix time at UTC, like the value of Time.now()
+         */
+        time_t getValue_lastQuickWake() const {
+            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, lastQuickWake));
+        }
+        void setValue_lastQuickWake(time_t value) {
+            setValue<uint32_t>(offsetof(SleepHelperData, lastQuickWake), (uint32_t)value);
         }
 
     protected:

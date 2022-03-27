@@ -236,12 +236,17 @@ bool SleepHelper::SettingsFile::load() {
         }
     }
 
+    // Merge in any default values
+    if (defaultValues) {
+        addDefaultValues(defaultValues);
+    }
+
     return true;
 }
 
 bool SleepHelper::SettingsFile::save() {
     WITH_LOCK(*this) {
-        int fd = open(path, O_RDWR | O_CREAT | O_TRUNC);
+        int fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0666);
         if (fd != -1) {            
             write(fd, parser.getBuffer(), parser.getOffset());
             close(fd);
@@ -254,7 +259,8 @@ bool SleepHelper::SettingsFile::save() {
     return true;
 }
 
-bool SleepHelper::SettingsFile::setValuesJson(const char *inputJson) {
+
+bool SleepHelper::SettingsFile::updateValuesJson(const char *inputJson) {
     std::vector<String> updatedKeys;
 
     WITH_LOCK(*this) {
@@ -315,6 +321,56 @@ bool SleepHelper::SettingsFile::setValuesJson(const char *inputJson) {
         save();
     }
 
+
+    return true;
+}
+
+bool SleepHelper::SettingsFile::addDefaultValues(const char *inputJson) {
+    bool needsSave = false;
+
+    WITH_LOCK(*this) {
+        JsonParserStatic<particle::protocol::MAX_EVENT_DATA_LENGTH, 50> inputParser;
+        inputParser.addString(inputJson);
+        inputParser.parse();
+
+        const JsonParserGeneratorRK::jsmntok_t *keyToken;
+		const JsonParserGeneratorRK::jsmntok_t *valueToken;
+
+        for(size_t index = 0; ; index++) {
+    		if (!inputParser.getKeyValueTokenByIndex(inputParser.getOuterObject(), keyToken, valueToken, index)) {
+                break;
+            }
+
+            String key;
+            inputParser.getTokenValue(keyToken, key);
+
+            JsonModifier modifier(parser);
+
+            // Does this item exist?
+    		const JsonParserGeneratorRK::jsmntok_t *oldValueToken;
+            if (!parser.getValueTokenByKey(parser.getOuterObject(), key, oldValueToken)) {
+                // Key does not exist, insert a dummy key/value
+                modifier.insertOrUpdateKeyValue(parser.getOuterObject(), key, (int)0);
+
+                // Update the inserted token to be the actual data to insert
+                parser.getValueTokenByKey(parser.getOuterObject(), key, oldValueToken);
+                const JsonParserGeneratorRK::jsmntok_t expandedValueToken = modifier.tokenWithQuotes(valueToken);
+                const JsonParserGeneratorRK::jsmntok_t expandedOldValueToken = modifier.tokenWithQuotes(oldValueToken);
+                modifier.startModify(&expandedOldValueToken);
+                
+                for(int ii = expandedValueToken.start; ii < expandedValueToken.end; ii++) {
+                    modifier.insertChar(inputParser.getBuffer()[ii]);
+                }
+
+                modifier.finish();
+                needsSave = true;
+            }                
+        }
+    }
+
+    if (needsSave) {
+        save();
+    }
 
     return true;
 }
