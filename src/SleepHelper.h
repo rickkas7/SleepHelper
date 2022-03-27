@@ -609,60 +609,28 @@ public:
 
 
     /**
-     * @brief Base class for storing persistent binary data to a file
+     * @brief Base class for storing persistent binary data to a file or retained memory
      * 
      * This class is separate from PersistentData so you can subclass it to hold your own application-specific
      * data as well.
+     * 
+     * See PersistentDataFile for saving data to a file on the flash file system
      */
     class PersistentDataBase : public SleepHelperRecursiveMutex {
     public:
-        class SavedDataHeader { // 20 bytes
+        class SavedDataHeader { // 16 bytes
         public:
             uint32_t magic;                 //!< SAVED_DATA_MAGIC = 0xd87cb6ce;
-            uint32_t version;               //!< SAVED_DATA_VERSION = 1
+            uint16_t version;               //!< SAVED_DATA_VERSION = 1
             uint16_t size;                  //!< size of the whole structure, including the user data after it
-            uint16_t flags;                 //!< currently 0
             uint32_t reserved2;             //!< reserved for future use
             uint32_t reserved1;             //!< reserved for future use
             // You cannot change the size of this structure!
         };
-
-        PersistentDataBase(SavedDataHeader *savedDataHeader, size_t savedDataSize) : savedDataHeader(savedDataHeader), savedDataSize(savedDataSize) {
-        };
-
-
-        /**
-         * @brief Sets the path to the persistent data file on the file system
-         * 
-         * @param path 
-         * @return PersistentData& 
-         */
-        PersistentDataBase &withPath(const char *path) { 
-            this->path = path; 
-            return *this; 
-        };
         
-        /**
-         * @brief Sets the wait to save delay. Default is 1000 milliseconds.
-         * 
-         * @param value Value is milliseconds, or 0
-         * @return PersistentData& 
-         * 
-         * Normally, if the value is changed by a set call, then about
-         * one second later the change will be saved to disk from the loop thread. The
-         * sleepHelperData is also saved before sleep or reset if changed.
-         * 
-         * You can change the save delay by using withSaveDelayMs(). If you set it to 0, then
-         * the data is saved within the setValue call immediately, which will make all set calls
-         * run more slowly.
-         */
-        PersistentDataBase &withSaveDelayMs(uint32_t value) {
-            saveDelayMs = value;
-            if (saveDelayMs == 0) {
-                flush(true);
-            }
-            return *this;
-        }
+        PersistentDataBase(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
+            savedDataHeader(savedDataHeader), savedDataSize(savedDataSize), savedDataMagic(savedDataMagic), savedDataVersion(savedDataVersion)  {
+        };
 
         /**
          * @brief Initialize this object for use in SleepHelper
@@ -670,7 +638,7 @@ public:
          * This is used from SleepHelper::setup(). You should not use this if you are creating your
          * own PersistentData object; this is only used to hook this class into SleepHelper/
          */
-        void setup();
+        virtual void setup();
 
         /**
          * @brief Load the persistent data file. You normally do not need to call this; it will be loaded automatically.
@@ -678,26 +646,22 @@ public:
          * @return true 
          * @return false 
          */
-        bool load();
+        virtual bool load();
 
         /**
          * @brief Save the persistent data file. You normally do not need to call this; it will be saved automatically.
          * 
-         * @return true 
-         * @return false 
+         * Save does nothing in this base class, but for PersistentDataFile it saves to a file
          */
-        bool save();
+        virtual void save() {};
 
         /**
-         * @brief Write the settings to disk if changed and the wait to save time has expired
+         * @brief Save the persistent data file. You normally do not need to call this; it will be saved automatically.
          * 
-         * @param force Pass true to ignore the wait to save time and save immediately if necessary. This
-         * is used when you're about to sleep or reset, for example.
-         * 
-         * This call is fast if a save is not required so you can call it frequently, even every loop.
+         * Save does nothing in this base class, but for PersistentDataFile uses it to determine whether to save immediately
+         * or defer until later.
          */
-        void flush(bool force);
-    
+        virtual void saveOrDefer() {}
 
         /**
          * @brief Templated class for getting integral values (uint32_t, float, double, etc.)
@@ -737,25 +701,38 @@ public:
                     T oldValue = *(T *)p;
                     if (oldValue != value) {
                         *(T *)p = value;
-                        if (saveDelayMs) {
-                            lastUpdate = millis();
-                        }
-                        else {
-                            save();
-                        }
+                        saveOrDefer();
                     }
                 }
             }
         }
 
+        /**
+         * @brief Get the value of a string
+         * 
+         * @param offset 
+         * @param size 
+         * @param value 
+         * @return true 
+         * @return false 
+         * 
+         * The templated getValue method doesn't work with String values, so this version should be used instead.
+         */
         bool getValueString(size_t offset, size_t size, String &value) const;
 
+        /**
+         * @brief Set the value of a string
+         * 
+         * @param offset 
+         * @param size 
+         * @param value 
+         * @return true 
+         * @return false 
+         * 
+         * The templated setValue method doesn't work with string values, so this version should be used instead.
+         */
         bool setValueString(size_t offset, size_t size, const char *value);
         
-
-        static const uint32_t SAVED_DATA_MAGIC = 0xd87cb6ce;
-        static const uint16_t SAVED_DATA_VERSION = 1; 
-
     protected:
         /**
          * This class cannot be copied
@@ -767,8 +744,129 @@ public:
          */
         PersistentDataBase& operator=(const PersistentDataBase&) = delete;
 
-        SavedDataHeader *savedDataHeader = 0;
-        uint32_t savedDataSize = 0;
+        /**
+         * @brief Used to validate the saved data structure. Used internally by load(). 
+         * 
+         * @return true 
+         * @return false 
+         */
+        virtual bool validate(size_t dataSize);
+
+        /**
+         * @brief Used to initialize the saved data structure. Used internally by load(). 
+         * 
+         * @return true 
+         * @return false 
+         */
+        virtual void initialize();
+
+
+        SavedDataHeader *savedDataHeader = 0; //!< Pointer to the saved data header, which is followed by the data
+        uint32_t savedDataSize = 0;     //!< Size of the saved data (header + actual data)
+        
+        uint32_t savedDataMagic;        //!< Magic bytes for the saved data
+        uint16_t savedDataVersion;      //!< Version number for the saved data
+    };
+
+    /**
+     * @brief Base class for persistent data stored in a file 
+     * 
+     */
+    class PersistentDataFile : public PersistentDataBase {
+    public:
+        PersistentDataFile(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
+            PersistentDataBase(savedDataHeader, savedDataSize, savedDataMagic, savedDataVersion) {
+        };
+        
+        /**
+         * @brief Sets the path to the persistent data file on the file system
+         * 
+         * @param path 
+         * @return PersistentDataFile& 
+         */
+        PersistentDataFile &withPath(const char *path) { 
+            this->path = path; 
+            return *this; 
+        };
+
+        /**
+         * @brief Sets the wait to save delay. Default is 1000 milliseconds.
+         * 
+         * @param value Value is milliseconds, or 0
+         * @return PersistentData& 
+         * 
+         * Normally, if the value is changed by a set call, then about
+         * one second later the change will be saved to disk from the loop thread. The
+         * sleepHelperData is also saved before sleep or reset if changed.
+         * 
+         * You can change the save delay by using withSaveDelayMs(). If you set it to 0, then
+         * the data is saved within the setValue call immediately, which will make all set calls
+         * run more slowly.
+         */
+        PersistentDataFile &withSaveDelayMs(uint32_t value) {
+            saveDelayMs = value;
+            if (saveDelayMs == 0) {
+                flush(true);
+            }
+            return *this;
+        }
+        
+        /**
+         * @brief Initialize this object for use in SleepHelper
+         * 
+         * This is used from SleepHelper::setup(). You should not use this if you are creating your
+         * own PersistentData object; this is only used to hook this class into SleepHelper/
+         */
+        virtual void setup();
+
+        /**
+         * @brief Load the persistent data file. You normally do not need to call this; it will be loaded automatically.
+         * 
+         * @return true 
+         * @return false 
+         */
+        virtual bool load();
+
+        /**
+         * @brief Save the persistent data file. You normally do not need to call this; it will be saved automatically.
+         */
+        virtual void save();
+
+        /**
+         * @brief Either saves data or immediately, or defers until later, based on saveDelayMs
+         * 
+         * If saveDelayMs == 0, then always saves immediately. Otherwise, waits that amount of time before saving
+         * to allow multiple saves to be batch and to not block the updating thread.
+         */
+        virtual void saveOrDefer() {
+            if (saveDelayMs) {
+                lastUpdate = millis();
+            }
+            else {
+                save();
+            }
+        }
+
+        /**
+         * @brief Write the settings to disk if changed and the wait to save time has expired
+         * 
+         * @param force Pass true to ignore the wait to save time and save immediately if necessary. This
+         * is used when you're about to sleep or reset, for example.
+         * 
+         * This call is fast if a save is not required so you can call it frequently, even every loop.
+         */
+        virtual void flush(bool force);
+    
+    protected:
+        /**
+         * This class cannot be copied
+         */
+        PersistentDataFile(const PersistentDataFile&) = delete;
+
+        /**
+         * This class cannot be copied
+         */
+        PersistentDataFile& operator=(const PersistentDataFile&) = delete;
         
         uint32_t lastUpdate = 0;
         uint32_t saveDelayMs = 1000;
@@ -783,12 +881,12 @@ public:
      * setup() or later. You can access it from worker threads.
      * 
      */
-    class PersistentData : public PersistentDataBase {
+    class PersistentData : public PersistentDataFile {
     public:
         /**
          * @brief Structure saved to the persistent data file (binary)
          * 
-         * It must always begin with the SavedDataHeader (20 bytes)!
+         * It must always begin with the SavedDataHeader (16 bytes)!
          * 
          * You can expand the structure later without incrementing the
          * version number. Added fields will be initialized to 0. The size is 
@@ -810,7 +908,7 @@ public:
         /**
          * @brief Default constructor. Use withPath() to set the pathname if using this constructor
          */
-        PersistentData() : PersistentDataBase(&sleepHelperData.header, sizeof(SleepHelperData)) {};
+        PersistentData() : PersistentDataFile(&sleepHelperData.header, sizeof(SleepHelperData), SAVED_DATA_MAGIC, SAVED_DATA_VERSION) {};
 
         /**
          * @brief Destructor
@@ -856,6 +954,10 @@ public:
         void setValue_lastQuickWake(time_t value) {
             setValue<uint32_t>(offsetof(SleepHelperData, lastQuickWake), (uint32_t)value);
         }
+
+        static const uint32_t SAVED_DATA_MAGIC = 0xd87cb6ce;
+        static const uint16_t SAVED_DATA_VERSION = 1; 
+
 
     protected:
         SleepHelperData sleepHelperData;

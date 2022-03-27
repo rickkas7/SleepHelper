@@ -359,11 +359,11 @@ void persistentDataTest() {
 	}
 }
 
-class MyPersistentData : public SleepHelper::PersistentDataBase {
+class MyPersistentData : public SleepHelper::PersistentDataFile {
 public:
 	class MyData {
 	public:
-		// This structure must always begin with the header (20 bytes)
+		// This structure must always begin with the header (16 bytes)
 		SleepHelper::PersistentDataBase::SavedDataHeader header;
 		// Your fields go here. Once you've added a field you cannot add fields
 		// (except at the end), insert fields, remove fields, change size of a field.
@@ -376,7 +376,10 @@ public:
 		// OK to add more fields here 
 	};
 
-	MyPersistentData() : PersistentDataBase(&myData.header, sizeof(MyData)) {};
+	static const uint32_t DATA_MAGIC = 0x20a99e73;
+	static const uint16_t DATA_VERSION = 1;
+
+	MyPersistentData() : PersistentDataFile(&myData.header, sizeof(MyData), DATA_MAGIC, DATA_VERSION) {};
 
 	int getValue_test1() const {
 		return getValue<int>(offsetof(MyData, test1));
@@ -468,6 +471,116 @@ void customPersistentDataTest() {
 
 
 }
+
+
+class RetainedDataTest : public SleepHelper::PersistentDataBase {
+public:
+	class MyData {
+	public:
+		// This structure must always begin with the header (16 bytes)
+		SleepHelper::PersistentDataBase::SavedDataHeader header;
+		// Your fields go here. Once you've added a field you cannot add fields
+		// (except at the end), insert fields, remove fields, change size of a field.
+		// Doing so will cause the data to be corrupted!
+		// You may want to keep a version number in your data.
+		int test1;
+		bool test2;
+		double test3;
+		char test4[10];
+		// OK to add more fields here 
+	};
+
+	static const uint32_t DATA_MAGIC = 0xd971e39b;
+	static const uint16_t DATA_VERSION = 1;
+
+	RetainedDataTest(SleepHelper::PersistentDataBase::SavedDataHeader *header) : SleepHelper::PersistentDataBase(header, sizeof(MyData), DATA_MAGIC, DATA_VERSION) {};
+
+	int getValue_test1() const {
+		return getValue<int>(offsetof(MyData, test1));
+	}
+
+	void setValue_test1(int value) {
+		setValue<int>(offsetof(MyData, test1), value);
+	}
+
+	bool getValue_test2() const {
+		return getValue<bool>(offsetof(MyData, test2));
+	}
+
+	void setValue_test2(bool value) {
+		setValue<bool>(offsetof(MyData, test2), value);
+	}
+
+	double getValue_test3() const {
+		return getValue<double>(offsetof(MyData, test3));
+	}
+
+	void setValue_test3(double value) {
+		setValue<double>(offsetof(MyData, test3), value);
+	}
+
+	String getValue_test4() const {
+		String result;
+		getValueString(offsetof(MyData, test4), sizeof(MyData::test4), result);
+		return result;
+	}
+	bool setValue_test4(const char *str) {
+		return setValueString(offsetof(MyData, test4), sizeof(MyData::test4), str);
+	}
+
+};
+
+void customRetainedDataTest() {
+
+	RetainedDataTest::MyData retainedData; // Simulating retained data
+
+
+	RetainedDataTest data(&retainedData.header);
+	bool bResult;
+	String s;
+
+	data.load();
+
+	data.setValue_test1(0x55aa55aa);
+	assertInt("", data.getValue_test1(), 0x55aa55aa);
+
+	assertInt("", data.getValue_test2(), false);
+	data.setValue_test2(true);
+	assertInt("", data.getValue_test2(), true);
+
+
+	assertDouble("", data.getValue_test3(), 0.0, 0.001);
+	data.setValue_test3(9999999.12345);
+	assertDouble("", data.getValue_test3(), 9999999.12345, 0.001);
+
+	s = data.getValue_test4();
+	assertStr("", s, "");
+	data.setValue_test4("testing!"); 
+	s = data.getValue_test4();
+	assertStr("", s, "testing!");
+
+	data.setValue_test4("testing1!"); 
+	s = data.getValue_test4();
+	assertStr("", s, "testing1!");
+
+	bResult = data.setValue_test4("testing12!"); 
+	assertInt("", bResult, false);
+	s = data.getValue_test4();
+	assertStr("", s, "testing1!");
+
+	data.save();
+
+
+	RetainedDataTest data2(&retainedData.header);
+	data2.load();
+
+	assertInt("", data2.getValue_test1(), 0x55aa55aa);
+	assertInt("", data2.getValue_test2(), true);
+	assertDouble("", data2.getValue_test3(), 9999999.12345, 0.001);
+	assertStr("", data2.getValue_test4(), "testing1!");
+
+}
+
 
 void eventCombinerTest() {
 	{
@@ -625,6 +738,7 @@ int main(int argc, char *argv[]) {
 	settingsTest();
 	persistentDataTest();
 	customPersistentDataTest();
+	customRetainedDataTest();
 	eventCombinerTest();
 	return 0;
 }
