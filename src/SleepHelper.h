@@ -288,13 +288,6 @@ public:
         SettingsFile() {};
 
         /**
-         * @brief Constructor that thats a pathname to the settings file
-         * 
-         * @param path 
-         */
-        SettingsFile(const char *path) : path(path) {};
-
-        /**
          * @brief Destructor
          */
         virtual ~SettingsFile() {};
@@ -434,9 +427,18 @@ public:
 
             return setValue(name, tempStr);
         }
-        
+
         /**
-         * @brief Merges multiple values from JSON data into the settings
+         * @brief Set value to the specified JSON, replacing the existing settings. Calls update callbacks if necessary.
+         * 
+         * @param json 
+         * @return true 
+         * @return false 
+         */
+        bool setValuesJson(const char *json);
+
+        /**
+         * @brief Merges multiple values from JSON data into the settings. Calls update callbacks if necessary.
          * 
          * @param json 
          * @return true 
@@ -491,6 +493,120 @@ public:
         const char *defaultValues = 0;
     };
 
+    /**
+     * @brief Cloud-based settings
+     * 
+     * This is a specialized subclass of SettingsFile. It still stores JSON data in a file
+     * on the flash file system. However, it is designed to be used with the cloud as the
+     * source of truth. 
+     * 
+     * At specified times, the device will send up a 32-bit hash code of its current settings
+     * in a publish. If the cloud has a different version of the settings, it will send
+     * down a new configuration by Particle function call.
+     * 
+     * The new settings are designed to always fit in a single function payload, 1024 bytes
+     * on most Gen 3 devices, and the entire configuration is always sent to make sure the
+     * data and hash values match.
+     * 
+     * Because you cannot make local changes to settings, all of the set, update, and default
+     * settings methods of SettingsFile are hidden when using CloudSettingsFile.
+     */
+    class CloudSettingsFile : public SettingsFile {
+    public:
+        CloudSettingsFile() {
+        };
+
+        /**
+         * @brief Default values are never used with cloud settings, because the settings must originate from the cloud side
+         * 
+         * @param defaultValues 
+         * @return SettingsFile& 
+         */
+        SettingsFile &withDefaultValues(const char *defaultValues) = delete;
+
+        /**
+         * @brief You can never set a value when using cloud settings because the source of truth is always the cloud version
+         * 
+         * @tparam T 
+         * @param name 
+         * @param value 
+         * @return true 
+         * @return false 
+         */
+        template<class T>
+	    bool setValue(const char *name, const T &value) = delete;
+        
+        /**
+         * @brief You can never set a value when using cloud settings because the source of truth is always the cloud version
+         * 
+         * @param name 
+         * @param value 
+         * @return true 
+         * @return false 
+         */
+        bool setValue(const char *name, const char *value) = delete;
+
+        /**
+         * @brief Cloud settings must always exactly match the cloud version, so you only server setValueJson, not update
+         * 
+         * @param json 
+         * @return true 
+         * @return false 
+         */
+        bool updateValuesJson(const char *json) = delete;
+
+        /**
+         * @brief Default values are never used with cloud settings
+         * 
+         * @param inputJson 
+         * @return true 
+         * @return false 
+         */
+        bool addDefaultValues(const char *inputJson) = delete;
+
+        /**
+         * @brief Get the hashed value of the current settings, used to check if they need to be updated
+         * 
+         * @return uint32_t 
+         */
+        uint32_t getHash() const;
+
+        /**
+         * @brief Murmur3 hash algorithm implementation
+         * 
+         * @param buf Pointer to the buffer to hash (const uint8_t *) 
+         * @param len Length of the data in bytes
+         * @param seed hash seed value (uint32_t)
+         * @return uint32_t 
+         * 
+         * This generates a 32-bit hash of the specified buffer. This is a non-cryptographic hash
+         * but the code is very small and fast. It's used for detecting settings changes.
+         * 
+         * See: https://en.wikipedia.org/wiki/MurmurHash
+         */
+        static uint32_t murmur3_32(const uint8_t* buf, size_t len, uint32_t seed);
+
+        /**
+         * @brief The hash seed used for settings file changes
+         */
+        static const uint32_t HASH_SEED = 0x5b4ffa05;
+
+    private:
+        /**
+         * @brief Part of the algorithm used by murmur3_32(). Used internally.
+         * 
+         * @param k 
+         * @return uint32_t 
+         */
+        static inline uint32_t murmur_32_scramble(uint32_t k) {
+            k *= 0xcc9e2d51;
+            k = (k << 15) | (k >> 17);
+            k *= 0x1b873593;
+            return k;
+        }
+
+    };
+
 
     /**
      * @brief Base class for storing persistent binary data to a file
@@ -512,9 +628,6 @@ public:
         };
 
         PersistentDataBase(SavedDataHeader *savedDataHeader, size_t savedDataSize) : savedDataHeader(savedDataHeader), savedDataSize(savedDataSize) {
-        };
-
-        PersistentDataBase(SavedDataHeader *savedDataHeader, size_t savedDataSize, const char *path) : savedDataHeader(savedDataHeader), savedDataSize(savedDataSize), path(path) {
         };
 
 
@@ -698,13 +811,6 @@ public:
          * @brief Default constructor. Use withPath() to set the pathname if using this constructor
          */
         PersistentData() : PersistentDataBase(&sleepHelperData.header, sizeof(SleepHelperData)) {};
-
-        /**
-         * @brief Constructor that thats a pathname to the persistent data file
-         * 
-         * @param path 
-         */
-        PersistentData(const char *path) : PersistentDataBase(&sleepHelperData.header, sizeof(SleepHelperData), path) {};
 
         /**
          * @brief Destructor

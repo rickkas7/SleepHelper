@@ -195,10 +195,13 @@ void settingsTest() {
 		// Default values on initial set
 		unlink(testPath);
 
+		const char *defaultValues = "{\"t1\":1234,\"t2\":\"testing 2!\",\"t3\":-5.5,\"t4\":false}";
+
 		SleepHelper::SettingsFile settings;
 		settings.withPath(testPath);
-		settings.withDefaultValues("{\"t1\":1234,\"t2\":\"testing 2!\",\"t3\":-5.5,\"t4\":false}");
+		settings.withDefaultValues(defaultValues);
 		settings.load();
+
 
 		String keyChanged;
 		bool bResult;
@@ -214,6 +217,10 @@ void settingsTest() {
 		});
 
 		assertStr("", keyChanged, "");
+
+		settings.getValuesJson(stringValue);
+		assertStr("", stringValue, defaultValues);
+
 
 		bResult = settings.getValue("t1", intValue);
 		assertInt("", bResult, true);
@@ -233,6 +240,7 @@ void settingsTest() {
 
 
 		// Make sure default values do not override
+		// Also new defaults are added
 		SleepHelper::SettingsFile settings2;
 		settings2.withPath(testPath);
 		settings2.withDefaultValues("{\"t1\":999,\"t2\":\"testing!\",\"t3\":-3.1,\"t4\":true,\"t5\":555}");
@@ -268,7 +276,67 @@ void settingsTest() {
 
 	}
 
+	// Cloud Settings
+	{
+		unlink(testPath);
 
+		const char *cloudSettings = "{\"t1\":1234,\"t2\":\"testing 2!\",\"t3\":-5.5,\"t4\":false}";
+
+		SleepHelper::CloudSettingsFile settings;
+		settings.withPath(testPath);
+		settings.load();
+
+		settings.setValuesJson(cloudSettings);
+
+		String keyChanged;
+		bool bResult;
+		int intValue;
+		bool boolValue;
+		double doubleValue;
+		String stringValue;
+
+		settings.withSettingChangeFunction([&keyChanged](const char *key) {
+			// printf("setting changed %s!\n", key);
+			keyChanged = key;
+			return true;
+		});
+
+		assertStr("", keyChanged, "");
+
+		settings.getValuesJson(stringValue);
+		assertStr("", stringValue, cloudSettings);
+
+
+		bResult = settings.getValue("t1", intValue);
+		assertInt("", bResult, true);
+		assertInt("", intValue, 1234);
+
+		bResult = settings.getValue("t2", stringValue);
+		assertInt("", bResult, true);
+		assertStr("", stringValue, "testing 2!");
+
+		bResult = settings.getValue("t3", doubleValue);
+		assertInt("", bResult, true);
+		assertDouble("", doubleValue, -5.5, 0.001);
+
+		bResult = settings.getValue("t4", boolValue);
+		assertInt("", bResult, true);
+		assertInt("", boolValue, false);
+
+		assertInt("", (int)settings.getHash(), 1924270570);
+
+		const char *cloudSettings2 = "{\"t1\":9999,\"t2\":\"testing 2!\",\"t3\":-5.5,\"t4\":false}";
+		settings.setValuesJson(cloudSettings2);
+		assertStr("", keyChanged, "t1");
+
+		bResult = settings.getValue("t1", intValue);
+		assertInt("", bResult, true);
+		assertInt("", intValue, 9999);
+
+		assertInt("", (int)settings.getHash(), 109685353);
+
+		unlink(testPath);
+	}
 
 
 }
@@ -308,7 +376,7 @@ public:
 		// OK to add more fields here 
 	};
 
-	MyPersistentData(const char *path) : PersistentDataBase(&myData.header, sizeof(MyData), path) {};
+	MyPersistentData() : PersistentDataBase(&myData.header, sizeof(MyData)) {};
 
 	int getValue_test1() const {
 		return getValue<int>(offsetof(MyData, test1));
@@ -351,7 +419,8 @@ void customPersistentDataTest() {
 	const char *persistentDataPath = "./temp02.dat";
 	unlink(persistentDataPath);
 
-	MyPersistentData data(persistentDataPath);
+	MyPersistentData data;
+	data.withPath(persistentDataPath);
 	bool bResult;
 	String s;
 
@@ -388,7 +457,8 @@ void customPersistentDataTest() {
 	data.save();
 
 
-	MyPersistentData data2(persistentDataPath);
+	MyPersistentData data2;
+	data2.withPath(persistentDataPath);
 	data2.load();
 
 	assertInt("", data2.getValue_test1(), 0x55aa55aa);

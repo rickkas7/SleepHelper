@@ -13,10 +13,11 @@ SleepHelper &SleepHelper::instance() {
     return *_instance;
 }
 
-SleepHelper::SleepHelper() : 
-    settingsFile("/usr/sleepSettings.json"), 
-    persistentData("/usr/sleepData.dat"),
-    appLog("app.sleep") {
+SleepHelper::SleepHelper() : appLog("app.sleep") {
+    
+    settingsFile.withPath("/usr/sleepSettings.json");
+
+    persistentData.withPath("/usr/sleepData.dat");
 }
 
 SleepHelper::~SleepHelper() {
@@ -90,7 +91,6 @@ void SleepHelper::systemEventHandler(system_event_t event, int param) {
 void SleepHelper::systemEventHandlerStatic(system_event_t event, int param) {
     SleepHelper::instance().systemEventHandler(event, param);
 }
-
 
 void SleepHelper::stateHandlerStart() {
     if (!shouldConnectFunctions.shouldConnect()) {
@@ -259,6 +259,67 @@ bool SleepHelper::SettingsFile::save() {
     return true;
 }
 
+bool SleepHelper::SettingsFile::setValuesJson(const char *inputJson) {
+    std::vector<String> updatedKeys;
+
+    WITH_LOCK(*this) {
+        JsonParserStatic<particle::protocol::MAX_EVENT_DATA_LENGTH, 50> inputParser;
+        inputParser.addString(inputJson);
+        inputParser.parse();
+
+        const JsonParserGeneratorRK::jsmntok_t *keyToken;
+		const JsonParserGeneratorRK::jsmntok_t *valueToken;
+
+        for(size_t index = 0; ; index++) {
+    		if (!inputParser.getKeyValueTokenByIndex(inputParser.getOuterObject(), keyToken, valueToken, index)) {
+                break;
+            }
+
+            String key;
+            inputParser.getTokenValue(keyToken, key);
+
+            // Does this item exist?
+    		const JsonParserGeneratorRK::jsmntok_t *oldValueToken;
+            if (!parser.getValueTokenByKey(parser.getOuterObject(), key, oldValueToken)) {
+                // Key does not exist, issue a change notification
+                updatedKeys.push_back(key);
+            }
+            else {
+                int valueLen = valueToken->end - valueToken->start;
+                int oldValueLen = oldValueToken->end - oldValueToken->start;
+
+                if (valueToken->type != oldValueToken->type || 
+                    valueLen != oldValueLen ||
+                    memcmp(inputParser.getBuffer() + valueToken->start, parser.getBuffer() + oldValueToken->start, valueLen) != 0) {
+
+                    // Changed value
+                    updatedKeys.push_back(key);
+                }
+            }
+
+
+                
+        }
+    }
+
+    if (!updatedKeys.empty()) {
+        for(auto it = updatedKeys.begin(); it != updatedKeys.end(); ++it) {
+            settingChangeFunctions.forEach(*it);
+        }
+
+        // Replace existing settings
+        parser.clear();
+        parser.addString(inputJson);
+        parser.parse();
+
+        save();
+    }
+
+
+    return true;
+}
+
+
 
 bool SleepHelper::SettingsFile::updateValuesJson(const char *inputJson) {
     std::vector<String> updatedKeys;
@@ -390,6 +451,54 @@ bool SleepHelper::SettingsFile::getValuesJson(String &json) {
     }
 
     return true;
+}
+
+//
+// SleepHelper::CloudSettingsFile
+//
+uint32_t SleepHelper::CloudSettingsFile::getHash() const {
+    uint32_t hash;
+
+    WITH_LOCK(*this) {
+        hash = murmur3_32((const uint8_t *)parser.getBuffer(), parser.getOffset(), HASH_SEED);
+    }
+
+    return hash;
+}
+
+
+uint32_t SleepHelper::CloudSettingsFile::murmur3_32(const uint8_t* key, size_t len, uint32_t seed) {
+    // https://en.wikipedia.org/wiki/MurmurHash
+	uint32_t h = seed;
+    uint32_t k;
+    /* Read in groups of 4. */
+    for (size_t i = len >> 2; i; i--) {
+        // Here is a source of differing results across endiannesses.
+        // A swap here has no effects on hash properties though.
+        memcpy(&k, key, sizeof(uint32_t));
+        key += sizeof(uint32_t);
+        h ^= murmur_32_scramble(k);
+        h = (h << 13) | (h >> 19);
+        h = h * 5 + 0xe6546b64;
+    }
+    /* Read the rest. */
+    k = 0;
+    for (size_t i = len & 3; i; i--) {
+        k <<= 8;
+        k |= key[i - 1];
+    }
+    // A swap is *not* necessary here because the preceding loop already
+    // places the low bytes in the low places according to whatever endianness
+    // we use. Swaps only apply when the memory is copied in a chunk.
+    h ^= murmur_32_scramble(k);
+    /* Finalize. */
+	h ^= len;
+	h ^= h >> 16;
+	h *= 0x85ebca6b;
+	h ^= h >> 13;
+	h *= 0xc2b2ae35;
+	h ^= h >> 16;
+	return h;
 }
 
 
