@@ -984,21 +984,9 @@ public:
          */
         class EventInfo {
         public:
-            /**
-             * @brief Default constructor 
-             */
-            EventInfo() {};
-
-            /**
-             * @brief Constructor with values to fill int
-             * 
-             * @param jsonStr The fragment of JSON to save 
-             * @param priority The priority 0 - 100
-             */
-            EventInfo(const char *jsonStr, int priority) : json(jsonStr), priority(priority) {};
-
             String json; //!< JSON fragment, an object without the surrounding {}
             int priority = 0; //!< Priority 0 - 100 inclusive.
+            std::vector<String> keys; //!< Top level keys
         };
 
         /**
@@ -1034,6 +1022,17 @@ public:
         }
 
         /**
+         * @brief Add a callback that is removed after generating events
+         * 
+         * @param fn 
+         * @return EventCombiner& 
+         */
+        EventCombiner &withOneTimeCallback(std::function<bool(JSONWriter &, int &)> fn) { 
+            oneTimeCallbacks.add(fn); 
+            return *this;
+        }
+
+        /**
          * @brief Generate one or more events based on the maximum event size
          * 
          * @param events vector of String objects to fill in with event data
@@ -1054,6 +1053,14 @@ public:
          */
         void generateEvents(std::vector<String> &events, size_t maxSize);
 
+        /**
+         * @brief Clear the one-time callbacks
+         * 
+         * This is done automatically after generateEvents, but can be done manually in unusual cases.
+         */
+        void clearOneTimeCallbacks() {
+            oneTimeCallbacks.removeAll();
+        }
 
     protected:
         /**
@@ -1066,7 +1073,10 @@ public:
          */
         EventCombiner& operator=(const EventCombiner&) = delete;
 
+        void generateEventInternal(std::function<void(JSONWriter &, int &)> callback, char *buf, size_t maxSize, std::vector<EventInfo> &infoArray);
+
         AppCallback<JSONWriter &, int &> callbacks; //!< Callback functions
+        AppCallback<JSONWriter &, int &> oneTimeCallbacks; //!< One-time use callback functions 
 
     };
 
@@ -1180,6 +1190,17 @@ public:
      */
     SleepHelper &withWakeEventFunction(std::function<bool(JSONWriter &, int &)> fn) {
         wakeEventFunctions.withCallback(fn);
+        return *this;
+    }
+
+    /**
+     * @brief Add a callback to add to an event published on wake executed for a single wake publish
+     * 
+     * @param fn 
+     * @return SleepHelper& 
+     */
+    SleepHelper &withWakeEventOneTimeFunction(std::function<bool(JSONWriter &, int &)> fn) {
+        wakeEventFunctions.withOneTimeCallback(fn);
         return *this;
     }
 

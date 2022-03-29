@@ -728,7 +728,86 @@ void eventCombinerTest() {
 
 	}
 
-	// 
+	{
+		// Dedeupe simple
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 60;
+			return true;
+		});
+		t1.withCallback([](JSONWriter &jw, int &priority) {
+			jw.name("a").value(9999);
+			priority = 60;
+			return true;
+		});
+		t1.withCallback([](JSONWriter &jw, int &priority) {
+			jw.name("b").value(true);
+			priority = 60;
+			return true;
+		});
+		std::vector<String> events;
+
+		t1.generateEvents(events, 18);
+		assertInt("", events.size(), 2);
+		assertStr("", events[0].c_str(), "{\"a\":123}");
+		assertStr("", events[1].c_str(), "{\"b\":true}");
+
+	}	
+
+	{
+		// Dedeupe complex - high priority first, multiple keys
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 60;
+			return true;
+		});
+		t1.withCallback([](JSONWriter &jw, int &priority) {
+			jw.name("a").value(9999);
+			jw.name("b").value("test");
+			priority = 70;
+			return true;
+		});
+		t1.withCallback([](JSONWriter &jw, int &priority) {
+			jw.name("b").value("xxx");
+			priority = 60;
+			return true;
+		});
+		std::vector<String> events;
+
+		t1.generateEvents(events, 32);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"a\":9999,\"b\":\"test\"}");
+
+	}	
+	// One-time callback functions
+
+	{
+		// Generate two events
+		SleepHelper::EventCombiner t1;
+		t1.withCallback([](JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 60;
+			return true;
+		});
+		t1.withOneTimeCallback([](JSONWriter &jw, int &priority) {
+			jw.name("b").value(true);
+			priority = 60;
+			return true;
+		});
+		std::vector<String> events;
+
+		t1.generateEvents(events, 18);
+		assertInt("", events.size(), 2);
+		assertStr("", events[0].c_str(), "{\"a\":123}");
+		assertStr("", events[1].c_str(), "{\"b\":true}");
+
+		t1.generateEvents(events, 18);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"a\":123}");
+
+	}
 
 }
 

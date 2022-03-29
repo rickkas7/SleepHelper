@@ -740,6 +740,10 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events) {
     generateEvents(events, maxSize);
 }
 
+static bool _keyCompare(const String &a, const String &b) {
+    return strcmp(a, b) > 0;
+}
+
 void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, size_t maxSize) {
     
     events.clear();
@@ -751,78 +755,118 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
     }
 
     for(auto it = callbacks.callbackFunctions.begin(); it != callbacks.callbackFunctions.end(); ++it) {
+        generateEventInternal(*it, buf, maxSize, infoArray);        
+    }
+    for(auto it = oneTimeCallbacks.callbackFunctions.begin(); it != oneTimeCallbacks.callbackFunctions.end(); ++it) {
+        generateEventInternal(*it, buf, maxSize, infoArray);        
+    }
+
+    if (!infoArray.empty()) {
+        // Sort highest priority first
+        std::sort(infoArray.begin(), infoArray.end(), [](EventInfo a, EventInfo b) {
+            return a.priority > b.priority;
+        });
+
+        // Dedupe keys in case a one-time callback is called more than once
+        std::vector<String> keysAdded;
+        for(auto it = infoArray.begin(); it != infoArray.end(); ) {
+            bool keyExists = false;
+            
+            for(auto it2 = it->keys.begin(); it2 != it->keys.end(); ++it2) {
+                for(auto it3 = keysAdded.begin(); it3 != keysAdded.end(); ++it3) {
+                    if (*it3 == *it2) {
+                        keyExists = true;
+                        break;
+                    }
+                }
+                keysAdded.push_back(*it2);
+            }
+
+            if (keyExists) {
+                it = infoArray.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+
         // 
-        memset(buf, 0, maxSize);
-        JSONBufferWriter writer(buf, maxSize);
+        char *cur = buf;
+        char *end = &buf[maxSize - 2]; // Room for leading , and trailing }
 
-        int priority = 0;
+        *cur++ = '{';
+        bool firstEventBuffer = true;
 
-        writer.beginObject();
-        (*it)(writer, priority);
-        writer.endObject();
-
-        if (writer.dataSize() <= writer.bufferSize()) {
-            // Callback data was not truncated 
-
-            // Remove the } at the end of the object
-            buf[strlen(buf) - 1] = 0;
-
-            if (priority > 0 && strlen(buf) > 2) {
-                infoArray.push_back(EventInfo(&buf[1], priority));
+        for(auto it = infoArray.begin(); it != infoArray.end(); ++it) {
+            
+            if (&cur[strlen(it->json)] >= end) {
+                // Buffer is full
+                if (cur > &buf[1]) {
+                    *cur++ = '}';
+                    *cur = 0;
+                    events.push_back(buf);
+                    cur = &buf[1];
+                }
+                firstEventBuffer = false;
             }
-        }
-    }
 
-    if (infoArray.empty()) {
-        free(buf);
-        return;
-    }
+            if (!firstEventBuffer && it->priority < 50) {
+                break;
+            }        
 
-    // Sort highest priority first
-    std::sort(infoArray.begin(), infoArray.end(), [](EventInfo a, EventInfo b) {
-        return a.priority > b.priority;
-    });
-
-    // 
-    char *cur = buf;
-    char *end = &buf[maxSize - 2]; // Room for leading , and trailing }
-
-    *cur++ = '{';
-    bool firstEventBuffer = true;
-
-    for(auto it = infoArray.begin(); it != infoArray.end(); ++it) {
-        
-        if (&cur[strlen(it->json)] >= end) {
-            // Buffer is full
-            if (cur > &buf[1]) {
-                *cur++ = '}';
-                *cur = 0;
-                events.push_back(buf);
-                cur = &buf[1];
+            if (cur != &buf[1]) {
+                *cur++ = ',';
             }
-            firstEventBuffer = false;
+
+            strcpy(cur, it->json);
+            cur += strlen(cur);
         }
 
-        if (!firstEventBuffer && it->priority < 50) {
-            break;
-        }        
-
-        if (cur != &buf[1]) {
-            *cur++ = ',';
+        if (cur > &buf[1]) {
+            // Write out last object
+            *cur++ = '}';
+            *cur = 0;
+            events.push_back(buf);
         }
-
-        strcpy(cur, it->json);
-        cur += strlen(cur);
     }
 
-    if (cur > &buf[1]) {
-        // Write out last object
-        *cur++ = '}';
-        *cur = 0;
-        events.push_back(buf);
-    }
+    clearOneTimeCallbacks();
 
     free(buf);
 }
 
+
+void SleepHelper::EventCombiner::generateEventInternal(std::function<void(JSONWriter &, int &)> callback, char *buf, size_t maxSize, std::vector<EventInfo> &infoArray) {
+    memset(buf, 0, maxSize);
+    JSONBufferWriter writer(buf, maxSize);
+
+    int priority = 0;
+
+    writer.beginObject();
+    callback(writer, priority);
+    writer.endObject();
+
+    if (priority > 0 && strlen(buf) > 2) {
+        // Priority is set and not an empty object
+        if (writer.dataSize() <= writer.bufferSize()) {
+            // Callback data was not truncated 
+
+            EventInfo eventInfo;
+            eventInfo.priority = priority;
+
+            // Gather keys used in this
+            JSONValue outerObj = JSONValue::parseCopy(buf);
+            JSONObjectIterator iter(outerObj);
+            while(iter.next()) {
+                eventInfo.keys.push_back((const char *)iter.name());
+            }
+
+            // Remove the } at the end of the object
+            buf[strlen(buf) - 1] = 0;
+            eventInfo.json = &buf[1];
+
+            infoArray.push_back(eventInfo);
+        }
+    }
+}
 
