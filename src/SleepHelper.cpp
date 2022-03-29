@@ -4,6 +4,7 @@
 #include "BackgroundPublishRK.h"
 #endif
 
+#include <cmath>
 #include <fcntl.h>
 #include <algorithm> // std::sort
 
@@ -935,4 +936,186 @@ void SleepHelper::EventCombiner::generateEventInternal(std::function<void(JSONWr
         }
     }
 }
+
+//
+// EventHistory
+//
+
+
+void SleepHelper::EventHistory::addEvent(const char *jsonObj) {
+    // Append to the file
+    WITH_LOCK(*this) {
+        int fd = open(path, O_RDWR | O_CREAT | O_APPEND, 0666);
+        if (fd != -1) {
+            write(fd, jsonObj, strlen(jsonObj));
+            write(fd, "\n", 1);
+            close(fd);
+
+            hasEvents = true;
+        }
+    }    
+}
+
+bool SleepHelper::EventHistory::getEvents(JSONWriter &writer, size_t maxSize, bool bRemoveEvents) {
+    if (maxSize < 2 || !hasEvents) {
+        return false;
+    }
+    char *buf = (char *)malloc(maxSize);
+    if (!buf) {
+        return false;
+    }
+
+    bool bResult = false;
+
+    WITH_LOCK(*this) {
+        int fd = open(path, O_RDONLY);
+        if (fd != -1) {
+            int dataSize = read(fd, buf, maxSize);
+            if (dataSize > 0) {
+                // Remove partial event
+                while(dataSize > 0 && buf[dataSize - 1] != '\n') {
+                    dataSize--;
+                }                    
+
+                if (dataSize > 0 && buf[dataSize - 1] == '\n') {
+                    // Have valid data
+                    bResult = true;
+                    size_t bytesUsed = 2;
+
+                    writer.beginArray();
+
+                    char *cur = buf;
+                    char *end = &buf[dataSize];
+                    while(cur < end) {
+                        char *lf = strchr(cur, '\n');
+                        *lf = 0;
+
+                        bytesUsed += strlen(cur) + 1;
+                        if (bytesUsed > maxSize) {
+                            break;
+                        }
+                        SleepHelper::JSONCopy(cur, writer);                        
+
+                        cur = lf + 1;
+                        removeOffset = (cur - buf);
+                    }
+
+                    writer.endArray();
+                }
+            }
+            close(fd);
+        }
+    }    
+
+    free(buf);
+
+    if (bRemoveEvents) {
+        removeEvents();
+    }
+
+    return bResult;
+}
+
+void SleepHelper::EventHistory::removeEvents() {
+    WITH_LOCK(*this) {
+        const size_t bufSize = 512;
+        char *buf = (char *)malloc(bufSize);
+        if (buf) {
+            int fdsrc = open(path, O_RDONLY);
+            if (fdsrc != -1) {
+                struct stat sb;
+                fstat(fdsrc, &sb);
+                size_t fileSize = sb.st_size;  
+                if (removeOffset < fileSize) {
+                    lseek(fdsrc, removeOffset, SEEK_SET);
+
+                    String tempPath = String(path) + ".tmp";
+                    int fddst = open(tempPath, O_RDWR | O_CREAT | O_TRUNC, 0666);
+                    if (fddst) {
+                        while(removeOffset < fileSize) {
+                            int count = read(fdsrc, buf, bufSize);
+                            if (count > 0) {
+                                write(fddst, buf, count);
+                                removeOffset += count;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        close(fddst);
+                    }
+                    close(fdsrc);
+
+                    // Swap src and dst files
+                    unlink(path);
+                    rename(tempPath, path);
+                    removeOffset = 0;
+                }
+                else {
+                    unlink(path);
+                    hasEvents = false;
+                }
+            }
+            free(buf);
+        }
+
+    }
+}
+
+// [static]
+void SleepHelper::JSONCopy(const char *src, JSONWriter &writer) {
+    JSONCopy(JSONValue::parseCopy(src), writer);
+}
+
+// [static]
+void SleepHelper::JSONCopy(const JSONValue &src, JSONWriter &writer) {
+    // This is inefficient and annoying, but there's no way to insert pre-formatted JSON into a JSONWriter
+    if (src.isArray()) {
+        writer.beginArray();
+
+        JSONArrayIterator iter(src);
+        while(iter.next()) {
+            JSONCopy(iter.value(), writer);
+        }
+
+        writer.endArray();
+    }
+    else
+    if (src.isObject()) {
+        writer.beginObject();
+
+        JSONObjectIterator iter(src);
+        while(iter.next()) {
+            // Log.info("key=%s value=%s", (const char *) iter.name(), (const char *) iter.value().toString());
+            writer.name((const char *) iter.name());
+            JSONCopy(iter.value(), writer);
+        }
+
+        writer.endObject();
+    }
+    else
+    if (src.isString()) {
+        writer.value(src.toString().data());
+    }
+    else
+    if (src.isBool()) {
+        writer.value(src.toBool());
+    }
+    else
+    if (src.isNull()) {
+        writer.nullValue();
+    }
+    else {
+        // isNumber
+        double d = src.toDouble();
+        if (d == std::floor(d)) {
+            // Is an integer
+            writer.value((int)d);
+        }
+        else {
+            writer.value(d);
+        }
+    }
+}
+
 

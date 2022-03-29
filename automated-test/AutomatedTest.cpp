@@ -357,6 +357,8 @@ void persistentDataTest() {
 
 	{
 	}
+
+	unlink(persistentDataPath);
 }
 
 class MyPersistentData : public SleepHelper::PersistentDataFile {
@@ -469,6 +471,7 @@ void customPersistentDataTest() {
 	assertDouble("", data2.getValue_test3(), 9999999.12345, 0.001);
 	assertStr("", data2.getValue_test4(), "testing1!");
 
+	unlink(persistentDataPath);
 
 }
 
@@ -808,7 +811,287 @@ void eventCombinerTest() {
 		assertStr("", events[0].c_str(), "{\"a\":123}");
 
 	}
+}
 
+void eventHistoryTest() {
+	// JSONCopy tests (low level)
+	{
+		const char *t1 = "{\"a\":123}";
+
+		char buf[256];
+		memset(buf, 0, sizeof(buf));
+		JSONBufferWriter writer(buf, sizeof(buf) - 1);
+		writer.beginObject();
+		writer.name("x");
+		SleepHelper::JSONCopy(t1, writer);
+		writer.endObject();
+
+		assertStr("", buf, "{\"x\":{\"a\":123}}");
+	}
+	{
+		const char *t1 = "{\"a\":123,\"b\":true}";
+
+		char buf[256];
+		memset(buf, 0, sizeof(buf));
+		JSONBufferWriter writer(buf, sizeof(buf) - 1);
+		writer.beginObject();
+		writer.name("x");
+		SleepHelper::JSONCopy(t1, writer);
+		writer.endObject();
+
+		assertStr("", buf, "{\"x\":{\"a\":123,\"b\":true}}");
+	}
+
+	{
+		const char *t1 = "{\"a\":123,\"b\":true,\"c\":\"testing\"}";
+
+		char buf[256];
+		memset(buf, 0, sizeof(buf));
+		JSONBufferWriter writer(buf, sizeof(buf) - 1);
+		writer.beginArray();
+		SleepHelper::JSONCopy(t1, writer);
+		writer.endArray();
+
+		assertStr("", buf, "[{\"a\":123,\"b\":true,\"c\":\"testing\"}]");
+	}
+	{
+		const char *t1 = "{\"a\":123,\"b\":true,\"d\":null,\"e\":-5.5}";
+
+		char buf[256];
+		memset(buf, 0, sizeof(buf));
+		JSONBufferWriter writer(buf, sizeof(buf) - 1);
+		writer.beginObject();
+		writer.name("x");
+		SleepHelper::JSONCopy(t1, writer);
+		writer.endObject();
+
+		assertStr("", buf, "{\"x\":{\"a\":123,\"b\":true,\"d\":null,\"e\":-5.5}}");
+	}
+	{
+		const char *t1 = "{\"a\":123,\"b\":true,\"d\":null,\"e\":-5.5,\"f\":[1,2,3]}";
+
+		char buf[256];
+		memset(buf, 0, sizeof(buf));
+		JSONBufferWriter writer(buf, sizeof(buf) - 1);
+		writer.beginObject();
+		writer.name("x");
+		SleepHelper::JSONCopy(t1, writer);
+		writer.endObject();
+
+		assertStr("", buf, "{\"x\":{\"a\":123,\"b\":true,\"d\":null,\"e\":-5.5,\"f\":[1,2,3]}}");
+	}
+	{
+		const char *t1 = "{\"a\":123,\"b\":true,\"d\":null,\"e\":-5.5,\"f\":[1,2,3],\"g\":{\"h\":9999}}";
+
+		char buf[256];
+		memset(buf, 0, sizeof(buf));
+		JSONBufferWriter writer(buf, sizeof(buf) - 1);
+		writer.beginObject();
+		writer.name("x");
+		SleepHelper::JSONCopy(t1, writer);
+		writer.endObject();
+
+		assertStr("", buf, "{\"x\":{\"a\":123,\"b\":true,\"d\":null,\"e\":-5.5,\"f\":[1,2,3],\"g\":{\"h\":9999}}}");
+	}
+
+	const char *eventsFile = "./events.txt";
+	unlink(eventsFile);
+
+	{
+		// EventHistory: Simple  test
+		SleepHelper::EventHistory events;
+		events.withPath(eventsFile);
+
+		events.addEvent("{\"a\":123}");
+		assertFile("", eventsFile, "testfiles/events01.txt");
+
+		events.addEvent("{\"a\":222}");
+		assertFile("", eventsFile, "testfiles/events02.txt");
+
+		char buf[1024];
+		memset(buf, 0, sizeof(buf));
+		JSONBufferWriter writer(buf, sizeof(buf) - 1);
+		
+		bool bResult = events.getEvents(writer, sizeof(buf));
+        assertInt("", bResult, true);
+
+		assertStr("", buf, "[{\"a\":123},{\"a\":222}]");
+
+		bResult = events.getEvents(writer, sizeof(buf));
+        assertInt("", bResult, false);
+
+		struct stat sb;
+		assertInt("", stat(eventsFile, &sb), -1);
+		assertInt("", errno, ENOENT);
+
+	}
+	{
+		// EventHistory: Get partial
+		SleepHelper::EventHistory events;
+		events.withPath(eventsFile);
+
+		events.addEvent("{\"a\":123}");
+		assertFile("", eventsFile, "testfiles/events01.txt");
+
+		events.addEvent("{\"a\":222}");
+		assertFile("", eventsFile, "testfiles/events02.txt");
+
+		char buf[16];
+
+		{
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+			
+			bool bResult = events.getEvents(writer, sizeof(buf));
+			assertInt("", bResult, true);
+
+			assertStr("", buf, "[{\"a\":123}]");
+		}
+
+		{
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+
+			bool bResult = events.getEvents(writer, sizeof(buf));
+			assertInt("", bResult, true);
+
+			assertStr("", buf, "[{\"a\":222}]");
+		}
+		{
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+
+			bool bResult = events.getEvents(writer, sizeof(buf));
+			assertInt("", bResult, false);
+
+			struct stat sb;
+			assertInt("", stat(eventsFile, &sb), -1);
+			assertInt("", errno, ENOENT);
+		}
+
+	}
+	{
+		// EventHistory: Get partial2
+		SleepHelper::EventHistory events;
+		events.withPath(eventsFile);
+
+		events.addEvent("{\"a\":123}");
+		events.addEvent("{\"a\":222}");
+		events.addEvent("{\"a\":333}");
+
+		char buf[26];
+
+		{
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+			
+			bool bResult = events.getEvents(writer, sizeof(buf));
+			assertInt("", bResult, true);
+
+			assertStr("", buf, "[{\"a\":123},{\"a\":222}]");
+		}
+
+		{
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+
+			bool bResult = events.getEvents(writer, sizeof(buf));
+			assertInt("", bResult, true);
+
+			assertStr("", buf, "[{\"a\":333}]");
+		}
+		{
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+
+			bool bResult = events.getEvents(writer, sizeof(buf));
+			assertInt("", bResult, false);
+
+			struct stat sb;
+			assertInt("", stat(eventsFile, &sb), -1);
+			assertInt("", errno, ENOENT);
+		}
+
+	}
+	{
+		// EventHistory: Get partial 2 with separate remove and add between get and remove
+		SleepHelper::EventHistory events;
+		events.withPath(eventsFile);
+
+		events.addEvent("{\"a\":123}");
+		events.addEvent("{\"a\":222}");
+
+		char buf[26];
+
+		{
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+			
+			bool bResult = events.getEvents(writer, sizeof(buf), false);
+			assertInt("", bResult, true);
+
+
+			events.addEvent("{\"a\":333}");
+
+			events.removeEvents();
+
+			assertStr("", buf, "[{\"a\":123},{\"a\":222}]");
+		}
+
+		{
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+
+			bool bResult = events.getEvents(writer, sizeof(buf), false);
+			assertInt("", bResult, true);
+			
+			events.removeEvents();
+
+			assertStr("", buf, "[{\"a\":333}]");
+		}
+		{
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+
+			bool bResult = events.getEvents(writer, sizeof(buf), false);
+			assertInt("", bResult, false);
+
+			struct stat sb;
+			assertInt("", stat(eventsFile, &sb), -1);
+			assertInt("", errno, ENOENT);
+		}
+
+	}
+	{
+		// Event history - 100 single events
+		SleepHelper::EventHistory events;
+		events.withPath(eventsFile);
+
+		// This is enough bytes to force multiple 512 byte buffer copies
+		for(int ii = 0; ii < 100; ii++) {
+			char json[256];
+			snprintf(json, sizeof(json), "{\"a\":%d}", ii);
+			events.addEvent(json);
+		}
+
+
+		for(int ii = 0; ii < 100; ii++) {
+			char buf[16];
+			memset(buf, 0, sizeof(buf));
+			JSONBufferWriter writer(buf, sizeof(buf) - 1);
+			
+			bool bResult = events.getEvents(writer, sizeof(buf));
+			assertInt("", bResult, true);
+
+			char json[256];
+			snprintf(json, sizeof(json), "[{\"a\":%d}]", ii);
+
+			assertStr("", buf, json);
+		}
+	}
+
+
+	// unlink(eventsFile);
 }
 
 int main(int argc, char *argv[]) {
@@ -817,5 +1100,6 @@ int main(int argc, char *argv[]) {
 	customPersistentDataTest();
 	customRetainedDataTest();
 	eventCombinerTest();
+	eventHistoryTest();
 	return 0;
 }

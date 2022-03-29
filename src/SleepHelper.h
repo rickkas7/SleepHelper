@@ -1079,7 +1079,103 @@ public:
 
         AppCallback<JSONWriter &, int &> callbacks; //!< Callback functions
         AppCallback<JSONWriter &, int &> oneTimeCallbacks; //!< One-time use callback functions 
+    };
 
+    /**
+     * @brief Class to manage small events, typically used for time-series data
+     * 
+     * For example, if you want to frequently measure the temperature, but publish the data 
+     * less frequently, to save on cellular connections, battery, and data operations, this
+     * class can be helpful.
+     * 
+     * Each event is JSON data. The data is stored in a single file in the flash file
+     * system. When it's time to publish, all of the events that will fit in the appropriate
+     * size will be aggregated into a single JSON array, reducing the number of data 
+     * operations and speeding the Particle event publishing process, which is limited to
+     * one event per second-ish.
+     */
+    class EventHistory : public SleepHelperRecursiveMutex {
+    public:
+        EventHistory() {};
+
+        /**
+         * @brief Sets the path of the event history file
+         * 
+         * @param path 
+         * @return EventHistory& 
+         */
+        EventHistory &withPath(const char *path) {
+            this->path = path;
+            return *this;
+        }
+
+        /**
+         * @brief Adds an event to the event history
+         * 
+         * @param jsonObj Must be a string containing a JSON object (including the surrounding {}).
+         * 
+         * If the data you want to send is an array, you should encapsulate the array under a key in the outermost
+         * object. If the data is just a single primitive such as a number or string, also surround it with
+         * a key and object.
+         */
+        void addEvent(const char *jsonObj);
+
+        /**
+         * @brief Get saved events and insert them as an array to writer
+         * 
+         * @param writer 
+         * @param maxSize 
+         * @param removeEvents 
+         * @return true 
+         * @return false 
+         * 
+         * If there are no events (getHasEvent() == false), this method returns quickly
+         * so there is no need to preflight this call with a test for having events.
+         */
+        bool getEvents(JSONWriter &writer, size_t maxSize, bool removeEvents = true);
+        
+        /**
+         * @brief Remove the events last retrieved using getEvents
+         * 
+         * By default, events are removed automatically so there is no need to call
+         * this. The function exists so you can do a two-phase removal. 
+         * 
+         * It's safe to add events in the time period bretween getEvents() and
+         * removeEvents() however you should not have multiple getEvents() in a row
+         * or from different threads, as you will get the same events multiple times
+         * and data corruption can occur.
+         * 
+         * If the device resets between getEvents() and removeEvents(), the events
+         * will be sent again later.
+         */
+        void removeEvents();
+
+        /**
+         * @brief Returns true if there are events to get using getEvents
+         * 
+         * @return true 
+         * @return false 
+         * 
+         * This operation is fast, just checks a flag variable. It's not necessary to
+         * check before calling getEvents(), because that method has the same check
+         * internally.
+         */
+        bool getHasEvents() const { return hasEvents; };
+
+    protected:
+        /**
+         * This class cannot be copied
+         */
+        EventHistory(const EventHistory&) = delete;
+
+        /**
+         * This class cannot be copied
+         */
+        EventHistory& operator=(const EventHistory&) = delete;
+
+        String path;
+        bool hasEvents = false;
+        size_t removeOffset = 0;
     };
 
     class PublishData {
@@ -1094,6 +1190,31 @@ public:
         PublishFlags flags = PRIVATE;
     };
 
+    /**
+     * @brief Copies pre-formatted JSON into a writer
+     * 
+     * @param src Must be a valid JSON object or array as a string
+     * @param writer 
+     * 
+     * This is used because JSONWriter does not have a method to write pre-formatted JSON into a
+     * writer. It's a little inefficient but works. Note: The JSON that is inserted may not be
+     * identical to the original. This is especially true for JSON that contains double
+     * values because the decimal precision will likely change.
+     */
+    static void JSONCopy(const char *src, JSONWriter &writer);
+
+    /**
+     * @brief Copies pre-formatted JSON into a writer
+     * 
+     * @param src Must be a JSONValue containing an object, array, or primitive
+     * @param writer 
+     * 
+     * This is used because JSONWriter does not have a method to write pre-formatted JSON into a
+     * writer. It's a little inefficient but works. Note: The JSON that is inserted may not be
+     * identical to the original. This is especially true for JSON that contains double
+     * values because the decimal precision will likely change.
+     */
+    static void JSONCopy(const JSONValue &src, JSONWriter &writer);
 
 
 #ifndef UNITTEST
