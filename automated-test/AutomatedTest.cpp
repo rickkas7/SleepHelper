@@ -729,19 +729,19 @@ void eventCombinerTest() {
 	}
 
 	{
-		// Dedeupe simple
+		// Dedeupe one-time processed most recently added first at same priority
 		SleepHelper::EventCombiner t1;
-		t1.withCallback([](JSONWriter &jw, int &priority) {
+		t1.withOneTimeCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value(123);
 			priority = 60;
 			return true;
 		});
-		t1.withCallback([](JSONWriter &jw, int &priority) {
+		t1.withOneTimeCallback([](JSONWriter &jw, int &priority) {
 			jw.name("a").value(9999);
 			priority = 60;
 			return true;
 		});
-		t1.withCallback([](JSONWriter &jw, int &priority) {
+		t1.withOneTimeCallback([](JSONWriter &jw, int &priority) {
 			jw.name("b").value(true);
 			priority = 60;
 			return true;
@@ -750,8 +750,8 @@ void eventCombinerTest() {
 
 		t1.generateEvents(events, 18);
 		assertInt("", events.size(), 2);
-		assertStr("", events[0].c_str(), "{\"a\":123}");
-		assertStr("", events[1].c_str(), "{\"b\":true}");
+		assertStr("", events[0].c_str(), "{\"b\":true}");
+		assertStr("", events[1].c_str(), "{\"a\":9999}");
 
 	}	
 
@@ -800,8 +800,8 @@ void eventCombinerTest() {
 
 		t1.generateEvents(events, 18);
 		assertInt("", events.size(), 2);
-		assertStr("", events[0].c_str(), "{\"a\":123}");
-		assertStr("", events[1].c_str(), "{\"b\":true}");
+		assertStr("", events[0].c_str(), "{\"b\":true}");
+		assertStr("", events[1].c_str(), "{\"a\":123}");
 
 		t1.generateEvents(events, 18);
 		assertInt("", events.size(), 1);

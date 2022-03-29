@@ -974,6 +974,8 @@ public:
      * to minimize data operations. Sometimes you have unimportant data that would be nice
      * to include if there's space but omit if not. And sometimes you have important 
      * data that must be sent, and it's OK to send multiple events if necessary.
+     * 
+     * This class also has a priority-based de-duplication of keys.
      */
     class EventCombiner {
     public:
@@ -1093,6 +1095,7 @@ public:
     };
 
 
+
 #ifndef UNITTEST
     SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, std::chrono::milliseconds&)> fn) { 
         sleepConfigurationFunctions.add(fn); 
@@ -1201,6 +1204,28 @@ public:
      */
     SleepHelper &withWakeEventOneTimeFunction(std::function<bool(JSONWriter &, int &)> fn) {
         wakeEventFunctions.withOneTimeCallback(fn);
+        return *this;
+    }
+
+    /**
+     * @brief Simplified interface to create a one-time wake event with enable detection
+     * 
+     * @param flag 
+     * @param fn 
+     * @return SleepHelper& 
+     * 
+     * 
+     */
+    SleepHelper &withWakeEventFunction(uint64_t flag, std::function<void(JSONWriter &, int &)> fn) {
+        if ((eventsEnabled & flag) != 0) {
+            wakeEventFunctions.withOneTimeCallback([flag, fn](JSONWriter &writer, int &priority) {
+                const char *name = eventsEnableName(flag);
+                writer.name(name);
+                priority = eventsEnablePriority(flag);
+                fn(writer, priority);
+                return true;
+            });
+        }
         return *this;
     }
 
@@ -1376,6 +1401,29 @@ public:
         return *this;
     }
 
+    // When adding a constant here, be sure to update WakeEvents _wakeEvents[] as well!
+
+    static const uint64_t eventsEnabledWakeReason           = 0x0000000000000001ul;  //!< "wr" wake reason (int) event
+    static const uint64_t eventsEnabledTimeToConnect        = 0x0000000000000002ul;  //!< "ttc" time to connect event
+    static const uint64_t eventsEnabledResetReason          = 0x0000000000000004ul;  //!< "rr" reset reason event
+
+    SleepHelper &withEventsEnabledEnable(uint64_t flag) {
+        eventsEnabled |= flag;
+        return *this;
+    }
+
+    SleepHelper &withEventsEnabledDisable(uint64_t flag) {
+        eventsEnabled &= ~flag;
+        return *this;
+    }
+    
+    bool eventsEnableEnabled(uint64_t flag) const {
+        return (eventsEnabled & flag) != 0;
+    }
+
+    static int eventsEnablePriority(uint64_t flag);
+
+    static const char *eventsEnableName(uint64_t flag);
 
     /**
      * @brief Perform setup operations; call this from global application setup()
@@ -1497,6 +1545,8 @@ protected:
 
     std::vector<PublishData> publishData;
     system_tick_t stateTime = 0;
+
+    uint64_t eventsEnabled = 0xfffffffffffffffful;
 
 #ifndef UNITTEST
     std::function<void(SleepHelper&)> stateHandler = &SleepHelper::stateHandlerStart;

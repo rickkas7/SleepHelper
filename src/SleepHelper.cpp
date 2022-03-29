@@ -17,6 +17,51 @@ SleepHelper &SleepHelper::instance() {
     return *_instance;
 }
 
+typedef struct {
+    uint64_t flag;
+    String name;
+    int priority;
+} WakeEvents;
+
+static WakeEvents _wakeEvents[] = {
+    { SleepHelper::eventsEnabledWakeReason, "wr", 50 },
+    { SleepHelper::eventsEnabledTimeToConnect, "ttc", 50 },
+    { SleepHelper::eventsEnabledResetReason, "rr", 50 }
+};
+
+static const WakeEvents *_findWakeEvent(uint64_t flag) {
+    size_t numWakeEvents = sizeof(_wakeEvents) / sizeof(_wakeEvents[0]);
+    for(size_t ii = 0; ii < numWakeEvents; ii++) {
+        if (_wakeEvents[ii].flag == flag) {
+            return &_wakeEvents[ii];
+        }
+    }
+    return 0;
+}
+
+// [static]
+int SleepHelper::eventsEnablePriority(uint64_t flag) {
+    const WakeEvents *ev = _findWakeEvent(flag);
+    if (ev) {
+        return ev->priority;
+    }
+    else {
+        return 0;
+    }
+}
+
+// [static]
+const char *SleepHelper::eventsEnableName(uint64_t flag) {
+    const WakeEvents *ev = _findWakeEvent(flag);
+    if (ev) {
+        return ev->name;
+    }
+    else {
+        return "";
+    }
+}
+
+
 SleepHelper::SleepHelper() : appLog("app.sleep") {
     
     settingsFile.withPath("/usr/sleepSettings.json");
@@ -29,6 +74,8 @@ SleepHelper::~SleepHelper() {
 
 #ifndef UNITTEST
 void SleepHelper::setup() {
+    int resetReason = (int) System.resetReason();
+
     // Register for system events
     System.on(firmware_update | firmware_update_pending | reset | out_of_memory, systemEventHandlerStatic);
 
@@ -51,6 +98,11 @@ void SleepHelper::setup() {
     withSleepReadyFunction([](system_tick_t) {
         // Return true if it's OK to sleep or false if not.
         return Time.isValid();
+    });
+
+    // If reset reason events are enabled, add to the wake event
+    withWakeEventFunction(eventsEnabledResetReason, [resetReason](JSONWriter &writer, int &priority) {
+        writer.value(resetReason);
     });
 
 }
@@ -123,11 +175,11 @@ void SleepHelper::stateHandlerConnectWait() {
         stateHandler = &SleepHelper::stateHandlerTimeValidWait;
         return;
     }
-    if (!networkConnectedMillis && Cellular.connected()) {
+    if (!networkConnectedMillis && Cellular.ready()) {
         networkConnectedMillis = millis();
 
         system_tick_t elapsedMs = networkConnectedMillis - connectAttemptStartMillis;
-        appLog.info("connected to network in %lu ms", elaposedMs);
+        appLog.info("connected to network in %lu ms", elapsedMs);
     }
 
     system_tick_t elapsedMs = millis() - connectAttemptStartMillis;
@@ -156,6 +208,11 @@ void SleepHelper::stateHandlerConnectedStart() {
 
     system_tick_t elapsedMs = connectedStartMillis - connectAttemptStartMillis;
     appLog.info("connected to cloud in %lu ms", elapsedMs);
+
+    withWakeEventFunction(eventsEnabledTimeToConnect, [elapsedMs](JSONWriter &writer, int &priority) {
+        writer.value((int)elapsedMs);
+    });
+
 
     if (wakeEventName.length() > 0) {
         // Call the wake event handlers to see if they have JSON data to publish
@@ -279,6 +336,12 @@ void SleepHelper::stateHandlerPrepareToSleep() {
     SystemSleepResult sleepResult = System.sleep(sleepConfig);
 
     wakeFunctions.forEach(sleepResult);
+
+
+    int wakeReasonInt = (int) sleepResult.wakeupReason();
+    withWakeEventFunction(eventsEnabledWakeReason, [wakeReasonInt](JSONWriter &writer, int &priority) {
+        writer.value(wakeReasonInt);
+    });     
 
     // Woke from sleep
     stateHandler = &SleepHelper::stateHandlerStart;
@@ -754,10 +817,13 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
         return;
     }
 
-    for(auto it = callbacks.callbackFunctions.begin(); it != callbacks.callbackFunctions.end(); ++it) {
+    // Process one-time callbacks in reverse order (most recently added first) because keys added at the same 
+    // priority level will use the first value set, and we want the latest value to be used.
+    for(auto it = oneTimeCallbacks.callbackFunctions.rbegin(); it != oneTimeCallbacks.callbackFunctions.rend(); ++it) {
         generateEventInternal(*it, buf, maxSize, infoArray);        
     }
-    for(auto it = oneTimeCallbacks.callbackFunctions.begin(); it != oneTimeCallbacks.callbackFunctions.end(); ++it) {
+
+    for(auto it = callbacks.callbackFunctions.begin(); it != callbacks.callbackFunctions.end(); ++it) {
         generateEventInternal(*it, buf, maxSize, infoArray);        
     }
 
@@ -771,7 +837,7 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
         std::vector<String> keysAdded;
         for(auto it = infoArray.begin(); it != infoArray.end(); ) {
             bool keyExists = false;
-            
+
             for(auto it2 = it->keys.begin(); it2 != it->keys.end(); ++it2) {
                 for(auto it3 = keysAdded.begin(); it3 != keysAdded.end(); ++it3) {
                     if (*it3 == *it2) {
