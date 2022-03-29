@@ -568,8 +568,6 @@ void customRetainedDataTest() {
 	s = data.getValue_test4();
 	assertStr("", s, "testing1!");
 
-	data.save();
-
 
 	RetainedDataTest data2(&retainedData.header);
 	data2.load();

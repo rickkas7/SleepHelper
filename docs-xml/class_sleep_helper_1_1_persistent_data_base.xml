@@ -1,0 +1,529 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.2" xml:lang="en-US">
+  <compounddef id="class_sleep_helper_1_1_persistent_data_base" kind="class" language="C++" prot="public">
+    <compoundname>SleepHelper::PersistentDataBase</compoundname>
+    <basecompoundref refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex" prot="public" virt="non-virtual">SleepHelper::SleepHelperRecursiveMutex</basecompoundref>
+    <derivedcompoundref refid="class_sleep_helper_1_1_persistent_data_file" prot="public" virt="non-virtual">SleepHelper::PersistentDataFile</derivedcompoundref>
+    <includes refid="_sleep_helper_8h" local="no">SleepHelper.h</includes>
+    <innerclass refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header" prot="public">SleepHelper::PersistentDataBase::SavedDataHeader</innerclass>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="class_sleep_helper_1_1_persistent_data_base_1ab720fe91ade2ae4de848d2f2e05c7214" prot="protected" static="no" mutable="no">
+        <type><ref refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header" kindref="compound">SavedDataHeader</ref> *</type>
+        <definition>SavedDataHeader* SleepHelper::PersistentDataBase::savedDataHeader</definition>
+        <argsstring></argsstring>
+        <name>savedDataHeader</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+<para>Pointer to the saved data header, which is followed by the data. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="764" column="25" bodyfile="src/SleepHelper.h" bodystart="764" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_sleep_helper_1_1_persistent_data_base_1aa0caff0a7bc69dcbbadcf0ed90183918" prot="protected" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t SleepHelper::PersistentDataBase::savedDataSize</definition>
+        <argsstring></argsstring>
+        <name>savedDataSize</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+<para>Size of the saved data (header + actual data) </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="765" column="18" bodyfile="src/SleepHelper.h" bodystart="765" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_sleep_helper_1_1_persistent_data_base_1a53ceb74ed3d72cae9b3c7cbf951920be" prot="protected" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t SleepHelper::PersistentDataBase::savedDataMagic</definition>
+        <argsstring></argsstring>
+        <name>savedDataMagic</name>
+        <briefdescription>
+<para>Magic bytes for the saved data. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="767" column="18" bodyfile="src/SleepHelper.h" bodystart="767" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_sleep_helper_1_1_persistent_data_base_1ae83f350dae5800773fb77c5b926b88a8" prot="protected" static="no" mutable="no">
+        <type>uint16_t</type>
+        <definition>uint16_t SleepHelper::PersistentDataBase::savedDataVersion</definition>
+        <argsstring></argsstring>
+        <name>savedDataVersion</name>
+        <briefdescription>
+<para>Version number for the saved data. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="768" column="18" bodyfile="src/SleepHelper.h" bodystart="768" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1a92abd754f41974d92858e576b0acd1ba" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>SleepHelper::PersistentDataBase::PersistentDataBase</definition>
+        <argsstring>(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion)</argsstring>
+        <name>PersistentDataBase</name>
+        <param>
+          <type><ref refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header" kindref="compound">SavedDataHeader</ref> *</type>
+          <declname>savedDataHeader</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>savedDataSize</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>savedDataMagic</declname>
+        </param>
+        <param>
+          <type>uint16_t</type>
+          <declname>savedDataVersion</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="631" column="9" bodyfile="src/SleepHelper.h" bodystart="631" bodyend="633"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1a77053781d5de71294148097240e4df93" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void SleepHelper::PersistentDataBase::setup</definition>
+        <argsstring>()</argsstring>
+        <name>setup</name>
+        <reimplementedby refid="class_sleep_helper_1_1_persistent_data_file_1a5a3ab93e39c55d1b3e76a0e3e4dd52eb">setup</reimplementedby>
+        <briefdescription>
+<para>Initialize this object for use in <ref refid="class_sleep_helper" kindref="compound">SleepHelper</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This is used from <ref refid="class_sleep_helper_1aa55dc9d8e2627cf697ac1bd6a1db9c2d" kindref="member">SleepHelper::setup()</ref>. You should not use this if you are creating your own <ref refid="class_sleep_helper_1_1_persistent_data" kindref="compound">PersistentData</ref> object; this is only used to hook this class into SleepHelper/ </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="641" column="22" bodyfile="src/SleepHelper.cpp" bodystart="509" bodyend="512"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1a8093c806a04b1827de64f34692a6bc5b" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::PersistentDataBase::load</definition>
+        <argsstring>()</argsstring>
+        <name>load</name>
+        <reimplementedby refid="class_sleep_helper_1_1_persistent_data_file_1aa81dab5081da864009b9f404555cbeb4">load</reimplementedby>
+        <briefdescription>
+<para>Load the persistent data file. You normally do not need to call this; it will be loaded automatically. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="649" column="22" bodyfile="src/SleepHelper.cpp" bodystart="514" bodyend="522"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1a71e5d0b036785550bb14405bb08dc3f9" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>virtual void SleepHelper::PersistentDataBase::save</definition>
+        <argsstring>()</argsstring>
+        <name>save</name>
+        <reimplementedby refid="class_sleep_helper_1_1_persistent_data_file_1a058811c83bd34f1a9fa4a48ca25c2dec">save</reimplementedby>
+        <briefdescription>
+<para>Save the persistent data file. You normally do not need to call this; it will be saved automatically. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Save does nothing in this base class, but for <ref refid="class_sleep_helper_1_1_persistent_data_file" kindref="compound">PersistentDataFile</ref> it saves to a file </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="656" column="22" bodyfile="src/SleepHelper.h" bodystart="656" bodyend="656"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1a16b2f7093ce0180898553b11200be1dc" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>virtual void SleepHelper::PersistentDataBase::saveOrDefer</definition>
+        <argsstring>()</argsstring>
+        <name>saveOrDefer</name>
+        <reimplementedby refid="class_sleep_helper_1_1_persistent_data_file_1a7e798b37e77b9ec5b081a1c62b73a285">saveOrDefer</reimplementedby>
+        <briefdescription>
+<para>Save the persistent data file. You normally do not need to call this; it will be saved automatically. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Save does nothing in this base class, but for <ref refid="class_sleep_helper_1_1_persistent_data_file" kindref="compound">PersistentDataFile</ref> uses it to determine whether to save immediately or defer until later. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="664" column="22" bodyfile="src/SleepHelper.h" bodystart="664" bodyend="664"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1ab5b25ea7a09f7b067260a5a563bb4ed6" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class T</type>
+          </param>
+        </templateparamlist>
+        <type>T</type>
+        <definition>T SleepHelper::PersistentDataBase::getValue</definition>
+        <argsstring>(size_t offset) const</argsstring>
+        <name>getValue</name>
+        <param>
+          <type>size_t</type>
+          <declname>offset</declname>
+        </param>
+        <briefdescription>
+<para>Templated class for getting integral values (uint32_t, float, double, etc.) </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="templateparam"><parameteritem>
+<parameternamelist>
+<parametername>T</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>offset</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>T </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="674" column="11" bodyfile="src/SleepHelper.h" bodystart="674" bodyend="685"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1ac61c31bbbad135c5f27290ca1f77abd5" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class T</type>
+          </param>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void SleepHelper::PersistentDataBase::setValue</definition>
+        <argsstring>(size_t offset, T value)</argsstring>
+        <name>setValue</name>
+        <param>
+          <type>size_t</type>
+          <declname>offset</declname>
+        </param>
+        <param>
+          <type>T</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Templated class for setting integral values (uint32_t, float, double, etc.) </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="templateparam"><parameteritem>
+<parameternamelist>
+<parametername>T</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>offset</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>T </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="695" column="14" bodyfile="src/SleepHelper.h" bodystart="695" bodyend="708"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1ab263ff7c88a8008c1f000ea98cb49db8" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::PersistentDataBase::getValueString</definition>
+        <argsstring>(size_t offset, size_t size, String &amp;value) const</argsstring>
+        <name>getValueString</name>
+        <param>
+          <type>size_t</type>
+          <declname>offset</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>String &amp;</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Get the value of a string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>offset</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false</para>
+</simplesect>
+The templated getValue method doesn&apos;t work with String values, so this version should be used instead. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="721" column="14" bodyfile="src/SleepHelper.cpp" bodystart="526" bodyend="538"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1a44e9ea66d4d6e15b71e4f981351a1891" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::PersistentDataBase::setValueString</definition>
+        <argsstring>(size_t offset, size_t size, const char *value)</argsstring>
+        <name>setValueString</name>
+        <param>
+          <type>size_t</type>
+          <declname>offset</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Set the value of a string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>offset</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false</para>
+</simplesect>
+The templated setValue method doesn&apos;t work with string values, so this version should be used instead. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="734" column="14" bodyfile="src/SleepHelper.cpp" bodystart="540" bodyend="557"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1aa3c802d58213d8364f6b6226630f6fd3" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>SleepHelper::PersistentDataBase::PersistentDataBase</definition>
+        <argsstring>(const PersistentDataBase &amp;)=delete</argsstring>
+        <name>PersistentDataBase</name>
+        <param>
+          <type>const <ref refid="class_sleep_helper_1_1_persistent_data_base" kindref="compound">PersistentDataBase</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>This class cannot be copied </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="740" column="9"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1a5a99923acf23273899b0c57a0e87fcbb" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="class_sleep_helper_1_1_persistent_data_base" kindref="compound">PersistentDataBase</ref> &amp;</type>
+        <definition>PersistentDataBase &amp; SleepHelper::PersistentDataBase::operator=</definition>
+        <argsstring>(const PersistentDataBase &amp;)=delete</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="class_sleep_helper_1_1_persistent_data_base" kindref="compound">PersistentDataBase</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>This class cannot be copied </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="745" column="28"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1a94dcb177e239dc4256b3a8aab3fd31ef" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::PersistentDataBase::validate</definition>
+        <argsstring>(size_t dataSize)</argsstring>
+        <name>validate</name>
+        <param>
+          <type>size_t</type>
+          <declname>dataSize</declname>
+        </param>
+        <briefdescription>
+<para>Used to validate the saved data structure. Used internally by <ref refid="class_sleep_helper_1_1_persistent_data_base_1a8093c806a04b1827de64f34692a6bc5b" kindref="member">load()</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="753" column="22" bodyfile="src/SleepHelper.cpp" bodystart="559" bodyend="577"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_persistent_data_base_1a936835f54e26c62894161a1a3a2adf60" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void SleepHelper::PersistentDataBase::initialize</definition>
+        <argsstring>()</argsstring>
+        <name>initialize</name>
+        <briefdescription>
+<para>Used to initialize the saved data structure. Used internally by <ref refid="class_sleep_helper_1_1_persistent_data_base_1a8093c806a04b1827de64f34692a6bc5b" kindref="member">load()</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="761" column="22" bodyfile="src/SleepHelper.cpp" bodystart="579" bodyend="584"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+<para>Base class for storing persistent binary data to a file or retained memory. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This class is separate from <ref refid="class_sleep_helper_1_1_persistent_data" kindref="compound">PersistentData</ref> so you can subclass it to hold your own application-specific data as well.</para>
+<para>See <ref refid="class_sleep_helper_1_1_persistent_data_file" kindref="compound">PersistentDataFile</ref> for saving data to a file on the flash file system. </para>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="4">
+        <label>SleepHelper::PersistentData</label>
+        <link refid="class_sleep_helper_1_1_persistent_data"/>
+        <childnode refid="3" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>SleepHelper::PersistentDataBase</label>
+        <link refid="class_sleep_helper_1_1_persistent_data_base"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>SleepHelper::PersistentDataFile</label>
+        <link refid="class_sleep_helper_1_1_persistent_data_file"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>SleepHelper::SleepHelperRecursiveMutex</label>
+        <link refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1">
+        <label>SleepHelper::PersistentDataBase</label>
+        <link refid="class_sleep_helper_1_1_persistent_data_base"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>savedDataHeader</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>SleepHelper::PersistentDataBase::SavedDataHeader</label>
+        <link refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header"/>
+      </node>
+      <node id="2">
+        <label>SleepHelper::SleepHelperRecursiveMutex</label>
+        <link refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex"/>
+      </node>
+    </collaborationgraph>
+    <location file="src/SleepHelper.h" line="619" column="5" bodyfile="src/SleepHelper.h" bodystart="619" bodyend="769"/>
+    <listofallmembers>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a3c9e1311d1d26a58afb1c8f8d32fcf69" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>dispose</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1ab5b25ea7a09f7b067260a5a563bb4ed6" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>getValue</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1ab263ff7c88a8008c1f000ea98cb49db8" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>getValueString</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a936835f54e26c62894161a1a3a2adf60" prot="protected" virt="virtual"><scope>SleepHelper::PersistentDataBase</scope><name>initialize</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a8093c806a04b1827de64f34692a6bc5b" prot="public" virt="virtual"><scope>SleepHelper::PersistentDataBase</scope><name>load</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ae36dee79d37ac9610cd4c76c845c5386" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>lock</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a5a99923acf23273899b0c57a0e87fcbb" prot="protected" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>operator=</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a92abd754f41974d92858e576b0acd1ba" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>PersistentDataBase</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1aa3c802d58213d8364f6b6226630f6fd3" prot="protected" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>PersistentDataBase</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a71e5d0b036785550bb14405bb08dc3f9" prot="public" virt="virtual"><scope>SleepHelper::PersistentDataBase</scope><name>save</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1ab720fe91ade2ae4de848d2f2e05c7214" prot="protected" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>savedDataHeader</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a53ceb74ed3d72cae9b3c7cbf951920be" prot="protected" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>savedDataMagic</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1aa0caff0a7bc69dcbbadcf0ed90183918" prot="protected" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>savedDataSize</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1ae83f350dae5800773fb77c5b926b88a8" prot="protected" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>savedDataVersion</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a16b2f7093ce0180898553b11200be1dc" prot="public" virt="virtual"><scope>SleepHelper::PersistentDataBase</scope><name>saveOrDefer</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a77053781d5de71294148097240e4df93" prot="public" virt="virtual"><scope>SleepHelper::PersistentDataBase</scope><name>setup</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1ac61c31bbbad135c5f27290ca1f77abd5" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>setValue</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a44e9ea66d4d6e15b71e4f981351a1891" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>setValueString</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1af25f1073f79d12bb4f57a7c1f6629aa8" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>SleepHelperRecursiveMutex</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1acb7f25e9fab9e82496908e5726b7e812" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>SleepHelperRecursiveMutex</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a6a1f53c6f4b467ddfd988d8defd8c478" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>try_lock</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a34bb756e26a98c673610396cbf06e7b7" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>trylock</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ad89bbb20eae4ef07b147fe69f688c765" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>unlock</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1a94dcb177e239dc4256b3a8aab3fd31ef" prot="protected" virt="virtual"><scope>SleepHelper::PersistentDataBase</scope><name>validate</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1aaeecb1cb2dea4299c77275757cb69016" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase</scope><name>~SleepHelperRecursiveMutex</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

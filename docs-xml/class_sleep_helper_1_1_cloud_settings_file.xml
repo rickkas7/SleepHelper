@@ -1,0 +1,424 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.2" xml:lang="en-US">
+  <compounddef id="class_sleep_helper_1_1_cloud_settings_file" kind="class" language="C++" prot="public">
+    <compoundname>SleepHelper::CloudSettingsFile</compoundname>
+    <basecompoundref refid="class_sleep_helper_1_1_settings_file" prot="public" virt="non-virtual">SleepHelper::SettingsFile</basecompoundref>
+    <includes refid="_sleep_helper_8h" local="no">SleepHelper.h</includes>
+      <sectiondef kind="public-static-attrib">
+      <memberdef kind="variable" id="class_sleep_helper_1_1_cloud_settings_file_1a6c66f4f0bf2235038b55aecb10b20ca7" prot="public" static="yes" mutable="no">
+        <type>const uint32_t</type>
+        <definition>const uint32_t SleepHelper::CloudSettingsFile::HASH_SEED</definition>
+        <argsstring></argsstring>
+        <name>HASH_SEED</name>
+        <initializer>= 0x5b4ffa05</initializer>
+        <briefdescription>
+<para>The hash seed used for settings file changes. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="592" column="31" bodyfile="src/SleepHelper.h" bodystart="592" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_sleep_helper_1_1_cloud_settings_file_1ac58d8c97b33001cf158f8a03c1165d94" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>SleepHelper::CloudSettingsFile::CloudSettingsFile</definition>
+        <argsstring>()</argsstring>
+        <name>CloudSettingsFile</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="516" column="9" bodyfile="src/SleepHelper.h" bodystart="516" bodyend="517"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_cloud_settings_file_1a6d25a550a529f32f7e5ea858ae0cd502" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="class_sleep_helper_1_1_settings_file" kindref="compound">SettingsFile</ref> &amp;</type>
+        <definition>SettingsFile &amp; SleepHelper::CloudSettingsFile::withDefaultValues</definition>
+        <argsstring>(const char *defaultValues)=delete</argsstring>
+        <name>withDefaultValues</name>
+        <param>
+          <type>const char *</type>
+          <declname>defaultValues</declname>
+        </param>
+        <briefdescription>
+<para>Default values are never used with cloud settings, because the settings must originate from the cloud side. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>defaultValues</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para><ref refid="class_sleep_helper_1_1_settings_file" kindref="compound">SettingsFile</ref>&amp; </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="525" column="22"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_cloud_settings_file_1ae1261424b34dd05deec2b9820b204962" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>class T</type>
+          </param>
+        </templateparamlist>
+        <type>bool</type>
+        <definition>bool SleepHelper::CloudSettingsFile::setValue</definition>
+        <argsstring>(const char *name, const T &amp;value)=delete</argsstring>
+        <name>setValue</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const T &amp;</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>You can never set a value when using cloud settings because the source of truth is always the cloud version. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="templateparam"><parameteritem>
+<parameternamelist>
+<parametername>T</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="537" column="10"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_cloud_settings_file_1a7e5d3be2fb2a774cb61c2d0d384312ba" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::CloudSettingsFile::setValue</definition>
+        <argsstring>(const char *name, const char *value)=delete</argsstring>
+        <name>setValue</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>You can never set a value when using cloud settings because the source of truth is always the cloud version. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="547" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_cloud_settings_file_1a12a74f4f8a4201259133cd6effabf7a8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::CloudSettingsFile::updateValuesJson</definition>
+        <argsstring>(const char *json)=delete</argsstring>
+        <name>updateValuesJson</name>
+        <param>
+          <type>const char *</type>
+          <declname>json</declname>
+        </param>
+        <briefdescription>
+<para>Cloud settings must always exactly match the cloud version, so you only server setValueJson, not update. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>json</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="556" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_cloud_settings_file_1ac2bcc30188938a0b9f4470986759413c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::CloudSettingsFile::addDefaultValues</definition>
+        <argsstring>(const char *inputJson)=delete</argsstring>
+        <name>addDefaultValues</name>
+        <param>
+          <type>const char *</type>
+          <declname>inputJson</declname>
+        </param>
+        <briefdescription>
+<para>Default values are never used with cloud settings. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>inputJson</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="565" column="14"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_cloud_settings_file_1a2070ffd5585814514d37e3b69ac0cd0d" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>uint32_t</type>
+        <definition>uint32_t SleepHelper::CloudSettingsFile::getHash</definition>
+        <argsstring>() const</argsstring>
+        <name>getHash</name>
+        <briefdescription>
+<para>Get the hashed value of the current settings, used to check if they need to be updated. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>uint32_t </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="572" column="18" bodyfile="src/SleepHelper.cpp" bodystart="459" bodyend="467"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-static-func">
+      <memberdef kind="function" id="class_sleep_helper_1_1_cloud_settings_file_1afe5cf12a3155b1021f363a0fca5ad9a7" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>uint32_t</type>
+        <definition>uint32_t SleepHelper::CloudSettingsFile::murmur3_32</definition>
+        <argsstring>(const uint8_t *buf, size_t len, uint32_t seed)</argsstring>
+        <name>murmur3_32</name>
+        <param>
+          <type>const uint8_t *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>len</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>seed</declname>
+        </param>
+        <briefdescription>
+<para>Murmur3 hash algorithm implementation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Pointer to the buffer to hash (const uint8_t *) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Length of the data in bytes </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>seed</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash seed value (uint32_t) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>uint32_t</para>
+</simplesect>
+This generates a 32-bit hash of the specified buffer. This is a non-cryptographic hash but the code is very small and fast. It&apos;s used for detecting settings changes.</para>
+<para>See: <ulink url="https://en.wikipedia.org/wiki/MurmurHash">https://en.wikipedia.org/wiki/MurmurHash</ulink> </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="587" column="25" bodyfile="src/SleepHelper.cpp" bodystart="470" bodyend="502"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-static-func">
+      <memberdef kind="function" id="class_sleep_helper_1_1_cloud_settings_file_1a7e8f41356c35f90fae2c5a0f2a71219e" prot="private" static="yes" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>uint32_t</type>
+        <definition>static uint32_t SleepHelper::CloudSettingsFile::murmur_32_scramble</definition>
+        <argsstring>(uint32_t k)</argsstring>
+        <name>murmur_32_scramble</name>
+        <param>
+          <type>uint32_t</type>
+          <declname>k</declname>
+        </param>
+        <briefdescription>
+<para>Part of the algorithm used by <ref refid="class_sleep_helper_1_1_cloud_settings_file_1afe5cf12a3155b1021f363a0fca5ad9a7" kindref="member">murmur3_32()</ref>. Used internally. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>k</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>uint32_t </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="601" column="32" bodyfile="src/SleepHelper.h" bodystart="601" bodyend="606"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+<para>Cloud-based settings. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This is a specialized subclass of <ref refid="class_sleep_helper_1_1_settings_file" kindref="compound">SettingsFile</ref>. It still stores JSON data in a file on the flash file system. However, it is designed to be used with the cloud as the source of truth.</para>
+<para>At specified times, the device will send up a 32-bit hash code of its current settings in a publish. If the cloud has a different version of the settings, it will send down a new configuration by Particle function call.</para>
+<para>The new settings are designed to always fit in a single function payload, 1024 bytes on most Gen 3 devices, and the entire configuration is always sent to make sure the data and hash values match.</para>
+<para>Because you cannot make local changes to settings, all of the set, update, and default settings methods of <ref refid="class_sleep_helper_1_1_settings_file" kindref="compound">SettingsFile</ref> are hidden when using <ref refid="class_sleep_helper_1_1_cloud_settings_file" kindref="compound">CloudSettingsFile</ref>. </para>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="1">
+        <label>SleepHelper::CloudSettingsFile</label>
+        <link refid="class_sleep_helper_1_1_cloud_settings_file"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>SleepHelper::SettingsFile</label>
+        <link refid="class_sleep_helper_1_1_settings_file"/>
+        <childnode refid="3" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>SleepHelper::SleepHelperRecursiveMutex</label>
+        <link refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1">
+        <label>SleepHelper::CloudSettingsFile</label>
+        <link refid="class_sleep_helper_1_1_cloud_settings_file"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>SleepHelper::SettingsFile</label>
+        <link refid="class_sleep_helper_1_1_settings_file"/>
+        <childnode refid="3" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>SleepHelper::SleepHelperRecursiveMutex</label>
+        <link refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex"/>
+      </node>
+    </collaborationgraph>
+    <location file="src/SleepHelper.h" line="514" column="5" bodyfile="src/SleepHelper.h" bodystart="514" bodyend="608"/>
+    <listofallmembers>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1ac2bcc30188938a0b9f4470986759413c" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>addDefaultValues</name></member>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1ac58d8c97b33001cf158f8a03c1165d94" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>CloudSettingsFile</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1aa496babc997844677026805acf56a0fa" prot="protected" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>defaultValues</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a3c9e1311d1d26a58afb1c8f8d32fcf69" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>dispose</name></member>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1a2070ffd5585814514d37e3b69ac0cd0d" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>getHash</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1a6efa28ca49cf9973bb1c3b9f7a34da21" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>getValue</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1af2f81934694c6c82e10f5c1d4a577f8e" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>getValuesJson</name></member>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1a6c66f4f0bf2235038b55aecb10b20ca7" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>HASH_SEED</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1a86c1223740ecac78d495172d4a86c9f8" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>load</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ae36dee79d37ac9610cd4c76c845c5386" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>lock</name></member>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1afe5cf12a3155b1021f363a0fca5ad9a7" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>murmur3_32</name></member>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1a7e8f41356c35f90fae2c5a0f2a71219e" prot="private" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>murmur_32_scramble</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1af3cdb2e1347e544be021cc3f3849b612" prot="protected" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>operator=</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1aa173313f625c381fc9e2cefc3cb1306d" prot="protected" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>parser</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1aaaab1493e82be7c15a62a98b3180f5a8" prot="protected" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>path</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1a5401ec9133ebafbd46642fb7db71c51f" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>save</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1ad51309909967dae8f9b7062e9173c47f" prot="protected" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>settingChangeFunctions</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1a99e4341f16fead8656eec1c2c58aa53c" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>SettingsFile</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1a9d206ef93d7bed231f85e6ec10c9f393" prot="protected" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>SettingsFile</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1a4dde1ae6b6af0a60a45efa41f973fd5d" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>setup</name></member>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1ae1261424b34dd05deec2b9820b204962" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>setValue</name></member>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1a7e5d3be2fb2a774cb61c2d0d384312ba" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>setValue</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1adeca5f5202727cb3685c27e8f0bb64c2" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>setValuesJson</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1af25f1073f79d12bb4f57a7c1f6629aa8" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>SleepHelperRecursiveMutex</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1acb7f25e9fab9e82496908e5726b7e812" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>SleepHelperRecursiveMutex</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a6a1f53c6f4b467ddfd988d8defd8c478" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>try_lock</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a34bb756e26a98c673610396cbf06e7b7" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>trylock</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ad89bbb20eae4ef07b147fe69f688c765" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>unlock</name></member>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1a12a74f4f8a4201259133cd6effabf7a8" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>updateValuesJson</name></member>
+      <member refid="class_sleep_helper_1_1_cloud_settings_file_1a6d25a550a529f32f7e5ea858ae0cd502" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>withDefaultValues</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1aa8df129856d5796956f36ac93ee7e228" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>withPath</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1a377febb03172255a6c3254c66b2369c9" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>withSettingChangeFunction</name></member>
+      <member refid="class_sleep_helper_1_1_settings_file_1a870fcfe0e33c8bc5c2e5f3c9cec3aac4" prot="public" virt="virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>~SettingsFile</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1aaeecb1cb2dea4299c77275757cb69016" prot="public" virt="non-virtual"><scope>SleepHelper::CloudSettingsFile</scope><name>~SleepHelperRecursiveMutex</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.2" xml:lang="en-US">
+  <compounddef id="class_sleep_helper_1_1_should_connect_app_callback" kind="class" language="C++" prot="public">
+    <compoundname>SleepHelper::ShouldConnectAppCallback</compoundname>
+    <basecompoundref refid="class_sleep_helper_1_1_app_callback" prot="public" virt="non-virtual">SleepHelper::AppCallback&lt; int &amp;, int &amp; &gt;</basecompoundref>
+    <includes refid="_sleep_helper_8h" local="no">SleepHelper.h</includes>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_sleep_helper_1_1_should_connect_app_callback_1a6c6304ffbbd78c1dca79d8afbc2c97e1" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::ShouldConnectAppCallback::shouldConnect</definition>
+        <argsstring>()</argsstring>
+        <name>shouldConnect</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="250" column="14" bodyfile="src/SleepHelper.h" bodystart="250" bodyend="267"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+<para>Class for ShouldConnect application callback. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>The prototype for the function or lambda is:</para>
+<para>bool callback(int &amp;connectConviction, int &amp;noConnectConviction)</para>
+<para>If you believe you should connect set connectConviction to a value between 1 and 100. The value defaults 0 which means &quot;I don&apos;t care&quot;. If you absolutely must connect to the cloud now, set the value to a high value.</para>
+<para>If you do not want to connect, set the noConnectConviction to a value between 1 and 100. For example, if you definitely do not have enough battery power to successfully connect a high value is used.</para>
+<para>All of the ShouldConnect callbacks are called, and the maximum values for connectConviction and noConnectConviction are saved. If connectConviction &gt;= noConnectConviction then a connection is attempted.</para>
+<para>The bool result is ignored by this callback. </para>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="2">
+        <label>SleepHelper::AppCallback&lt; int &amp;, int &amp; &gt;</label>
+        <link refid="class_sleep_helper_1_1_app_callback"/>
+      </node>
+      <node id="1">
+        <label>SleepHelper::ShouldConnectAppCallback</label>
+        <link refid="class_sleep_helper_1_1_should_connect_app_callback"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="2">
+        <label>SleepHelper::AppCallback&lt; int &amp;, int &amp; &gt;</label>
+        <link refid="class_sleep_helper_1_1_app_callback"/>
+      </node>
+      <node id="1">
+        <label>SleepHelper::ShouldConnectAppCallback</label>
+        <link refid="class_sleep_helper_1_1_should_connect_app_callback"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="src/SleepHelper.h" line="248" column="5" bodyfile="src/SleepHelper.h" bodystart="248" bodyend="268"/>
+    <listofallmembers>
+      <member refid="class_sleep_helper_1_1_app_callback_1a4045a1e0364030ccea36c1db55743332" prot="public" virt="non-virtual"><scope>SleepHelper::ShouldConnectAppCallback</scope><name>add</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1ad7a3257846621937f6fe5e9aa595c589" prot="public" virt="non-virtual"><scope>SleepHelper::ShouldConnectAppCallback</scope><name>callbackFunctions</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a420d79bd8b13cba2a00ffb9c9c428f49" prot="public" virt="non-virtual"><scope>SleepHelper::ShouldConnectAppCallback</scope><name>forEach</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a2c991e67a5341f63edae20b133bb1a13" prot="public" virt="non-virtual"><scope>SleepHelper::ShouldConnectAppCallback</scope><name>removeAll</name></member>
+      <member refid="class_sleep_helper_1_1_should_connect_app_callback_1a6c6304ffbbd78c1dca79d8afbc2c97e1" prot="public" virt="non-virtual"><scope>SleepHelper::ShouldConnectAppCallback</scope><name>shouldConnect</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a5293c6b263cf3d1f0fe81803f28a35b4" prot="public" virt="non-virtual"><scope>SleepHelper::ShouldConnectAppCallback</scope><name>untilFalse</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a1fa6bca65c3b724418572a3890e213ab" prot="public" virt="non-virtual"><scope>SleepHelper::ShouldConnectAppCallback</scope><name>untilTrue</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a96ceeb870605fa707cfe6e2d38b840c2" prot="public" virt="non-virtual"><scope>SleepHelper::ShouldConnectAppCallback</scope><name>whileAnyFalse</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a3b48734a055e9f4f6161b6b5ad3ed80a" prot="public" virt="non-virtual"><scope>SleepHelper::ShouldConnectAppCallback</scope><name>whileAnyTrue</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

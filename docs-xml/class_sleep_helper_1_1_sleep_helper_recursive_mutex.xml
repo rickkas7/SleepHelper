@@ -1,0 +1,194 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.2" xml:lang="en-US">
+  <compounddef id="class_sleep_helper_1_1_sleep_helper_recursive_mutex" kind="class" language="C++" prot="public">
+    <compoundname>SleepHelper::SleepHelperRecursiveMutex</compoundname>
+    <derivedcompoundref refid="class_sleep_helper_1_1_persistent_data_base" prot="public" virt="non-virtual">SleepHelper::PersistentDataBase</derivedcompoundref>
+    <derivedcompoundref refid="class_sleep_helper_1_1_settings_file" prot="public" virt="non-virtual">SleepHelper::SettingsFile</derivedcompoundref>
+    <includes refid="_sleep_helper_8h" local="no">SleepHelper.h</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a52882efc2fcd782fe72dd9e8e0761899" prot="private" static="no" mutable="yes">
+        <type>os_mutex_recursive_t</type>
+        <definition>os_mutex_recursive_t SleepHelper::SleepHelperRecursiveMutex::handle_</definition>
+        <argsstring></argsstring>
+        <name>handle_</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="42" column="38" bodyfile="src/SleepHelper.h" bodystart="42" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1af25f1073f79d12bb4f57a7c1f6629aa8" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>SleepHelper::SleepHelperRecursiveMutex::SleepHelperRecursiveMutex</definition>
+        <argsstring>(os_mutex_recursive_t handle)</argsstring>
+        <name>SleepHelperRecursiveMutex</name>
+        <param>
+          <type>os_mutex_recursive_t</type>
+          <declname>handle</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Creates a shared mutex. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="48" column="9" bodyfile="src/SleepHelper.h" bodystart="48" bodyend="49"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1acb7f25e9fab9e82496908e5726b7e812" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>SleepHelper::SleepHelperRecursiveMutex::SleepHelperRecursiveMutex</definition>
+        <argsstring>()</argsstring>
+        <name>SleepHelperRecursiveMutex</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="51" column="9" bodyfile="src/SleepHelper.h" bodystart="51" bodyend="52"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1aaeecb1cb2dea4299c77275757cb69016" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>SleepHelper::SleepHelperRecursiveMutex::~SleepHelperRecursiveMutex</definition>
+        <argsstring>()</argsstring>
+        <name>~SleepHelperRecursiveMutex</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="54" column="9" bodyfile="src/SleepHelper.h" bodystart="54" bodyend="56"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a3c9e1311d1d26a58afb1c8f8d32fcf69" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void SleepHelper::SleepHelperRecursiveMutex::dispose</definition>
+        <argsstring>()</argsstring>
+        <name>dispose</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="58" column="14" bodyfile="src/SleepHelper.h" bodystart="58" bodyend="63"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ae36dee79d37ac9610cd4c76c845c5386" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void SleepHelper::SleepHelperRecursiveMutex::lock</definition>
+        <argsstring>() const</argsstring>
+        <name>lock</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="65" column="14" bodyfile="src/SleepHelper.h" bodystart="65" bodyend="70"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a34bb756e26a98c673610396cbf06e7b7" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::SleepHelperRecursiveMutex::trylock</definition>
+        <argsstring>() const</argsstring>
+        <name>trylock</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="71" column="14" bodyfile="src/SleepHelper.h" bodystart="71" bodyend="76"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a6a1f53c6f4b467ddfd988d8defd8c478" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::SleepHelperRecursiveMutex::try_lock</definition>
+        <argsstring>() const</argsstring>
+        <name>try_lock</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="77" column="14" bodyfile="src/SleepHelper.h" bodystart="77" bodyend="79"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ad89bbb20eae4ef07b147fe69f688c765" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void SleepHelper::SleepHelperRecursiveMutex::unlock</definition>
+        <argsstring>() const</argsstring>
+        <name>unlock</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="80" column="14" bodyfile="src/SleepHelper.h" bodystart="80" bodyend="82"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+<para>This is a wrapper around a recursive mutex, similar to Device OS RecursiveMutex. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>There are two differences:</para>
+<para><itemizedlist>
+<listitem><para>The mutex is created on first lock, instead of from the constructor. This is done because it&apos;s not save to call os_mutex_recursive_create from a global constructor, and by delaying construction it makes it possible to safely construct the class as a global object.</para>
+</listitem><listitem><para>The lock/trylock/unlock methods are declared const and the mutex handle mutable. This allows the mutex to be locked from a const method. </para>
+</listitem></itemizedlist>
+</para>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="6">
+        <label>SleepHelper::CloudSettingsFile</label>
+        <link refid="class_sleep_helper_1_1_cloud_settings_file"/>
+        <childnode refid="5" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>SleepHelper::PersistentData</label>
+        <link refid="class_sleep_helper_1_1_persistent_data"/>
+        <childnode refid="3" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>SleepHelper::PersistentDataBase</label>
+        <link refid="class_sleep_helper_1_1_persistent_data_base"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>SleepHelper::PersistentDataFile</label>
+        <link refid="class_sleep_helper_1_1_persistent_data_file"/>
+        <childnode refid="2" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>SleepHelper::SettingsFile</label>
+        <link refid="class_sleep_helper_1_1_settings_file"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>SleepHelper::SleepHelperRecursiveMutex</label>
+        <link refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex"/>
+      </node>
+    </inheritancegraph>
+    <location file="src/SleepHelper.h" line="40" column="5" bodyfile="src/SleepHelper.h" bodystart="41" bodyend="83"/>
+    <listofallmembers>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a3c9e1311d1d26a58afb1c8f8d32fcf69" prot="public" virt="non-virtual"><scope>SleepHelper::SleepHelperRecursiveMutex</scope><name>dispose</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a52882efc2fcd782fe72dd9e8e0761899" prot="private" virt="non-virtual"><scope>SleepHelper::SleepHelperRecursiveMutex</scope><name>handle_</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ae36dee79d37ac9610cd4c76c845c5386" prot="public" virt="non-virtual"><scope>SleepHelper::SleepHelperRecursiveMutex</scope><name>lock</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1af25f1073f79d12bb4f57a7c1f6629aa8" prot="public" virt="non-virtual"><scope>SleepHelper::SleepHelperRecursiveMutex</scope><name>SleepHelperRecursiveMutex</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1acb7f25e9fab9e82496908e5726b7e812" prot="public" virt="non-virtual"><scope>SleepHelper::SleepHelperRecursiveMutex</scope><name>SleepHelperRecursiveMutex</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a6a1f53c6f4b467ddfd988d8defd8c478" prot="public" virt="non-virtual"><scope>SleepHelper::SleepHelperRecursiveMutex</scope><name>try_lock</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a34bb756e26a98c673610396cbf06e7b7" prot="public" virt="non-virtual"><scope>SleepHelper::SleepHelperRecursiveMutex</scope><name>trylock</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ad89bbb20eae4ef07b147fe69f688c765" prot="public" virt="non-virtual"><scope>SleepHelper::SleepHelperRecursiveMutex</scope><name>unlock</name></member>
+      <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1aaeecb1cb2dea4299c77275757cb69016" prot="public" virt="non-virtual"><scope>SleepHelper::SleepHelperRecursiveMutex</scope><name>~SleepHelperRecursiveMutex</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

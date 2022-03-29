@@ -1,5 +1,9 @@
 #include "SleepHelper.h"
 
+#ifndef UNITTEST
+#include "BackgroundPublishRK.h"
+#endif
+
 #include <fcntl.h>
 #include <algorithm> // std::sort
 
@@ -30,6 +34,12 @@ void SleepHelper::setup() {
 
     settingsFile.setup();
     persistentData.setup();
+
+    // This library directly uses BackgroundPublishRK to publish from a worker thread to 
+    // avoid blocking. You can safely use this at the same time as using 
+    // PublishQueuePosixRK to handle publishing with saving publishes to
+    // the flash file system for publishing later.
+	BackgroundPublishRK::instance().start();
 
     // Call all setup functions
     setupFunctions.forEach();
@@ -104,23 +114,62 @@ void SleepHelper::stateHandlerStart() {
     Particle.connect();    
     stateHandler = &SleepHelper::stateHandlerConnectWait;
     connectAttemptStartMillis = millis();
+    networkConnectedMillis = 0;
 }
 
 
 void SleepHelper::stateHandlerConnectWait() {
     if (Particle.connected()) {
-        connectedStartMillis = millis();
-        stateHandler = &SleepHelper::stateHandlerConnected;
+        stateHandler = &SleepHelper::stateHandlerTimeValidWait;
         return;
     }
+    if (!networkConnectedMillis && Cellular.connected()) {
+        networkConnectedMillis = millis();
+
+        system_tick_t elapsedMs = networkConnectedMillis - connectAttemptStartMillis;
+        appLog.info("connected to network in %lu ms", elaposedMs);
+    }
+
     system_tick_t elapsedMs = millis() - connectAttemptStartMillis;
 
-    if (maximumTimeToConnectFunctions.untilFalse(false, elapsedMs)) {
+    if (maximumTimeToConnectFunctions.whileAnyFalse(false, elapsedMs)) {
         appLog.info("timed out connecting to cloud");
         stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
         return;
     }
 
+}
+
+void SleepHelper::stateHandlerTimeValidWait() {
+    // Wait until we get a valid RTC clock time. This happens immediately after 
+    // connecting to the cloud, and will likely already be set on wake from
+    // sleep, so this will be instantaneous in many cases.
+    if (Time.isValid()) {
+        stateHandler = &SleepHelper::stateHandlerConnectedStart;
+        return;
+    }
+}
+
+
+void SleepHelper::stateHandlerConnectedStart() {
+    connectedStartMillis = millis();
+
+    system_tick_t elapsedMs = connectedStartMillis - connectAttemptStartMillis;
+    appLog.info("connected to cloud in %lu ms", elapsedMs);
+
+    if (wakeEventName.length() > 0) {
+        // Call the wake event handlers to see if they have JSON data to publish
+        std::vector<String> events;
+        wakeEventFunctions.generateEvents(events);
+
+        // If there are events, add to the publish queue
+        for(auto it = events.begin(); it != events.end(); ++it) {
+            publishData.push_back(PublishData(wakeEventName, *it));            
+        }
+    }
+
+
+    stateHandler = &SleepHelper::stateHandlerConnected;
 }
 
 void SleepHelper::stateHandlerConnected() {
@@ -129,12 +178,33 @@ void SleepHelper::stateHandlerConnected() {
         return;        
     }
 
-    appLog.info("connected to cloud");
+    if (!publishData.empty()) {
+        PublishData event = publishData.front();
 
-    whileConnectedFunctions.forEach();
+        stateTime = millis();
+
+        // TODO: Pause PublishQueuePosixRK processing until our immediate events are finished
+
+        stateHandler = &SleepHelper::stateHandlerPublishWait;
+
+        bool bResult = BackgroundPublishRK::instance().publish(event.eventName, event.eventData, event.flags, 
+            [this](bool succeeded, const char *event_name, const char *event_data, const void *event_context) {
+            // Callback
+            if (succeeded) {
+                appLog.info("removing item from publishData");
+                publishData.erase(publishData.begin());
+            }
+            stateHandler = &SleepHelper::stateHandlerPublishRateLimit;
+        });
+        if (!bResult) {
+            stateHandler = &SleepHelper::stateHandlerConnected;
+        }
+        return;
+    }
+
 
     system_tick_t elapsedMs = millis() - connectedStartMillis;
-    if (sleepReadyFunctions.untilFalse(true, elapsedMs)) {
+    if (sleepReadyFunctions.whileAnyFalse(true, elapsedMs)) {
         // Ready to sleep, go into prepare to sleep state
         stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
         return;
@@ -142,6 +212,18 @@ void SleepHelper::stateHandlerConnected() {
     
 
 }
+
+void SleepHelper::stateHandlerPublishWait() {
+    // Exiting this state happens from the background publish callback lambda, see stateHandlerConnected state
+}
+
+void SleepHelper::stateHandlerPublishRateLimit() {
+    if (millis() - stateTime > 1000) {
+        stateHandler = &SleepHelper::stateHandlerConnected;
+        return;
+    }
+}
+
 
 void SleepHelper::stateHandlerReconnectWait() {
     if (Particle.connected()) {

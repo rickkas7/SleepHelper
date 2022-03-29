@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.2" xml:lang="en-US">
+  <compounddef id="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header" kind="class" language="C++" prot="public">
+    <compoundname>SleepHelper::PersistentDataBase::SavedDataHeader</compoundname>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1a2b782bed30238df63772aa2ecb5447fa" prot="public" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t SleepHelper::PersistentDataBase::SavedDataHeader::magic</definition>
+        <argsstring></argsstring>
+        <name>magic</name>
+        <briefdescription>
+<para>savedDataMagic </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="623" column="22" bodyfile="src/SleepHelper.h" bodystart="623" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1addade822b86e4cabf105863ecef038a3" prot="public" static="no" mutable="no">
+        <type>uint16_t</type>
+        <definition>uint16_t SleepHelper::PersistentDataBase::SavedDataHeader::version</definition>
+        <argsstring></argsstring>
+        <name>version</name>
+        <briefdescription>
+<para>savedDataBersion </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="624" column="22" bodyfile="src/SleepHelper.h" bodystart="624" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1a270b86493b9837cee1bd901788116016" prot="public" static="no" mutable="no">
+        <type>uint16_t</type>
+        <definition>uint16_t SleepHelper::PersistentDataBase::SavedDataHeader::size</definition>
+        <argsstring></argsstring>
+        <name>size</name>
+        <briefdescription>
+<para>size of the whole structure, including the user data after it </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="625" column="22" bodyfile="src/SleepHelper.h" bodystart="625" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1aa25a3e53a26b5b54e8def7411d4fca53" prot="public" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t SleepHelper::PersistentDataBase::SavedDataHeader::reserved2</definition>
+        <argsstring></argsstring>
+        <name>reserved2</name>
+        <briefdescription>
+<para>reserved for future use </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="626" column="22" bodyfile="src/SleepHelper.h" bodystart="626" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1a57b5e9744223f1f7ed59017f2ea2b163" prot="public" static="no" mutable="no">
+        <type>uint32_t</type>
+        <definition>uint32_t SleepHelper::PersistentDataBase::SavedDataHeader::reserved1</definition>
+        <argsstring></argsstring>
+        <name>reserved1</name>
+        <briefdescription>
+<para>reserved for future use </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="627" column="22" bodyfile="src/SleepHelper.h" bodystart="627" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="src/SleepHelper.h" line="621" column="9" bodyfile="src/SleepHelper.h" bodystart="621" bodyend="629"/>
+    <listofallmembers>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1a2b782bed30238df63772aa2ecb5447fa" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase::SavedDataHeader</scope><name>magic</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1a57b5e9744223f1f7ed59017f2ea2b163" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase::SavedDataHeader</scope><name>reserved1</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1aa25a3e53a26b5b54e8def7411d4fca53" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase::SavedDataHeader</scope><name>reserved2</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1a270b86493b9837cee1bd901788116016" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase::SavedDataHeader</scope><name>size</name></member>
+      <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1addade822b86e4cabf105863ecef038a3" prot="public" virt="non-virtual"><scope>SleepHelper::PersistentDataBase::SavedDataHeader</scope><name>version</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

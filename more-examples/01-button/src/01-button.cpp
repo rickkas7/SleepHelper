@@ -47,7 +47,8 @@ void setup() {
             }
             return true;
         })
-        .withMaximumTimeToConnect(11min);
+        .withMaximumTimeToConnect(11min)
+        .withTimeConfig("EST5EDT,M3.2.0/02:00:00,M11.1.0/02:00:00");
 
     SleepHelper::instance().setup();
 }

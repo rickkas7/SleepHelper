@@ -614,14 +614,14 @@ public:
      * This class is separate from PersistentData so you can subclass it to hold your own application-specific
      * data as well.
      * 
-     * See PersistentDataFile for saving data to a file on the flash file system
+     * See PersistentDataFile for saving data to a file on the flash file system.
      */
     class PersistentDataBase : public SleepHelperRecursiveMutex {
     public:
         class SavedDataHeader { // 16 bytes
         public:
-            uint32_t magic;                 //!< SAVED_DATA_MAGIC = 0xd87cb6ce;
-            uint16_t version;               //!< SAVED_DATA_VERSION = 1
+            uint32_t magic;                 //!< savedDataMagic
+            uint16_t version;               //!< savedDataBersion
             uint16_t size;                  //!< size of the whole structure, including the user data after it
             uint32_t reserved2;             //!< reserved for future use
             uint32_t reserved1;             //!< reserved for future use
@@ -687,9 +687,9 @@ public:
         /**
          * @brief Templated class for setting integral values (uint32_t, float, double, etc.)
          * 
-         * @tparam T 
-         * @param offset 
-         * @return T 
+         * @tparam T An integral types
+         * @param offset Offset into the structure, normally offsetof(field, T)
+         * @param value The value to set
          */
         template<class T>
         void setValue(size_t offset, T value)  {
@@ -875,11 +875,14 @@ public:
     };
 
     /**
-     * @brief Class for managing small persistent data
+     * @brief Class for storing small data used by SleepHelper in the flash file system
      * 
-     * You must not access the persistent at global constructor time. Only use it from
+     * You must not access the persistent data at global constructor time. Only use it from
      * setup() or later. You can access it from worker threads.
      * 
+     * This class is only for SleepHelper private data. For storing your own data,
+     * you should subclass PersistentDataBase (for retained memory) or 
+     * subclass PersistentDataFile (for file-stored data).
      */
     class PersistentData : public PersistentDataFile {
     public:
@@ -1067,6 +1070,18 @@ public:
 
     };
 
+    class PublishData {
+    public:
+        PublishData() {};
+        PublishData(const char *eventName) : eventName(eventName) {}
+        PublishData(const char *eventName, const char *eventData) : eventName(eventName), eventData(eventData) {}
+        PublishData(const char *eventName, const char *eventData, PublishFlags flags) : eventName(eventName), eventData(eventData), flags(flags) {}
+
+        String eventName;
+        String eventData;
+        PublishFlags flags = PRIVATE;
+    };
+
 
 #ifndef UNITTEST
     SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, std::chrono::milliseconds&)> fn) { 
@@ -1105,9 +1120,6 @@ public:
      * 
      * Return false if you still have things to do before it's OK to sleep.
      * 
-     * This callback is only called when connected. Scanning the list stops when the first
-     * callback return false, so you should not use this callback for periodic actions. Use
-     * withWhileConnectedFunction() instead.
      */
     SleepHelper &withSleepReadyFunction(std::function<bool(system_tick_t)> fn) {
         sleepReadyFunctions.add(fn); 
@@ -1121,6 +1133,19 @@ public:
 
     SleepHelper &withWakeOrBootFunction(std::function<bool()> fn) { 
         wakeOrBootFunctions.add(fn); 
+        return *this;
+    }
+
+    
+    
+    /**
+     * @brief Set the event name used for the wake event. Default: sleepHelper.
+     * 
+     * @param eventName 
+     * @return SleepHelper& 
+     */
+    SleepHelper &withWakeEventName(const char *eventName) {
+        wakeEventName = eventName;
         return *this;
     }
 
@@ -1178,11 +1203,32 @@ public:
         return *this;
     }
 
+    /**
+     * @brief Adds a function to be called while connecting
+     * 
+     * @param fn 
+     * @return SleepHelper& 
+     * 
+     * Function or lambda prototype:
+     * 
+     * bool callback(system_tick_t ms)
+     * 
+     * Return true to continue attempting to connect. Return false to stop trying to connect and go to sleep.
+     * 
+     * All maximum time to connect functions are called on every loop call during the connecting phase,
+     * until one return false. This provides a way to be called periodically during connection.
+     */
     SleepHelper &withMaximumTimeToConnectFunction(std::function<bool(system_tick_t ms)> fn) {
         maximumTimeToConnectFunctions.add(fn); 
         return *this; 
     }
 
+    /**
+     * @brief Sets the maximum time to connect to the cloud. If this limit is exceeded, the device will go to sleep.
+     * 
+     * @param timeMs 
+     * @return SleepHelper& 
+     */
     SleepHelper &withMaximumTimeToConnect(std::chrono::milliseconds timeMs) { 
         return withMaximumTimeToConnectFunction([timeMs](system_tick_t ms) {
             return (ms >= timeMs.count());
@@ -1199,6 +1245,9 @@ public:
      * going to sleep. If you return true from your callback, then the device will continue
      * to stay awake. 
      * 
+     * If you want to be called while connected, see the sleepReady function which 
+     * does double duty as the whileConnected function.
+     * 
      * @param fn 
      * @return SleepHelper& 
      */
@@ -1207,10 +1256,6 @@ public:
         return *this;
     }
 
-    SleepHelper &withWhileConnectedFunction(std::function<bool()> fn) {
-        whileConnectedFunctions.add(fn); 
-        return *this;
-    }
 
     SleepHelper &withMinimumConnectedTime(std::chrono::milliseconds timeMs) { 
         return withSleepReadyFunction([timeMs](system_tick_t ms) {
@@ -1340,6 +1385,17 @@ public:
      */
     PersistentData persistentData;
 
+    /**
+     * @brief Schedule for when to do a quick wake (not necessarily publish)
+     */
+    LocalTimeSchedule quickWakeSchedule;
+
+    /**
+     * @brief Schedule for when to publish events
+     */
+    LocalTimeSchedule publishSchedule;
+
+
 protected:
     /**
      * @brief The constructor is protected because the class is a singleton
@@ -1372,7 +1428,15 @@ protected:
 
     void stateHandlerConnectWait();
 
+    void stateHandlerTimeValidWait();
+
+    void stateHandlerConnectedStart();
+
     void stateHandlerConnected();
+
+    void stateHandlerPublishWait();
+
+    void stateHandlerPublishRateLimit();
 
     void stateHandlerReconnectWait();
 
@@ -1407,17 +1471,17 @@ protected:
 
     AppCallback<> noConnectionFunctions;
 
-    AppCallback<> whileConnectedFunctions;
-
+    String wakeEventName = "sleepHelper";
     EventCombiner wakeEventFunctions;
 
-    LocalTimeSchedule sleepSchedule;
-    LocalTimeSchedule publishSchedule;
+    std::vector<PublishData> publishData;
+    system_tick_t stateTime = 0;
 
 #ifndef UNITTEST
     std::function<void(SleepHelper&)> stateHandler = &SleepHelper::stateHandlerStart;
 
     system_tick_t connectAttemptStartMillis = 0;
+    system_tick_t networkConnectedMillis = 0;
     system_tick_t connectedStartMillis = 0;
     bool outOfMemory = false;
 #endif // UNITTEST

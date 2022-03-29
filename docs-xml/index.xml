@@ -1,0 +1,204 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="1.9.2" xml:lang="en-US">
+  <compound refid="class_sleep_helper_1_1_app_callback" kind="class"><name>SleepHelper::AppCallback</name>
+    <member refid="class_sleep_helper_1_1_app_callback_1ad7a3257846621937f6fe5e9aa595c589" kind="variable"><name>callbackFunctions</name></member>
+    <member refid="class_sleep_helper_1_1_app_callback_1a4045a1e0364030ccea36c1db55743332" kind="function"><name>add</name></member>
+    <member refid="class_sleep_helper_1_1_app_callback_1a420d79bd8b13cba2a00ffb9c9c428f49" kind="function"><name>forEach</name></member>
+    <member refid="class_sleep_helper_1_1_app_callback_1a1fa6bca65c3b724418572a3890e213ab" kind="function"><name>untilTrue</name></member>
+    <member refid="class_sleep_helper_1_1_app_callback_1a3b48734a055e9f4f6161b6b5ad3ed80a" kind="function"><name>whileAnyTrue</name></member>
+    <member refid="class_sleep_helper_1_1_app_callback_1a5293c6b263cf3d1f0fe81803f28a35b4" kind="function"><name>untilFalse</name></member>
+    <member refid="class_sleep_helper_1_1_app_callback_1a96ceeb870605fa707cfe6e2d38b840c2" kind="function"><name>whileAnyFalse</name></member>
+    <member refid="class_sleep_helper_1_1_app_callback_1a2c991e67a5341f63edae20b133bb1a13" kind="function"><name>removeAll</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_cloud_settings_file" kind="class"><name>SleepHelper::CloudSettingsFile</name>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1a6c66f4f0bf2235038b55aecb10b20ca7" kind="variable"><name>HASH_SEED</name></member>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1ac58d8c97b33001cf158f8a03c1165d94" kind="function"><name>CloudSettingsFile</name></member>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1a6d25a550a529f32f7e5ea858ae0cd502" kind="function"><name>withDefaultValues</name></member>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1ae1261424b34dd05deec2b9820b204962" kind="function"><name>setValue</name></member>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1a7e5d3be2fb2a774cb61c2d0d384312ba" kind="function"><name>setValue</name></member>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1a12a74f4f8a4201259133cd6effabf7a8" kind="function"><name>updateValuesJson</name></member>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1ac2bcc30188938a0b9f4470986759413c" kind="function"><name>addDefaultValues</name></member>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1a2070ffd5585814514d37e3b69ac0cd0d" kind="function"><name>getHash</name></member>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1afe5cf12a3155b1021f363a0fca5ad9a7" kind="function"><name>murmur3_32</name></member>
+    <member refid="class_sleep_helper_1_1_cloud_settings_file_1a7e8f41356c35f90fae2c5a0f2a71219e" kind="function"><name>murmur_32_scramble</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_event_combiner" kind="class"><name>SleepHelper::EventCombiner</name>
+    <member refid="class_sleep_helper_1_1_event_combiner_1a9d35318dd25d2ea56a19d2df37c4a5e1" kind="variable"><name>callbacks</name></member>
+    <member refid="class_sleep_helper_1_1_event_combiner_1a348617cf948cdb5fd95e128e389cd4b0" kind="function"><name>EventCombiner</name></member>
+    <member refid="class_sleep_helper_1_1_event_combiner_1a93ec638d113802614d4265f87a53d2eb" kind="function"><name>withCallback</name></member>
+    <member refid="class_sleep_helper_1_1_event_combiner_1a5171be18cc6a6652c2bc0dd3ed49800c" kind="function"><name>generateEvents</name></member>
+    <member refid="class_sleep_helper_1_1_event_combiner_1a747c855dbe719d2e8588c2eff34eb8cb" kind="function"><name>generateEvents</name></member>
+    <member refid="class_sleep_helper_1_1_event_combiner_1ab03dfe32d0a889b87b976dd2fa3db0d7" kind="function"><name>EventCombiner</name></member>
+    <member refid="class_sleep_helper_1_1_event_combiner_1a73f14ab4f2a136283235bc7f8ff87e1b" kind="function"><name>operator=</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_event_combiner_1_1_event_info" kind="class"><name>SleepHelper::EventCombiner::EventInfo</name>
+    <member refid="class_sleep_helper_1_1_event_combiner_1_1_event_info_1a2847275110096626bb554c8a9566a9ca" kind="variable"><name>json</name></member>
+    <member refid="class_sleep_helper_1_1_event_combiner_1_1_event_info_1ac7475cc8466fe617b29c0510d31c8e7a" kind="variable"><name>priority</name></member>
+    <member refid="class_sleep_helper_1_1_event_combiner_1_1_event_info_1a20fcb4174c7a1274486812a89fabdd43" kind="function"><name>EventInfo</name></member>
+    <member refid="class_sleep_helper_1_1_event_combiner_1_1_event_info_1ae4b6cb8aa37fb0e044ce0aa9bff7807b" kind="function"><name>EventInfo</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_persistent_data" kind="class"><name>SleepHelper::PersistentData</name>
+    <member refid="class_sleep_helper_1_1_persistent_data_1a4d5f374953f979acfe480db12bb50258" kind="variable"><name>SAVED_DATA_MAGIC</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1a2f352dc062d34c99956436c495d1892e" kind="variable"><name>SAVED_DATA_VERSION</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1a2aa49f35b17fc9ed2850df050bd3e392" kind="variable"><name>sleepHelperData</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1a4ac3bcfd2284851c92ac66e1b8ac58d5" kind="function"><name>PersistentData</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1a9b369deac959f7becc98a28d102f1250" kind="function"><name>~PersistentData</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1ac9d60b4fef9233b994b7174fb2c16aa0" kind="function"><name>getValue_lastUpdateCheck</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1a515aa8648a7b806bb38f8300269e0472" kind="function"><name>setValue_lastUpdateCheck</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1a99ab3c5205c169fbe3f312e504659435" kind="function"><name>getValue_lastPublish</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1a208063e340082e9157d69f1242cc1ee0" kind="function"><name>setValue_lastPublish</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1aab7fcd4a3ebaffb55531f51c7b648fda" kind="function"><name>getValue_lastQuickWake</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1ae8e07948356e9a770f616656305e1450" kind="function"><name>setValue_lastQuickWake</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_persistent_data_base" kind="class"><name>SleepHelper::PersistentDataBase</name>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1ab720fe91ade2ae4de848d2f2e05c7214" kind="variable"><name>savedDataHeader</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1aa0caff0a7bc69dcbbadcf0ed90183918" kind="variable"><name>savedDataSize</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a53ceb74ed3d72cae9b3c7cbf951920be" kind="variable"><name>savedDataMagic</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1ae83f350dae5800773fb77c5b926b88a8" kind="variable"><name>savedDataVersion</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a92abd754f41974d92858e576b0acd1ba" kind="function"><name>PersistentDataBase</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a77053781d5de71294148097240e4df93" kind="function"><name>setup</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a8093c806a04b1827de64f34692a6bc5b" kind="function"><name>load</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a71e5d0b036785550bb14405bb08dc3f9" kind="function"><name>save</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a16b2f7093ce0180898553b11200be1dc" kind="function"><name>saveOrDefer</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1ab5b25ea7a09f7b067260a5a563bb4ed6" kind="function"><name>getValue</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1ac61c31bbbad135c5f27290ca1f77abd5" kind="function"><name>setValue</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1ab263ff7c88a8008c1f000ea98cb49db8" kind="function"><name>getValueString</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a44e9ea66d4d6e15b71e4f981351a1891" kind="function"><name>setValueString</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1aa3c802d58213d8364f6b6226630f6fd3" kind="function"><name>PersistentDataBase</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a5a99923acf23273899b0c57a0e87fcbb" kind="function"><name>operator=</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a94dcb177e239dc4256b3a8aab3fd31ef" kind="function"><name>validate</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1a936835f54e26c62894161a1a3a2adf60" kind="function"><name>initialize</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_persistent_data_file" kind="class"><name>SleepHelper::PersistentDataFile</name>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1abc2b99517c7547a03cb7a07030996549" kind="variable"><name>lastUpdate</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1ab719ecb9cb475bc2acdaaed348cc4f77" kind="variable"><name>saveDelayMs</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1a7e0e372728880304366ee35e8f58cbb5" kind="variable"><name>path</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1a436524b434bf1b1153fbc7adc359d4c9" kind="function"><name>PersistentDataFile</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1a38a114835aa2ddcb07d1115b44241fac" kind="function"><name>withPath</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1ae041d7011fc8039844a31d28e73b9f6d" kind="function"><name>withSaveDelayMs</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1a5a3ab93e39c55d1b3e76a0e3e4dd52eb" kind="function"><name>setup</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1aa81dab5081da864009b9f404555cbeb4" kind="function"><name>load</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1a058811c83bd34f1a9fa4a48ca25c2dec" kind="function"><name>save</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1a7e798b37e77b9ec5b081a1c62b73a285" kind="function"><name>saveOrDefer</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1a18a842937b6cb48ab01c9d1a188f4949" kind="function"><name>flush</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1a6f7d5d67998f0cdd764536ce3313fc5e" kind="function"><name>PersistentDataFile</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_file_1acd0c03f212cedcefca62dfb2c0aee772" kind="function"><name>operator=</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header" kind="class"><name>SleepHelper::PersistentDataBase::SavedDataHeader</name>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1a2b782bed30238df63772aa2ecb5447fa" kind="variable"><name>magic</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1addade822b86e4cabf105863ecef038a3" kind="variable"><name>version</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1a270b86493b9837cee1bd901788116016" kind="variable"><name>size</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1aa25a3e53a26b5b54e8def7411d4fca53" kind="variable"><name>reserved2</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header_1a57b5e9744223f1f7ed59017f2ea2b163" kind="variable"><name>reserved1</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_settings_file" kind="class"><name>SleepHelper::SettingsFile</name>
+    <member refid="class_sleep_helper_1_1_settings_file_1aa173313f625c381fc9e2cefc3cb1306d" kind="variable"><name>parser</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1ad51309909967dae8f9b7062e9173c47f" kind="variable"><name>settingChangeFunctions</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1aaaab1493e82be7c15a62a98b3180f5a8" kind="variable"><name>path</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1aa496babc997844677026805acf56a0fa" kind="variable"><name>defaultValues</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a99e4341f16fead8656eec1c2c58aa53c" kind="function"><name>SettingsFile</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a870fcfe0e33c8bc5c2e5f3c9cec3aac4" kind="function"><name>~SettingsFile</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1aa8df129856d5796956f36ac93ee7e228" kind="function"><name>withPath</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a81454575654c03f7888717305d480db1" kind="function"><name>withDefaultValues</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a377febb03172255a6c3254c66b2369c9" kind="function"><name>withSettingChangeFunction</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a4dde1ae6b6af0a60a45efa41f973fd5d" kind="function"><name>setup</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a86c1223740ecac78d495172d4a86c9f8" kind="function"><name>load</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a5401ec9133ebafbd46642fb7db71c51f" kind="function"><name>save</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a6efa28ca49cf9973bb1c3b9f7a34da21" kind="function"><name>getValue</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a38d7d6a31e354cce408c333657913c40" kind="function"><name>setValue</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1ae4b2d54313df57febc06cb1bdea0a556" kind="function"><name>setValue</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1adeca5f5202727cb3685c27e8f0bb64c2" kind="function"><name>setValuesJson</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a9bd1293818afc254c72e2da63446f42c" kind="function"><name>updateValuesJson</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a27e1b6f1830abc75e1e990656c6c125c" kind="function"><name>addDefaultValues</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1af2f81934694c6c82e10f5c1d4a577f8e" kind="function"><name>getValuesJson</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1a9d206ef93d7bed231f85e6ec10c9f393" kind="function"><name>SettingsFile</name></member>
+    <member refid="class_sleep_helper_1_1_settings_file_1af3cdb2e1347e544be021cc3f3849b612" kind="function"><name>operator=</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_should_connect_app_callback" kind="class"><name>SleepHelper::ShouldConnectAppCallback</name>
+    <member refid="class_sleep_helper_1_1_should_connect_app_callback_1a6c6304ffbbd78c1dca79d8afbc2c97e1" kind="function"><name>shouldConnect</name></member>
+  </compound>
+  <compound refid="class_sleep_helper" kind="class"><name>SleepHelper</name>
+    <member refid="class_sleep_helper_1a7a8fcf09815441b0de5478f492cf67aa" kind="variable"><name>settingsFile</name></member>
+    <member refid="class_sleep_helper_1a47b6cf4b7036b8ab39b55e0aa6278f6b" kind="variable"><name>persistentData</name></member>
+    <member refid="class_sleep_helper_1a5ab8265462fb2d359ce425be693aaed9" kind="variable"><name>sleepConfigurationFunctions</name></member>
+    <member refid="class_sleep_helper_1a841620a67c0f98bfee4e9808a8226c3d" kind="variable"><name>wakeFunctions</name></member>
+    <member refid="class_sleep_helper_1aab6eb4ae918d1cc5f8d3b9f8de4ef233" kind="variable"><name>setupFunctions</name></member>
+    <member refid="class_sleep_helper_1a4aa8bc1eef9fc012ace84e22a0c6dd03" kind="variable"><name>loopFunctions</name></member>
+    <member refid="class_sleep_helper_1aa89c7123a48644c2479c67a96c496e4c" kind="variable"><name>sleepReadyFunctions</name></member>
+    <member refid="class_sleep_helper_1a4dc8cbdd5b7a7ef3d292f3c225011e71" kind="variable"><name>shouldConnectFunctions</name></member>
+    <member refid="class_sleep_helper_1a790a2897f52fc755f752b1f76af94994" kind="variable"><name>wakeOrBootFunctions</name></member>
+    <member refid="class_sleep_helper_1adfe77dceb8caff70bdba400abb3b2533" kind="variable"><name>sleepOrResetFunctions</name></member>
+    <member refid="class_sleep_helper_1a775b5b367463b986c8c1c929adccf97f" kind="variable"><name>maximumTimeToConnectFunctions</name></member>
+    <member refid="class_sleep_helper_1ac49ebdc52fd4d78f06fe135f7ed3d598" kind="variable"><name>noConnectionFunctions</name></member>
+    <member refid="class_sleep_helper_1ab99d26318ff9514a6db29adeb87bb18b" kind="variable"><name>whileConnectedFunctions</name></member>
+    <member refid="class_sleep_helper_1a2555c5f23e97e7ff7c46eb6b69fd785b" kind="variable"><name>wakeEventFunctions</name></member>
+    <member refid="class_sleep_helper_1a8780ebc89a75918a1f4146b65185a295" kind="variable"><name>sleepSchedule</name></member>
+    <member refid="class_sleep_helper_1a7d9b5b4ab92962f00bc98e339278a370" kind="variable"><name>publishSchedule</name></member>
+    <member refid="class_sleep_helper_1a9cda0d070ecd63b3df79215cbd2bd300" kind="variable"><name>stateHandler</name></member>
+    <member refid="class_sleep_helper_1ad187ab04c4dfc6516c8ab23463487a83" kind="variable"><name>connectAttemptStartMillis</name></member>
+    <member refid="class_sleep_helper_1a27b8cffe89790c41d4e0f78f6e53ad15" kind="variable"><name>connectedStartMillis</name></member>
+    <member refid="class_sleep_helper_1ae26d1ab394fe449c9cfb4c9755dbd226" kind="variable"><name>outOfMemory</name></member>
+    <member refid="class_sleep_helper_1ad74eb51eefc7205b133be4fa58e32718" kind="variable"><name>appLog</name></member>
+    <member refid="class_sleep_helper_1a96e621d2b5d04ae764605bc5bf8ec185" kind="variable"><name>_instance</name></member>
+    <member refid="class_sleep_helper_1ad424c11c0781ea2ebbdd96a43521ea06" kind="function"><name>instance</name></member>
+    <member refid="class_sleep_helper_1a4a1cebe9ec345713091bd3f623cb6985" kind="function"><name>withSleepConfigurationFunction</name></member>
+    <member refid="class_sleep_helper_1ac633b93687b39b6b9e5ce18caa205dff" kind="function"><name>withWakeFunction</name></member>
+    <member refid="class_sleep_helper_1abf9f04100075adfc2a5ccd27a14db7de" kind="function"><name>withSetupFunction</name></member>
+    <member refid="class_sleep_helper_1a015eb8ec460526d1dd81b4859823aa7e" kind="function"><name>withLoopFunction</name></member>
+    <member refid="class_sleep_helper_1ac73ffa2b764f716d9af9c7840e7c30e5" kind="function"><name>withSleepReadyFunction</name></member>
+    <member refid="class_sleep_helper_1aabfb4418f8fb006b50d8efff7edbee4d" kind="function"><name>withShouldConnectFunction</name></member>
+    <member refid="class_sleep_helper_1a75d49d150a195cdd7ab8b9d01ef462f2" kind="function"><name>withWakeOrBootFunction</name></member>
+    <member refid="class_sleep_helper_1a0d2ea01e4c0d13adc81c038b33ea8871" kind="function"><name>withWakeEventFunction</name></member>
+    <member refid="class_sleep_helper_1a48f3f028336fae8f9b7b56335a2af98f" kind="function"><name>withSleepOrResetFunction</name></member>
+    <member refid="class_sleep_helper_1a6e5222c45e18155a9de17cb4350a8fbc" kind="function"><name>withMaximumTimeToConnectFunction</name></member>
+    <member refid="class_sleep_helper_1ab8889f82083eb26229ac096907218766" kind="function"><name>withMaximumTimeToConnect</name></member>
+    <member refid="class_sleep_helper_1a147c91d776b0968268e148b1be6958d0" kind="function"><name>withNoConnectionFunction</name></member>
+    <member refid="class_sleep_helper_1a0220bfedac1060b8246dff582426cb35" kind="function"><name>withWhileConnectedFunction</name></member>
+    <member refid="class_sleep_helper_1a68ae8f2760ead87883343d1d418b977c" kind="function"><name>withMinimumConnectedTime</name></member>
+    <member refid="class_sleep_helper_1a805abcdae1dd42163191a9edcb69660f" kind="function"><name>withSettingChangeFunction</name></member>
+    <member refid="class_sleep_helper_1a69d89d9b33b53b09df85580c20e8dfd3" kind="function"><name>withMinimumSoC</name></member>
+    <member refid="class_sleep_helper_1aa293cbbab40d07245d2006a71f696e6f" kind="function"><name>withTimeConfig</name></member>
+    <member refid="class_sleep_helper_1aa55dc9d8e2627cf697ac1bd6a1db9c2d" kind="function"><name>setup</name></member>
+    <member refid="class_sleep_helper_1a8dac8eec4a7beb5a0ae8e6060e51764e" kind="function"><name>loop</name></member>
+    <member refid="class_sleep_helper_1a89399adf4c228cd258637ae45465418f" kind="function"><name>SleepHelper</name></member>
+    <member refid="class_sleep_helper_1af1640a7ac7d7ba028f468d14d495cbfb" kind="function"><name>~SleepHelper</name></member>
+    <member refid="class_sleep_helper_1af61ceb6581809f8166c32e1eb5bbda92" kind="function"><name>SleepHelper</name></member>
+    <member refid="class_sleep_helper_1a4c086ef306238bde738d7837c0e52bbb" kind="function"><name>operator=</name></member>
+    <member refid="class_sleep_helper_1a2652c1019e156dbcaa5b1fa83a59f059" kind="function"><name>systemEventHandler</name></member>
+    <member refid="class_sleep_helper_1ae458f2222f1fb920f5ea59976ec5f758" kind="function"><name>stateHandlerStart</name></member>
+    <member refid="class_sleep_helper_1a16a9f4aba72174b61fd4a117c40c0151" kind="function"><name>stateHandlerConnectWait</name></member>
+    <member refid="class_sleep_helper_1a0ba6f6f8f9abfe688f507a0ca8aa058a" kind="function"><name>stateHandlerConnected</name></member>
+    <member refid="class_sleep_helper_1a671842ec813a228dee90ffa8bef692dc" kind="function"><name>stateHandlerReconnectWait</name></member>
+    <member refid="class_sleep_helper_1a3a773d6e7b996a7b37e9bac67caf2bdc" kind="function"><name>stateHandlerNoConnection</name></member>
+    <member refid="class_sleep_helper_1a551daa4717dfcaad8405f06e49d3e424" kind="function"><name>stateHandlerDisconnectBeforeSleep</name></member>
+    <member refid="class_sleep_helper_1a4cbc572eff1167e5e3dcd77aa0f7c7a4" kind="function"><name>stateHandlerPrepareToSleep</name></member>
+    <member refid="class_sleep_helper_1a7fd366a7d2fc5519300713a75675c3cd" kind="function"><name>systemEventHandlerStatic</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data" kind="class"><name>SleepHelper::PersistentData::SleepHelperData</name>
+    <member refid="class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data_1a8dd2b01a39923defba527b3ab9677261" kind="variable"><name>header</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data_1ac94cfc30c96b7aa4f5546f5836779080" kind="variable"><name>lastUpdateCheck</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data_1afa8006479d6e74bcdc34cdaa0be07c00" kind="variable"><name>lastPublish</name></member>
+    <member refid="class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data_1a4dc2baaae5fa1bd81436acb60b649a4b" kind="variable"><name>lastQuickWake</name></member>
+  </compound>
+  <compound refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex" kind="class"><name>SleepHelper::SleepHelperRecursiveMutex</name>
+    <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a52882efc2fcd782fe72dd9e8e0761899" kind="variable"><name>handle_</name></member>
+    <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1af25f1073f79d12bb4f57a7c1f6629aa8" kind="function"><name>SleepHelperRecursiveMutex</name></member>
+    <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1acb7f25e9fab9e82496908e5726b7e812" kind="function"><name>SleepHelperRecursiveMutex</name></member>
+    <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1aaeecb1cb2dea4299c77275757cb69016" kind="function"><name>~SleepHelperRecursiveMutex</name></member>
+    <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a3c9e1311d1d26a58afb1c8f8d32fcf69" kind="function"><name>dispose</name></member>
+    <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ae36dee79d37ac9610cd4c76c845c5386" kind="function"><name>lock</name></member>
+    <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a34bb756e26a98c673610396cbf06e7b7" kind="function"><name>trylock</name></member>
+    <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1a6a1f53c6f4b467ddfd988d8defd8c478" kind="function"><name>try_lock</name></member>
+    <member refid="class_sleep_helper_1_1_sleep_helper_recursive_mutex_1ad89bbb20eae4ef07b147fe69f688c765" kind="function"><name>unlock</name></member>
+  </compound>
+  <compound refid="_r_e_a_d_m_e_8md" kind="file"><name>README.md</name>
+  </compound>
+  <compound refid="_sleep_helper_8cpp" kind="file"><name>SleepHelper.cpp</name>
+  </compound>
+  <compound refid="_sleep_helper_8h" kind="file"><name>SleepHelper.h</name>
+  </compound>
+  <compound refid="dir_68267d1309a1af8e8297ef4c3efbcdba" kind="dir"><name>src</name>
+  </compound>
+  <compound refid="indexpage" kind="page"><name>index</name>
+  </compound>
+</doxygenindex>

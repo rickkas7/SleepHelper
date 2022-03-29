@@ -1,0 +1,304 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.2" xml:lang="en-US">
+  <compounddef id="class_sleep_helper_1_1_app_callback" kind="class" language="C++" prot="public">
+    <compoundname>SleepHelper::AppCallback</compoundname>
+    <includes refid="_sleep_helper_8h" local="no">SleepHelper.h</includes>
+    <templateparamlist>
+      <param>
+        <type>class...</type>
+        <declname>Types</declname>
+        <defname>Types</defname>
+      </param>
+    </templateparamlist>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="class_sleep_helper_1_1_app_callback_1ad7a3257846621937f6fe5e9aa595c589" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; std::function&lt; bool(Types... args)&gt; &gt;</type>
+        <definition>std::vector&lt;std::function&lt;bool(Types... args)&gt; &gt; SleepHelper::AppCallback&lt; Types &gt;::callbackFunctions</definition>
+        <argsstring></argsstring>
+        <name>callbackFunctions</name>
+        <briefdescription>
+<para>Vector of all callbacks, limited only by available RAM. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="224" column="21" bodyfile="src/SleepHelper.h" bodystart="224" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_sleep_helper_1_1_app_callback_1a4045a1e0364030ccea36c1db55743332" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void SleepHelper::AppCallback&lt; Types &gt;::add</definition>
+        <argsstring>(std::function&lt; bool(Types... args)&gt; callback)</argsstring>
+        <name>add</name>
+        <param>
+          <type>std::function&lt; bool(Types... args)&gt;</type>
+          <declname>callback</declname>
+        </param>
+        <briefdescription>
+<para>Adds a callback function. Zero or more callbacks can be defined. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>callback</parametername>
+</parameternamelist>
+<parameterdescription>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+The callback always returns a bool, but the parameters are defined by the template. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="114" column="14" bodyfile="src/SleepHelper.h" bodystart="114" bodyend="116"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_app_callback_1a420d79bd8b13cba2a00ffb9c9c428f49" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void SleepHelper::AppCallback&lt; Types &gt;::forEach</definition>
+        <argsstring>(Types... args)</argsstring>
+        <name>forEach</name>
+        <param>
+          <type>Types...</type>
+          <declname>args</declname>
+        </param>
+        <briefdescription>
+<para>Calls all callbacks, regardless of return value returned. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>args</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="123" column="14" bodyfile="src/SleepHelper.h" bodystart="123" bodyend="127"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_app_callback_1a1fa6bca65c3b724418572a3890e213ab" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::AppCallback&lt; Types &gt;::untilTrue</definition>
+        <argsstring>(bool defaultResult, Types... args)</argsstring>
+        <name>untilTrue</name>
+        <param>
+          <type>bool</type>
+          <declname>defaultResult</declname>
+        </param>
+        <param>
+          <type>Types...</type>
+          <declname>args</declname>
+        </param>
+        <briefdescription>
+<para>Calls callbacks until the first one returns true. The others are not called. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>defaultResult</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The value to return if all callbacks return false. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>args</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true If any callback returned true </para>
+</simplesect>
+<simplesect kind="return"><para>false If all callbacks returned false</para>
+</simplesect>
+This is fast return true, see also whileAnyTrue. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="139" column="14" bodyfile="src/SleepHelper.h" bodystart="139" bodyend="148"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_app_callback_1a3b48734a055e9f4f6161b6b5ad3ed80a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::AppCallback&lt; Types &gt;::whileAnyTrue</definition>
+        <argsstring>(bool defaultResult, Types... args)</argsstring>
+        <name>whileAnyTrue</name>
+        <param>
+          <type>bool</type>
+          <declname>defaultResult</declname>
+        </param>
+        <param>
+          <type>Types...</type>
+          <declname>args</declname>
+        </param>
+        <briefdescription>
+<para>Calls all callbacks. Returns true if any returns true, but all are still called. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>defaultResult</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The value to return if all callbacks return false. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>args</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="158" column="14" bodyfile="src/SleepHelper.h" bodystart="158" bodyend="168"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_app_callback_1a5293c6b263cf3d1f0fe81803f28a35b4" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::AppCallback&lt; Types &gt;::untilFalse</definition>
+        <argsstring>(bool defaultResult, Types... args)</argsstring>
+        <name>untilFalse</name>
+        <param>
+          <type>bool</type>
+          <declname>defaultResult</declname>
+        </param>
+        <param>
+          <type>Types...</type>
+          <declname>args</declname>
+        </param>
+        <briefdescription>
+<para>Calls all callbacks until the first one returns false, then returns without calling others. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>defaultResult</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The value to return if all callbacks return true. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>args</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false</para>
+</simplesect>
+This is fast return false. See also whileAnyFalse. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="180" column="14" bodyfile="src/SleepHelper.h" bodystart="180" bodyend="189"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_app_callback_1a96ceeb870605fa707cfe6e2d38b840c2" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool SleepHelper::AppCallback&lt; Types &gt;::whileAnyFalse</definition>
+        <argsstring>(bool defaultResult, Types... args)</argsstring>
+        <name>whileAnyFalse</name>
+        <param>
+          <type>bool</type>
+          <declname>defaultResult</declname>
+        </param>
+        <param>
+          <type>Types...</type>
+          <declname>args</declname>
+        </param>
+        <briefdescription>
+<para>Calls all callbacks. If any returns false then returns false, but all are still called. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>defaultResult</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The value to return if all callbacks return true. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>args</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>true </para>
+</simplesect>
+<simplesect kind="return"><para>false </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="199" column="14" bodyfile="src/SleepHelper.h" bodystart="199" bodyend="208"/>
+      </memberdef>
+      <memberdef kind="function" id="class_sleep_helper_1_1_app_callback_1a2c991e67a5341f63edae20b133bb1a13" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void SleepHelper::AppCallback&lt; Types &gt;::removeAll</definition>
+        <argsstring>()</argsstring>
+        <name>removeAll</name>
+        <briefdescription>
+<para>Remove all registered callbacks. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>You normally will never use this. It&apos;s used by the automated test suite. There&apos;s no function to remove a single callback since they&apos;re typically lambdas and it would be difficult to specify which one to remove. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/SleepHelper.h" line="217" column="14" bodyfile="src/SleepHelper.h" bodystart="217" bodyend="219"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+<para>Base class for a list of zero or more callback functions. </para>
+    </briefdescription>
+    <detaileddescription>
+<para><parameterlist kind="templateparam"><parameteritem>
+<parameternamelist>
+<parametername>Types</parametername>
+</parameternamelist>
+<parameterdescription>
+<para></para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+    </detaileddescription>
+    <location file="src/SleepHelper.h" line="105" column="5" bodyfile="src/SleepHelper.h" bodystart="105" bodyend="225"/>
+    <listofallmembers>
+      <member refid="class_sleep_helper_1_1_app_callback_1a4045a1e0364030ccea36c1db55743332" prot="public" virt="non-virtual"><scope>SleepHelper::AppCallback</scope><name>add</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1ad7a3257846621937f6fe5e9aa595c589" prot="public" virt="non-virtual"><scope>SleepHelper::AppCallback</scope><name>callbackFunctions</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a420d79bd8b13cba2a00ffb9c9c428f49" prot="public" virt="non-virtual"><scope>SleepHelper::AppCallback</scope><name>forEach</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a2c991e67a5341f63edae20b133bb1a13" prot="public" virt="non-virtual"><scope>SleepHelper::AppCallback</scope><name>removeAll</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a5293c6b263cf3d1f0fe81803f28a35b4" prot="public" virt="non-virtual"><scope>SleepHelper::AppCallback</scope><name>untilFalse</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a1fa6bca65c3b724418572a3890e213ab" prot="public" virt="non-virtual"><scope>SleepHelper::AppCallback</scope><name>untilTrue</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a96ceeb870605fa707cfe6e2d38b840c2" prot="public" virt="non-virtual"><scope>SleepHelper::AppCallback</scope><name>whileAnyFalse</name></member>
+      <member refid="class_sleep_helper_1_1_app_callback_1a3b48734a055e9f4f6161b6b5ad3ed80a" prot="public" virt="non-virtual"><scope>SleepHelper::AppCallback</scope><name>whileAnyTrue</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>
