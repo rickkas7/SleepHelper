@@ -1090,6 +1090,69 @@ void eventHistoryTest() {
 		}
 	}
 
+	// EventCombiner + EventHistory
+	{
+		SleepHelper::EventCombiner t1;
+		t1.withEventHistory(eventsFile, "eh");
+
+		t1.withOneTimeCallback([](JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 10;
+			return true;
+		});
+		t1.addEvent("{\"b\":123}");
+
+
+		std::vector<String> events;
+		t1.generateEvents(events, 50);
+		assertInt("", events.size(), 1);
+		assertStr("", events[0].c_str(), "{\"a\":123,\"eh\":[{\"b\":123}]}");
+	}
+	{
+		// Too many events to fit in the combiner
+		SleepHelper::EventCombiner t1;
+		t1.withEventHistory(eventsFile, "eh");
+
+		t1.withOneTimeCallback([](JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 10;
+			return true;
+		});
+		
+		t1.addEvent("{\"b\":1111}");
+		t1.addEvent("{\"b\":2222}");
+		t1.addEvent("{\"b\":3333}");
+		
+		std::vector<String> events;
+		t1.generateEvents(events, 24);
+		assertInt("", events.size(), 4);
+		assertStr("", events[0].c_str(), "{\"a\":123}");
+		assertStr("", events[1].c_str(), "{\"eh\":[{\"b\":1111}]}");
+		assertStr("", events[2].c_str(), "{\"eh\":[{\"b\":2222}]}");
+		assertStr("", events[3].c_str(), "{\"eh\":[{\"b\":3333}]}");
+	}
+
+	{
+		// Too many events to fit in the combiner
+		SleepHelper::EventCombiner t1;
+		t1.withEventHistory(eventsFile, "eh");
+
+		t1.withOneTimeCallback([](JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 10;
+			return true;
+		});
+		
+		t1.addEvent("{\"b\":1111}");
+		t1.addEvent("{\"b\":2222}");
+		t1.addEvent("{\"b\":3333}");
+		
+		std::vector<String> events;
+		t1.generateEvents(events, 32);
+		assertInt("", events.size(), 2);
+		assertStr("", events[0].c_str(), "{\"a\":123,\"eh\":[{\"b\":1111}]}");
+		assertStr("", events[1].c_str(), "{\"eh\":[{\"b\":2222},{\"b\":3333}]}");
+	}
 
 	// unlink(eventsFile);
 }

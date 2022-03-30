@@ -966,120 +966,6 @@ public:
         SleepHelperData sleepHelperData;
     };
 
-    /**
-     * @brief Class to handle building JSON events from multiple callbacks with priority 
-     * and the ability to generate multiple events if necessary
-     * 
-     * The idea is that you want to combine all of the data into a single event if possible
-     * to minimize data operations. Sometimes you have unimportant data that would be nice
-     * to include if there's space but omit if not. And sometimes you have important 
-     * data that must be sent, and it's OK to send multiple events if necessary.
-     * 
-     * This class also has a priority-based de-duplication of keys.
-     */
-    class EventCombiner {
-    public:
-        /**
-         * @brief Container to hold a JSON fragment and a priority value 0 - 100.
-         * 
-         * Note that this is only a fragment, basically an object without the surrounding {}!
-         */
-        class EventInfo {
-        public:
-            String json; //!< JSON fragment, an object without the surrounding {}
-            int priority = 0; //!< Priority 0 - 100 inclusive.
-            std::vector<String> keys; //!< Top level keys
-        };
-
-        /**
-         * @brief Default constructor
-         * 
-         * Use withCallback to add callback functions
-         */
-        EventCombiner() {};
-
-        /**
-         * @brief Adds a callback function to generate JSON data
-         * 
-         * @param fn 
-         * @return EventCombiner& 
-         * 
-         * The callback function has this prototype:
-         * 
-         * bool callback(JSONWriter &writer, int &priority)
-         * 
-         * The return value is ignored; you should return true.
-         * 
-         * writer is the JSONWriter to store the data into
-         * priority should be set to a value from 1 to 100. If you leave it at zero your data will not be saved!
-         * 
-         * Items are added to the event in priority order, largest first.
-         * 
-         * If you have a priority < 50 and the event is full, then your data will be discarded to 
-         * avoid generating another event.
-         */
-        EventCombiner &withCallback(std::function<bool(JSONWriter &, int &)> fn) { 
-            callbacks.add(fn); 
-            return *this;
-        }
-
-        /**
-         * @brief Add a callback that is removed after generating events
-         * 
-         * @param fn 
-         * @return EventCombiner& 
-         */
-        EventCombiner &withOneTimeCallback(std::function<bool(JSONWriter &, int &)> fn) { 
-            oneTimeCallbacks.add(fn); 
-            return *this;
-        }
-
-        /**
-         * @brief Generate one or more events based on the maximum event size
-         * 
-         * @param events vector of String objects to fill in with event data
-         * 
-         * The events vector you pass into this method will be cleared. It will be returned filled in
-         * with zero or more Strings, each containing event data in valid JSON format.
-         */
-        void generateEvents(std::vector<String> &events);
-
-        /**
-         * @brief generate one or more events based on desired size
-         * 
-         * @param events vector of String objects to fill in with event data
-         * @param maxSize Maximum size of each even in bytes
-         * 
-         * The events vector you pass into this method will be cleared. It will be returned filled in
-         * with zero or more Strings, each containing event data in valid JSON format.
-         */
-        void generateEvents(std::vector<String> &events, size_t maxSize);
-
-        /**
-         * @brief Clear the one-time callbacks
-         * 
-         * This is done automatically after generateEvents, but can be done manually in unusual cases.
-         */
-        void clearOneTimeCallbacks() {
-            oneTimeCallbacks.removeAll();
-        }
-
-    protected:
-        /**
-         * This class cannot be copied
-         */
-        EventCombiner(const EventCombiner&) = delete;
-
-        /**
-         * This class cannot be copied
-         */
-        EventCombiner& operator=(const EventCombiner&) = delete;
-
-        void generateEventInternal(std::function<void(JSONWriter &, int &)> callback, char *buf, size_t maxSize, std::vector<EventInfo> &infoArray);
-
-        AppCallback<JSONWriter &, int &> callbacks; //!< Callback functions
-        AppCallback<JSONWriter &, int &> oneTimeCallbacks; //!< One-time use callback functions 
-    };
 
     /**
      * @brief Class to manage small events, typically used for time-series data
@@ -1176,6 +1062,141 @@ public:
         String path;
         bool hasEvents = false;
         size_t removeOffset = 0;
+    };
+
+    /**
+     * @brief Class to handle building JSON events from multiple callbacks with priority 
+     * and the ability to generate multiple events if necessary
+     * 
+     * The idea is that you want to combine all of the data into a single event if possible
+     * to minimize data operations. Sometimes you have unimportant data that would be nice
+     * to include if there's space but omit if not. And sometimes you have important 
+     * data that must be sent, and it's OK to send multiple events if necessary.
+     * 
+     * This class also has a priority-based de-duplication of keys.
+     */
+    class EventCombiner {
+    public:
+        /**
+         * @brief Container to hold a JSON fragment and a priority value 0 - 100.
+         * 
+         * Note that this is only a fragment, basically an object without the surrounding {}!
+         */
+        class EventInfo {
+        public:
+            String json; //!< JSON fragment, an object without the surrounding {}
+            int priority = 0; //!< Priority 0 - 100 inclusive.
+            std::vector<String> keys; //!< Top level keys
+        };
+
+        /**
+         * @brief Default constructor
+         * 
+         * Use withCallback to add callback functions
+         */
+        EventCombiner() {};
+
+        /**
+         * @brief Adds a callback function to generate JSON data
+         * 
+         * @param fn 
+         * @return EventCombiner& 
+         * 
+         * The callback function has this prototype:
+         * 
+         * bool callback(JSONWriter &writer, int &priority)
+         * 
+         * The return value is ignored; you should return true.
+         * 
+         * writer is the JSONWriter to store the data into
+         * priority should be set to a value from 1 to 100. If you leave it at zero your data will not be saved!
+         * 
+         * Items are added to the event in priority order, largest first.
+         * 
+         * If you have a priority < 50 and the event is full, then your data will be discarded to 
+         * avoid generating another event.
+         */
+        EventCombiner &withCallback(std::function<bool(JSONWriter &, int &)> fn) { 
+            callbacks.add(fn); 
+            return *this;
+        }
+
+        /**
+         * @brief Add a callback that is removed after generating events
+         * 
+         * @param fn 
+         * @return EventCombiner& 
+         */
+        EventCombiner &withOneTimeCallback(std::function<bool(JSONWriter &, int &)> fn) { 
+            oneTimeCallbacks.add(fn); 
+            return *this;
+        }
+
+        /**
+         * @brief Sets parameters for the EventHistory feature
+         * 
+         * @param path path to store the event history
+         * @param key JSON key to publish event history items under
+         * @return EventCombiner& 
+         */
+        EventCombiner &withEventHistory(const char *path, const char *key) {
+            eventHistory.withPath(path);
+            this->eventHistoryKey = key;
+            return *this;
+        }
+
+        void addEvent(const char *jsonObj) {
+            eventHistory.addEvent(jsonObj);
+        }
+
+
+        /**
+         * @brief Generate one or more events based on the maximum event size
+         * 
+         * @param events vector of String objects to fill in with event data
+         * 
+         * The events vector you pass into this method will be cleared. It will be returned filled in
+         * with zero or more Strings, each containing event data in valid JSON format.
+         */
+        void generateEvents(std::vector<String> &events);
+
+        /**
+         * @brief generate one or more events based on desired size
+         * 
+         * @param events vector of String objects to fill in with event data
+         * @param maxSize Maximum size of each even in bytes
+         * 
+         * The events vector you pass into this method will be cleared. It will be returned filled in
+         * with zero or more Strings, each containing event data in valid JSON format.
+         */
+        void generateEvents(std::vector<String> &events, size_t maxSize);
+
+        /**
+         * @brief Clear the one-time callbacks
+         * 
+         * This is done automatically after generateEvents, but can be done manually in unusual cases.
+         */
+        void clearOneTimeCallbacks() {
+            oneTimeCallbacks.removeAll();
+        }
+
+    protected:
+        /**
+         * This class cannot be copied
+         */
+        EventCombiner(const EventCombiner&) = delete;
+
+        /**
+         * This class cannot be copied
+         */
+        EventCombiner& operator=(const EventCombiner&) = delete;
+
+        void generateEventInternal(std::function<void(JSONWriter &, int &)> callback, char *buf, size_t maxSize, std::vector<EventInfo> &infoArray);
+
+        AppCallback<JSONWriter &, int &> callbacks; //!< Callback functions
+        AppCallback<JSONWriter &, int &> oneTimeCallbacks; //!< One-time use callback functions 
+        EventHistory eventHistory; 
+        String eventHistoryKey;
     };
 
     class PublishData {
@@ -1349,6 +1370,19 @@ public:
         }
         return *this;
     }
+
+    /**
+     * @brief Sets parameters for the EventHistory feature
+     * 
+     * @param path path to store the event history
+     * @param key JSON key to publish event history items under
+     * @return EventCombiner& 
+     */
+    SleepHelper &withEventHistory(const char *path, const char *key) {
+        wakeEventFunctions.withEventHistory(path, key);
+        return *this;
+    }
+
 
     /**
      * @brief Adds a function to be called right before sleep or reset.

@@ -794,6 +794,132 @@ void SleepHelper::PersistentDataFile::flush(bool force) {
     }
 }
 
+
+//
+// EventHistory
+//
+
+
+void SleepHelper::EventHistory::addEvent(const char *jsonObj) {
+    // Append to the file
+    WITH_LOCK(*this) {
+        int fd = open(path, O_RDWR | O_CREAT | O_APPEND, 0666);
+        if (fd != -1) {
+            write(fd, jsonObj, strlen(jsonObj));
+            write(fd, "\n", 1);
+            close(fd);
+
+            hasEvents = true;
+        }
+    }    
+}
+
+bool SleepHelper::EventHistory::getEvents(JSONWriter &writer, size_t maxSize, bool bRemoveEvents) {
+    if (maxSize < 2 || !hasEvents) {
+        return false;
+    }
+    char *buf = (char *)malloc(maxSize);
+    if (!buf) {
+        return false;
+    }
+
+    bool bResult = false;
+
+    WITH_LOCK(*this) {
+        int fd = open(path, O_RDONLY);
+        if (fd != -1) {
+            int dataSize = read(fd, buf, maxSize);
+            if (dataSize > 0) {
+                // Remove partial event
+                while(dataSize > 0 && buf[dataSize - 1] != '\n') {
+                    dataSize--;
+                }                    
+
+                if (dataSize > 0 && buf[dataSize - 1] == '\n') {
+                    // Have valid data
+                    bResult = true;
+                    size_t bytesUsed = 2;
+
+                    writer.beginArray();
+
+                    char *cur = buf;
+                    char *end = &buf[dataSize];
+                    while(cur < end) {
+                        char *lf = strchr(cur, '\n');
+                        *lf = 0;
+
+                        bytesUsed += strlen(cur) + 1;
+                        if (bytesUsed > maxSize) {
+                            break;
+                        }
+                        SleepHelper::JSONCopy(cur, writer);                        
+
+                        cur = lf + 1;
+                        removeOffset = (cur - buf);                        
+                    }
+
+                    writer.endArray();
+                }
+            }
+            close(fd);
+        }
+    }    
+
+    free(buf);
+
+    if (bRemoveEvents) {
+        removeEvents();
+    }
+
+    return bResult;
+}
+
+void SleepHelper::EventHistory::removeEvents() {
+    WITH_LOCK(*this) {
+        const size_t bufSize = 512;
+        char *buf = (char *)malloc(bufSize);
+        if (buf) {
+            int fdsrc = open(path, O_RDONLY);
+            if (fdsrc != -1) {
+                struct stat sb;
+                fstat(fdsrc, &sb);
+                size_t fileSize = sb.st_size;  
+                if (removeOffset < fileSize) {
+                    lseek(fdsrc, removeOffset, SEEK_SET);
+
+                    String tempPath = String(path) + ".tmp";
+                    int fddst = open(tempPath, O_RDWR | O_CREAT | O_TRUNC, 0666);
+                    if (fddst) {
+                        while(removeOffset < fileSize) {
+                            int count = read(fdsrc, buf, bufSize);
+                            if (count > 0) {
+                                write(fddst, buf, count);
+                                removeOffset += count;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        close(fddst);
+                    }
+                    close(fdsrc);
+
+                    // Swap src and dst files
+                    unlink(path);
+                    rename(tempPath, path);
+                    removeOffset = 0;
+                }
+                else {
+                    unlink(path);
+                    hasEvents = false;
+                }
+            }
+            free(buf);
+        }
+
+    }
+}
+
 //
 // EventCombiner
 //
@@ -826,6 +952,37 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
 
     for(auto it = callbacks.callbackFunctions.begin(); it != callbacks.callbackFunctions.end(); ++it) {
         generateEventInternal(*it, buf, maxSize, infoArray);        
+    }
+
+    bool doRemoveEvents = false;
+
+    if (eventHistory.getHasEvents()) {
+        memset(buf, 0, maxSize);
+        JSONBufferWriter writer(buf, maxSize);
+
+        writer.beginObject();
+        writer.name(eventHistoryKey);
+
+        // Overhead:
+        // { " (eventHistoryKey) " : [ (array data) ]  }
+        size_t overhead = eventHistoryKey.length() + 7;
+
+        if (eventHistory.getEvents(writer, maxSize - overhead, false)) {
+            EventInfo eventInfo;
+            eventInfo.priority = 1;
+            eventInfo.keys.push_back(eventHistoryKey);
+
+            writer.endObject();
+
+            // Remove the } at the end of the object
+            buf[strlen(buf) - 1] = 0;
+            eventInfo.json = &buf[1];
+
+            infoArray.push_back(eventInfo);
+
+
+            doRemoveEvents = true;
+        }
     }
 
     if (!infoArray.empty()) {
@@ -897,6 +1054,42 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
         }
     }
 
+    if (doRemoveEvents) {
+        doRemoveEvents = false;
+
+        // Makes sure event was actually added
+        for(auto it = events.begin(); it != events.end(); ++it) {
+            JSONValue obj = JSONValue::parseCopy(*it);
+
+            JSONObjectIterator iter(obj);
+            while(iter.next()) {
+                String key = (const char *)iter.name();
+                if (key == eventHistoryKey) {
+                    doRemoveEvents = true;
+                }
+            }
+        }
+        if (doRemoveEvents) {
+            eventHistory.removeEvents();
+        }
+    }
+
+    while(eventHistory.getHasEvents()) {
+        // Process any events that did not fit in the first packet
+        memset(buf, 0, maxSize);
+        JSONBufferWriter writer(buf, maxSize);
+
+        writer.beginObject();
+        writer.name(eventHistoryKey);
+
+        if (eventHistory.getEvents(writer, maxSize - eventHistoryKey.length() - 6, false)) {        
+            writer.endObject();
+            
+            events.push_back(buf);
+            eventHistory.removeEvents();
+        }
+    }
+
     clearOneTimeCallbacks();
 
     free(buf);
@@ -934,131 +1127,6 @@ void SleepHelper::EventCombiner::generateEventInternal(std::function<void(JSONWr
 
             infoArray.push_back(eventInfo);
         }
-    }
-}
-
-//
-// EventHistory
-//
-
-
-void SleepHelper::EventHistory::addEvent(const char *jsonObj) {
-    // Append to the file
-    WITH_LOCK(*this) {
-        int fd = open(path, O_RDWR | O_CREAT | O_APPEND, 0666);
-        if (fd != -1) {
-            write(fd, jsonObj, strlen(jsonObj));
-            write(fd, "\n", 1);
-            close(fd);
-
-            hasEvents = true;
-        }
-    }    
-}
-
-bool SleepHelper::EventHistory::getEvents(JSONWriter &writer, size_t maxSize, bool bRemoveEvents) {
-    if (maxSize < 2 || !hasEvents) {
-        return false;
-    }
-    char *buf = (char *)malloc(maxSize);
-    if (!buf) {
-        return false;
-    }
-
-    bool bResult = false;
-
-    WITH_LOCK(*this) {
-        int fd = open(path, O_RDONLY);
-        if (fd != -1) {
-            int dataSize = read(fd, buf, maxSize);
-            if (dataSize > 0) {
-                // Remove partial event
-                while(dataSize > 0 && buf[dataSize - 1] != '\n') {
-                    dataSize--;
-                }                    
-
-                if (dataSize > 0 && buf[dataSize - 1] == '\n') {
-                    // Have valid data
-                    bResult = true;
-                    size_t bytesUsed = 2;
-
-                    writer.beginArray();
-
-                    char *cur = buf;
-                    char *end = &buf[dataSize];
-                    while(cur < end) {
-                        char *lf = strchr(cur, '\n');
-                        *lf = 0;
-
-                        bytesUsed += strlen(cur) + 1;
-                        if (bytesUsed > maxSize) {
-                            break;
-                        }
-                        SleepHelper::JSONCopy(cur, writer);                        
-
-                        cur = lf + 1;
-                        removeOffset = (cur - buf);
-                    }
-
-                    writer.endArray();
-                }
-            }
-            close(fd);
-        }
-    }    
-
-    free(buf);
-
-    if (bRemoveEvents) {
-        removeEvents();
-    }
-
-    return bResult;
-}
-
-void SleepHelper::EventHistory::removeEvents() {
-    WITH_LOCK(*this) {
-        const size_t bufSize = 512;
-        char *buf = (char *)malloc(bufSize);
-        if (buf) {
-            int fdsrc = open(path, O_RDONLY);
-            if (fdsrc != -1) {
-                struct stat sb;
-                fstat(fdsrc, &sb);
-                size_t fileSize = sb.st_size;  
-                if (removeOffset < fileSize) {
-                    lseek(fdsrc, removeOffset, SEEK_SET);
-
-                    String tempPath = String(path) + ".tmp";
-                    int fddst = open(tempPath, O_RDWR | O_CREAT | O_TRUNC, 0666);
-                    if (fddst) {
-                        while(removeOffset < fileSize) {
-                            int count = read(fdsrc, buf, bufSize);
-                            if (count > 0) {
-                                write(fddst, buf, count);
-                                removeOffset += count;
-                            }
-                            else {
-                                break;
-                            }
-                        }
-                        close(fddst);
-                    }
-                    close(fdsrc);
-
-                    // Swap src and dst files
-                    unlink(path);
-                    rename(tempPath, path);
-                    removeOffset = 0;
-                }
-                else {
-                    unlink(path);
-                    hasEvents = false;
-                }
-            }
-            free(buf);
-        }
-
     }
 }
 
