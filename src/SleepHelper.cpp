@@ -814,6 +814,20 @@ void SleepHelper::EventHistory::addEvent(const char *jsonObj) {
     }    
 }
 
+void SleepHelper::EventHistory::addEvent(std::function<void(JSONWriter &)>callback) {
+    char buf[particle::protocol::MAX_EVENT_DATA_LENGTH];
+
+    memset(buf, 0, sizeof(buf));
+    JSONBufferWriter writer(buf, sizeof(buf) - 1);
+
+    writer.beginObject();
+    callback(writer);
+    writer.endObject();
+
+    addEvent(buf);
+}
+
+
 bool SleepHelper::EventHistory::getEvents(JSONWriter &writer, size_t maxSize, bool bRemoveEvents) {
     if (maxSize < 2 || !hasEvents) {
         return false;

@@ -1007,6 +1007,28 @@ public:
         void addEvent(const char *jsonObj);
 
         /**
+         * @brief Adds an event to the event history using a callback and writer
+         * 
+         * @param callback The callback function, typically a lambda
+         * @return EventCombiner& 
+         * 
+         * The callback/lambda has this prototype:
+         * 
+         * void callback(JSONWriter &writer)
+         * 
+         * You typically use it like:
+         * 
+         * SleepHelper::instance().addEvent([](JSONWriter &writer) {
+		 *      writer.name("b").value(1111)
+         *            .name("c").value("testing!");
+		 * });
+         * 
+         * This is using the addEvent method of SleepHelper(), which just calls this
+         * method on the correct object.
+         */;
+        void addEvent(std::function<void(JSONWriter &)>callback);
+
+        /**
          * @brief Get saved events and insert them as an array to writer
          * 
          * @param writer 
@@ -1145,8 +1167,38 @@ public:
             return *this;
         }
 
-        void addEvent(const char *jsonObj) {
+        /**
+         * @brief Adds an event to the event history (preformatted JSON)
+         * 
+         * @param jsonObj A string containing a complete JSON object surrounded by {}
+         * 
+         * See the version with a callback for an easier way to build the JSON.
+         */
+        EventCombiner &addEvent(const char *jsonObj) {
             eventHistory.addEvent(jsonObj);
+            return *this;
+        }
+
+        /**
+         * @brief Adds an event to the event history using a callback and writer
+         * 
+         * @param callback The callback function, typically a lambda
+         * @return EventCombiner& 
+         * 
+         * The callback/lambda has this prototype:
+         * 
+         * void callback(JSONWriter &writer)
+         * 
+         * You typically use it like:
+         * 
+         * SleepHelper::instance().addEvent([](JSONWriter &writer) {
+		 *      writer.name("b").value(1111)
+         *            .name("c").value("testing!");
+		 * });
+         */
+        EventCombiner &addEvent(std::function<void(JSONWriter &)>callback) {
+            eventHistory.addEvent(callback);
+            return *this;
         }
 
 
@@ -1383,6 +1435,39 @@ public:
         return *this;
     }
 
+    /**
+     * @brief Adds an event to the event history (preformatted JSON)
+     * 
+     * @param jsonObj A string containing a complete JSON object surrounded by {}
+     * 
+     * See the version with a callback for an easier way to build the JSON.
+     */
+    SleepHelper &addEvent(const char *jsonObj) {
+        wakeEventFunctions.addEvent(jsonObj);
+        return *this;
+    }
+
+    /**
+     * @brief Adds an event to the event history using a callback and writer
+     * 
+     * @param callback The callback function, typically a lambda
+     * @return EventCombiner& 
+     * 
+     * The callback/lambda has this prototype:
+     * 
+     * void callback(JSONWriter &writer)
+     * 
+     * You typically use it like:
+     * 
+     * SleepHelper::instance().addEvent([](JSONWriter &writer) {
+     *      writer.name("b").value(1111)
+     *            .name("c").value("testing!");
+     * });
+     */
+    SleepHelper &addEvent(std::function<void(JSONWriter &)>callback) {
+        wakeEventFunctions.addEvent(callback);
+        return *this;
+    }
 
     /**
      * @brief Adds a function to be called right before sleep or reset.

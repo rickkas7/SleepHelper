@@ -11,13 +11,15 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 const pin_t BUTTON_PIN = D2;
 bool wokeByPin = false;
 
+void logButtonPress();
+
 void setup() {
     // For counting button clicks while awake
     DebounceSwitch::getInstance()->setup();
     DebounceSwitch::getInstance()->addSwitch(BUTTON_PIN, DebounceSwitchStyle::PRESS_LOW_PULLUP, [](DebounceSwitchState *switchState, void *context) {
-        Log.info("pin=%d state=%s", switchState->getPin(), switchState->getPressStateName());
+        // Log.info("pin=%d state=%s", switchState->getPin(), switchState->getPressStateName());
         if (switchState->getPressState() == DebouncePressState::TAP) {
-            Log.info("%d taps", switchState->getTapCount());
+            logButtonPress();
         }    
     });
 
@@ -33,6 +35,7 @@ void setup() {
                 pin_t whichPin = sleepResult.wakeupPin();
                 Log.info("wake by pin %d", whichPin);
                 if (whichPin == BUTTON_PIN) {
+                    logButtonPress();
                     wokeByPin = true;
                 }
                 else {
@@ -48,11 +51,20 @@ void setup() {
             return true;
         })
         .withMaximumTimeToConnect(11min)
-        .withTimeConfig("EST5EDT,M3.2.0/02:00:00,M11.1.0/02:00:00");
+        .withTimeConfig("EST5EDT,M3.2.0/02:00:00,M11.1.0/02:00:00")
+        .withEventHistory("/usr/events.txt", "eh");
 
     SleepHelper::instance().setup();
 }
 
 void loop() {
     SleepHelper::instance().loop();
+}
+
+
+void logButtonPress() {
+    Log.info("button press");
+    SleepHelper::instance().addEvent([](JSONWriter &writer) {
+        writer.name("b").value(Time.isValid() ? Time.now() : 0);
+    });
 }

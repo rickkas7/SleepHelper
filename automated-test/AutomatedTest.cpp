@@ -1154,8 +1154,37 @@ void eventHistoryTest() {
 		assertStr("", events[1].c_str(), "{\"eh\":[{\"b\":2222},{\"b\":3333}]}");
 	}
 
+	{
+		// addEvent JSONWriter
+		SleepHelper::EventCombiner t1;
+		t1.withEventHistory(eventsFile, "eh");
+
+		t1.withOneTimeCallback([](JSONWriter &jw, int &priority) {
+			jw.name("a").value(123);
+			priority = 10;
+			return true;
+		});
+		
+		t1.addEvent([](JSONWriter &writer) {
+			writer.name("b").value(1111);
+		});
+		t1.addEvent([](JSONWriter &writer) {
+			writer.name("c").value(false);
+		});
+		t1.addEvent([](JSONWriter &writer) {
+			writer.name("d").value("testing 1, 2, 3");
+		});
+
+		std::vector<String> events;
+		t1.generateEvents(events, 40);
+		//assertInt("", events.size(), 2);
+		assertStr("", events[0].c_str(), "{\"a\":123,\"eh\":[{\"b\":1111},{\"c\":false}]}");
+		assertStr("", events[1].c_str(), "{\"eh\":[{\"d\":\"testing 1, 2, 3\"}]}");
+	}
+
 	// unlink(eventsFile);
 }
+
 
 int main(int argc, char *argv[]) {
 	settingsTest();
