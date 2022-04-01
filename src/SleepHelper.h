@@ -1067,8 +1067,12 @@ public:
          * This operation is fast, just checks a flag variable. It's not necessary to
          * check before calling getEvents(), because that method has the same check
          * internally.
+         * 
+         * Except for the first run after wake, when it needs to check the file
+         * system to see if there is a file that was not processed before reboot.
+         * This is why this method is not const.
          */
-        bool getHasEvents() const { return hasEvents; };
+        bool getHasEvents();
 
     protected:
         /**
@@ -1082,6 +1086,7 @@ public:
         EventHistory& operator=(const EventHistory&) = delete;
 
         String path;
+        bool firstRun = true;
         bool hasEvents = false;
         size_t removeOffset = 0;
     };
@@ -1326,7 +1331,6 @@ public:
      * actually occur, because there can be many sleep ready functions and other calculations.
      * 
      * Return false if you still have things to do before it's OK to sleep.
-     * 
      */
     SleepHelper &withSleepReadyFunction(std::function<bool(system_tick_t)> fn) {
         sleepReadyFunctions.add(fn); 
@@ -1768,6 +1772,7 @@ protected:
 
 
     AppCallback<system_tick_t> sleepReadyFunctions;
+
 
     ShouldConnectAppCallback shouldConnectFunctions;
 

@@ -802,6 +802,7 @@ void SleepHelper::PersistentDataFile::flush(bool force) {
 
 void SleepHelper::EventHistory::addEvent(const char *jsonObj) {
     // Append to the file
+    SleepHelper::instance().appLog.info("adding event %s", jsonObj); // TEMPORARY
     WITH_LOCK(*this) {
         int fd = open(path, O_RDWR | O_CREAT | O_APPEND, 0666);
         if (fd != -1) {
@@ -861,6 +862,8 @@ bool SleepHelper::EventHistory::getEvents(JSONWriter &writer, size_t maxSize, bo
                     while(cur < end) {
                         char *lf = strchr(cur, '\n');
                         *lf = 0;
+
+                        SleepHelper::instance().appLog.info("copying event %s", cur); // TEMPORARY
 
                         bytesUsed += strlen(cur) + 1;
                         if (bytesUsed > maxSize) {
@@ -934,6 +937,19 @@ void SleepHelper::EventHistory::removeEvents() {
     }
 }
 
+bool SleepHelper::EventHistory::getHasEvents() { 
+    if (firstRun) {
+        firstRun = false;
+
+        struct stat sb;
+        int res = stat(path, &sb);
+
+        hasEvents = (res == 0 && sb.st_size > 0);
+    }
+    return hasEvents; 
+};
+
+
 //
 // EventCombiner
 //
@@ -971,6 +987,8 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
     bool doRemoveEvents = false;
 
     if (eventHistory.getHasEvents()) {
+        SleepHelper::instance().appLog.info("has event history events"); // TEMPORARY
+
         memset(buf, 0, maxSize);
         JSONBufferWriter writer(buf, maxSize);
 
@@ -1084,6 +1102,7 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
             }
         }
         if (doRemoveEvents) {
+            SleepHelper::instance().appLog.info("removing event from history events"); // TEMPORARY
             eventHistory.removeEvents();
         }
     }
