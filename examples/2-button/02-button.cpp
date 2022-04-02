@@ -1,4 +1,3 @@
-#include "DebounceSwitchRK.h"
 #include "LocalTimeRK.h"
 
 #include "SleepHelper.h"
@@ -10,27 +9,12 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 
 const pin_t BUTTON_PIN = D2;
 system_tick_t pinWakeMillis = 0;
+system_tick_t lastButtonPress = 0;
 
 void logButtonPress();
 
 void setup() {
-    // For counting button clicks while awake
-    /*
-    DebounceSwitch::getInstance()->setup();
-    DebounceSwitch::getInstance()->addSwitch(BUTTON_PIN, DebounceSwitchStyle::PRESS_LOW_PULLUP, [](DebounceSwitchState *switchState, void *context) {
-        Log.info("pin=%d state=%s", switchState->getPin(), switchState->getPressStateName());
-        switch(switchState->getPressState()) {
-        case DebouncePressState::TAP:
-            logButtonPress();
-            break;
-
-        case DebouncePressState::PRESS_START:
-        case DebouncePressState::RELEASED:
-        default:
-            break;
-        }
-    });
-    */
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
 
     SleepHelper::instance()
         .withShouldConnectMinimumSoC(9.0)
@@ -45,7 +29,7 @@ void setup() {
                 Log.info("wake by pin %d", whichPin);
                 if (whichPin == BUTTON_PIN) {
                     logButtonPress();
-                    pinWakeMillis = millis();
+                    lastButtonPress = pinWakeMillis = millis();
                 }
                 else {
                     pinWakeMillis = 0;
@@ -61,10 +45,10 @@ void setup() {
             return true;
         })
         .withNoConnectionFunction([]() {
-            // If woken by pin, wait 2 seconds for additional button presses (return true)
-            // Then allow sleep (return false)
+            // If woken by pin, wait until button is released
             if (pinWakeMillis) {
-                return (millis() - pinWakeMillis < 2000);
+                // return true to stay awake, false to allow sleep
+                return (digitalRead(BUTTON_PIN) == LOW);
             }
             else {
                 return false;
@@ -79,6 +63,14 @@ void setup() {
 
 void loop() {
     SleepHelper::instance().loop();
+
+    if (digitalRead(BUTTON_PIN) == LOW) {
+        if (millis() - lastButtonPress >= 1000) {
+            logButtonPress();
+        }
+        lastButtonPress = millis();
+    }
+
 }
 
 
