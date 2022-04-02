@@ -18,7 +18,7 @@ void setup() {
 
     SleepHelper::instance()
         .withShouldConnectMinimumSoC(9.0)
-        .withSleepConfigurationFunction([](SystemSleepConfiguration &sleepConfig, std::chrono::milliseconds&duration) {
+        .withSleepConfigurationFunction([](SystemSleepConfiguration &sleepConfig, system_tick_t&durationMs) {
             // Add a GPIO wake on button press
             sleepConfig.gpio(BUTTON_PIN, FALLING);
             return true;
@@ -57,6 +57,10 @@ void setup() {
         .withMaximumTimeToConnect(11min)
         .withTimeConfig("EST5EDT,M3.2.0/02:00:00,M11.1.0/02:00:00")
         .withEventHistory("/usr/events.txt", "eh");
+
+    // Full wake and publish every 15 minutes
+    SleepHelper::instance().getScheduleFull()
+        .withMinuteOfHour(15);
 
     SleepHelper::instance().setup();
 }

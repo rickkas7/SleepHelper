@@ -83,6 +83,10 @@ void SleepHelper::setup() {
     settingsFile.setup();
     persistentData.setup();
 
+    // Setup empty quick and full wake schedules to start
+    getScheduleQuick().withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+    getScheduleFull().withFlags(LocalTimeSchedule::FLAG_FULL_WAKE);
+
     // This library directly uses BackgroundPublishRK to publish from a worker thread to 
     // avoid blocking. You can safely use this at the same time as using 
     // PublishQueuePosixRK to handle publishing with saving publishes to
@@ -104,6 +108,31 @@ void SleepHelper::setup() {
     // If reset reason events are enabled, add to the wake event
     withWakeEventFunction(eventsEnabledResetReason, [resetReason](JSONWriter &writer, int &priority) {
         writer.value(resetReason);
+    });
+
+    withShouldConnectFunction([this](int &connectConviction, int &noConnectConviction) {
+        if (!Time.isValid()) {
+            // If we don't have an RTC time, connect
+            connectConviction = 80;
+            return true;
+        }
+
+        time_t t = SleepHelper::instance().persistentData.getValue_lastFullWake();
+        if (t == 0) {
+            t = Time.now();
+        }
+
+        LocalTimeConvert conv;
+        conv.withTime(t).convert();
+
+        t = scheduleManager.getNextFullWake(conv);
+        if (t <= Time.now()) {
+            // It's time to do a full wake
+            connectConviction = 80;
+            return true;
+        }
+
+        return true;
     });
 
 }
@@ -160,6 +189,8 @@ void SleepHelper::stateHandlerStart() {
     if (!shouldConnectFunctions.shouldConnect()) {
         // We should not connect, so go into no connection state
         appLog.info("running in no connection mode");
+        SleepHelper::instance().persistentData.setValue_lastQuickWake(Time.now());
+
         stateHandler = &SleepHelper::stateHandlerNoConnection;
         return;
     }
@@ -207,6 +238,8 @@ void SleepHelper::stateHandlerTimeValidWait() {
 
 void SleepHelper::stateHandlerConnectedStart() {
     connectedStartMillis = millis();
+
+    SleepHelper::instance().persistentData.setValue_lastFullWake(Time.now());
 
     system_tick_t elapsedMs = connectedStartMillis - connectAttemptStartMillis;
     appLog.info("connected to cloud in %lu ms", elapsedMs);
@@ -346,15 +379,24 @@ void SleepHelper::stateHandlerPrepareToSleep() {
     // Default sleep mode is ULP. Can override by sleepConfigurationFunction
     sleepConfig.mode(SystemSleepMode::ULTRA_LOW_POWER);
 
-    // Calculate sleep duration (default to 15 minutes)
-    std::chrono::milliseconds sleepTime = 15min;
+    // Calculate sleep duration (default to 15 minutes if no schedule is set)
+    system_tick_t sleepTime = std::chrono::duration_cast<std::chrono::milliseconds>(15min).count();
+
+    //
+    LocalTimeConvert conv;
+    conv.withCurrentTime().convert();
+    time_t nextWake = scheduleManager.getNextWake(conv);
+    if (nextWake != 0) {
+        sleepTime = (nextWake - Time.now()) * 1000;
+    }
+
     //sleepTimeRecommendationFunctions.forEach(sleepTime);
 
     // Allow other sleep configuration to be overridden
     sleepConfigurationFunctions.forEach(sleepConfig, sleepTime);
     sleepConfig.duration(sleepTime);
 
-    appLog.info("sleeping for %d sec", (int)(sleepTime.count() / 1000));
+    appLog.info("sleeping for %d sec", (int)(sleepTime / 1000));
 
     // Sleep!
     SystemSleepResult sleepResult = System.sleep(sleepConfig);

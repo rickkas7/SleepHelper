@@ -902,7 +902,7 @@ public:
         public:
             SavedDataHeader header;
             uint32_t lastUpdateCheck;
-            uint32_t lastPublish;
+            uint32_t lastFullWake;
             uint32_t lastQuickWake;
             // OK to add more fields here later without incremeting version.
             // New fields will be zero-initialized.
@@ -935,15 +935,15 @@ public:
         }
 
         /**
-         * @brief Get the value lastPublish (Unix time, UTC)
+         * @brief Get the value lastFullWake (Unix time, UTC)
          * 
          * @return time_t Unix time at UTC, like the value of Time.now()
          */
-        time_t getValue_lastPublish() const {
-            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, lastPublish));
+        time_t getValue_lastFullWake() const {
+            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, lastFullWake));
         }
-        void setValue_lastPublish(time_t value) {
-            setValue<uint32_t>(offsetof(SleepHelperData, lastPublish), (uint32_t)value);
+        void setValue_lastFullWake(time_t value) {
+            setValue<uint32_t>(offsetof(SleepHelperData, lastFullWake), (uint32_t)value);
         }
 
         /**
@@ -1296,7 +1296,7 @@ public:
 
 
 #ifndef UNITTEST
-    SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, std::chrono::milliseconds&)> fn) { 
+    SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, system_tick_t&)> fn) { 
         sleepConfigurationFunctions.add(fn); 
         return *this;
     }
@@ -1519,6 +1519,12 @@ public:
      * @param timeMs 
      * @return SleepHelper& 
      */
+    SleepHelper &withMaximumTimeToConnect(system_tick_t timeMs) { 
+        return withMaximumTimeToConnectFunction([timeMs](system_tick_t ms) {
+            return (ms >= timeMs);
+        }); 
+    }
+
     SleepHelper &withMaximumTimeToConnect(std::chrono::milliseconds timeMs) { 
         return withMaximumTimeToConnectFunction([timeMs](system_tick_t ms) {
             return (ms >= timeMs.count());
@@ -1546,6 +1552,12 @@ public:
         return *this;
     }
 
+
+    SleepHelper &withMinimumConnectedTime(system_tick_t timeMs) { 
+        return withSleepReadyFunction([timeMs](system_tick_t ms) {
+            return (ms >= timeMs);
+        }); 
+    }
 
     SleepHelper &withMinimumConnectedTime(std::chrono::milliseconds timeMs) { 
         return withSleepReadyFunction([timeMs](system_tick_t ms) {
@@ -1699,15 +1711,18 @@ public:
     PersistentData persistentData;
 
     /**
-     * @brief Schedule for when to do a quick wake (not necessarily publish)
+     * @brief Class for managing publish and wake schedules
+     * 
      */
-    LocalTimeSchedule quickWakeSchedule;
+    LocalTimeScheduleManager scheduleManager;
 
-    /**
-     * @brief Schedule for when to publish events
-     */
-    LocalTimeSchedule publishSchedule;
+    LocalTimeSchedule &getScheduleQuick() {
+        return scheduleManager.getScheduleByName("quick");
+    }
 
+    LocalTimeSchedule &getScheduleFull() {
+        return scheduleManager.getScheduleByName("full");
+    }
 
 protected:
     /**
@@ -1763,7 +1778,7 @@ protected:
 
     void stateHandlerPrepareToSleep();
 
-    AppCallback<SystemSleepConfiguration &, std::chrono::milliseconds&> sleepConfigurationFunctions;
+    AppCallback<SystemSleepConfiguration &, system_tick_t&> sleepConfigurationFunctions;
 
     AppCallback<const SystemSleepResult &> wakeFunctions;
 
