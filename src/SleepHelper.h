@@ -1757,6 +1757,10 @@ protected:
 
     void stateHandlerDisconnectBeforeSleep();
 
+    void stateHandlerDisconnectWait();
+
+    void stateHandlerCellularOff();
+
     void stateHandlerPrepareToSleep();
 
     AppCallback<SystemSleepConfiguration &, std::chrono::milliseconds&> sleepConfigurationFunctions;

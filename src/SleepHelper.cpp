@@ -156,6 +156,7 @@ void SleepHelper::systemEventHandlerStatic(system_event_t event, int param) {
 }
 
 void SleepHelper::stateHandlerStart() {
+    appLog.info("stateHandlerStart");
     if (!shouldConnectFunctions.shouldConnect()) {
         // We should not connect, so go into no connection state
         appLog.info("running in no connection mode");
@@ -294,6 +295,7 @@ void SleepHelper::stateHandlerNoConnection() {
 
     if (!noConnectionFunctions.whileAnyTrue(false)) {
         // No more noConnectionFunctions need time, so go to sleep now
+        appLog.info("done with connection mode, preparing to sleep");
         stateHandler = &SleepHelper::stateHandlerPrepareToSleep;
         return;
     }
@@ -306,16 +308,37 @@ void SleepHelper::stateHandlerDisconnectBeforeSleep() {
 
     appLog.info("disconnecting from cloud");
 
-    // Disconnect from the cloud
-    Particle.disconnect();
+    // Explicitly disconnect from the cloud with graceful offline status message
+    Particle.disconnect(CloudDisconnectOptions().graceful(true).timeout(5000)); // 5 seconds
 
-    // Do we need to power down the cellular modem?
+    stateHandler = &SleepHelper::stateHandlerDisconnectWait;
+}
+
+void SleepHelper::stateHandlerDisconnectWait() {
+    if (Particle.disconnected()) {
+        stateHandler = &SleepHelper::stateHandlerCellularOff;
+        return;
+    }
+}
+
+void SleepHelper::stateHandlerCellularOff() {
+    appLog.info("Powering down cellular");
+
+    // These two operations should be fast, so not necessary to use separate states
+    Cellular.disconnect();
+    waitUntilNot(Cellular.ready);
+
+    // Turn off modem so it won't be turned on again after wake
+    Cellular.off();
+    waitUntil(Cellular.isOff);
+
     stateHandler = &SleepHelper::stateHandlerPrepareToSleep;
 }
 
 
 void SleepHelper::stateHandlerPrepareToSleep() {
     appLog.info("stateHandlerPrepareToSleep");
+
     sleepOrResetFunctions.forEach(false);
 
     SystemSleepConfiguration sleepConfig;
@@ -336,18 +359,20 @@ void SleepHelper::stateHandlerPrepareToSleep() {
     // Sleep!
     SystemSleepResult sleepResult = System.sleep(sleepConfig);
 
-    wakeFunctions.forEach(sleepResult);
+    // Woke from sleep
+    stateHandler = &SleepHelper::stateHandlerStart;
 
+    wakeFunctions.forEach(sleepResult);
 
     int wakeReasonInt = (int) sleepResult.wakeupReason();
     withWakeEventFunction(eventsEnabledWakeReason, [wakeReasonInt](JSONWriter &writer, int &priority) {
         writer.value(wakeReasonInt);
     });     
 
-    // Woke from sleep
-    stateHandler = &SleepHelper::stateHandlerStart;
 
     wakeOrBootFunctions.forEach();
+
+    appLog.info("exiting stateHandlerPrepareToSleep");
 }
 #endif // UNITTEST
 
