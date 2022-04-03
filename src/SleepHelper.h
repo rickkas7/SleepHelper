@@ -224,6 +224,64 @@ public:
         std::vector<std::function<bool(Types... args)>> callbackFunctions;
     };
 
+    class AppCallbackState {
+    public:
+        static const int CALLBACK_STATE_START = -1;
+        static const int CALLBACK_START_RETURNED_FALSE = -2;
+
+        int callbackState = CALLBACK_STATE_START;
+        void *callbackData = 0; //!< Callback can store data here
+    };
+
+    template<class... Types>
+    class AppCallbackWithState {
+    public: 
+        /**
+         * @brief Adds a callback function. Zero or more callbacks can be defined.
+         * 
+         * @param callback 
+         * 
+         * The callback always returns a bool, but the parameters are defined by the template.
+         */
+        void add(std::function<bool(AppCallbackState &, Types... args)> callback) {
+            callbackFunctions.push_back(callback);
+            callbackState.push_back(AppCallbackState());
+        }
+
+        void setState(int newState) {
+            for(auto it = callbackState.begin(); it != callbackState.end(); ++it) {
+                it->callbackState = newState;
+            }
+        }
+
+        void setStartState() {
+            setState(AppCallbackState::CALLBACK_STATE_START);
+        }
+
+        bool whileAnyTrue(Types... args) {
+            bool finalRes = false;
+
+            for(auto it = callbackState.begin(), it2 = callbackFunctions.begin(); it != callbackState.end(); ++it, ++it2) {
+                if (it->callbackState != AppCallbackState::CALLBACK_START_RETURNED_FALSE) {
+
+                    bool res = (*it2)(*it, args...);
+                    if (res) {
+                        finalRes = true;
+                    }
+                    else {
+                        it->callbackState = AppCallbackState::CALLBACK_START_RETURNED_FALSE;
+                    }
+                }
+            }
+            return finalRes;
+        }
+
+
+        std::vector<std::function<bool(AppCallbackState &, Types... args)>> callbackFunctions;
+        std::vector<AppCallbackState> callbackState;
+
+    };
+
     /**
      * @brief Class for ShouldConnect application callback
      * 
@@ -1300,6 +1358,7 @@ public:
     public:
         bool isConnected; //!< Currently connected to cellular if true
         system_tick_t sleepTimeMs; //!< Override setting for sleep duration
+        system_tick_t timeUntilNextFullWakeMs;
         bool disconnectCellular; //!< Override setting for disconnecting from cellular
     };
 
@@ -1376,7 +1435,7 @@ public:
      * on wake.
      * 
      */
-    SleepHelper &withDataCaptureFunction(std::function<bool()> fn) {
+    SleepHelper &withDataCaptureFunction(std::function<bool(AppCallbackState &state)> fn) {
         dataCaptureFunctions.add(fn);
         return *this;
     }
@@ -1864,7 +1923,7 @@ protected:
 
     AppCallback<> loopFunctions;
 
-    AppCallback<> dataCaptureFunctions;
+    AppCallbackWithState<> dataCaptureFunctions;
 
 
     AppCallback<system_tick_t> sleepReadyFunctions;

@@ -205,8 +205,9 @@ void SleepHelper::calculateSleepSettings(bool isConnected) {
     if (nextWake != 0) {
         sleepParams.sleepTimeMs = (nextWake - Time.now()) * 1000;
     }
+    sleepParams.timeUntilNextFullWakeMs = scheduleManager.getNextFullWake(conv);
 
-    sleepParams.disconnectCellular = (sleepParams.sleepTimeMs >= minimumCellularOffTimeMs);
+    sleepParams.disconnectCellular = (sleepParams.timeUntilNextFullWakeMs >= minimumCellularOffTimeMs);
 
     // Allow other sleep configuration to be overridden
     sleepConfigurationFunctions.forEach(sleepConfig, sleepParams);
@@ -225,11 +226,21 @@ void SleepHelper::calculateSleepSettings(bool isConnected) {
 
 void SleepHelper::stateHandlerStart() {
     appLog.info("stateHandlerStart");
-    if (!shouldConnectFunctions.shouldConnect()) {
+
+    // This handles when we do a quick wake cycle by schedule and we've woken up
+    // again. There doesn't need to be a handle to handle this common case.
+    bool isQuickWake = false;
+    if (Time.isValid() && sleepParams.timeUntilNextFullWakeMs) {
+        
+        isQuickWake = (Time.now() < sleepParams.timeUntilNextFullWakeMs);
+    }
+
+    if (isQuickWake || !shouldConnectFunctions.shouldConnect()) {
         // We should not connect, so go into no connection state
         appLog.info("running in no connection mode");
         SleepHelper::instance().persistentData.setValue_lastQuickWake(Time.now());
 
+        dataCaptureFunctions.setStartState();
         stateHandler = &SleepHelper::stateHandlerNoConnectionDataCapture;
         return;
     }
@@ -286,11 +297,13 @@ void SleepHelper::stateHandlerConnectedStart() {
     withWakeEventFunction(eventsEnabledTimeToConnect, [elapsedMs](JSONWriter &writer, int &priority) {
         writer.value((int)elapsedMs);
     });
+
+    dataCaptureFunctions.setStartState();
     stateHandler = &SleepHelper::stateHandlerConnectedDataCapture;
 }
 
 void SleepHelper::stateHandlerConnectedDataCapture() {
-    if (dataCaptureFunctions.whileAnyFalse(true)) {
+    if (!dataCaptureFunctions.whileAnyTrue()) {
         stateHandler = &SleepHelper::stateHandlerConnectedWakeEvents;
     }
 }
@@ -373,7 +386,7 @@ void SleepHelper::stateHandlerReconnectWait() {
 }
 
 void SleepHelper::stateHandlerNoConnectionDataCapture() {
-    if (dataCaptureFunctions.whileAnyFalse(true)) {
+    if (!dataCaptureFunctions.whileAnyTrue()) {
         stateHandler = &SleepHelper::stateHandlerNoConnection;
     }
 }
@@ -908,7 +921,6 @@ void SleepHelper::PersistentDataFile::flush(bool force) {
 
 void SleepHelper::EventHistory::addEvent(const char *jsonObj) {
     // Append to the file
-    SleepHelper::instance().appLog.info("adding event %s", jsonObj); // TEMPORARY
     WITH_LOCK(*this) {
         int fd = open(path, O_RDWR | O_CREAT | O_APPEND, 0666);
         if (fd != -1) {
@@ -968,8 +980,6 @@ bool SleepHelper::EventHistory::getEvents(JSONWriter &writer, size_t maxSize, bo
                     while(cur < end) {
                         char *lf = strchr(cur, '\n');
                         *lf = 0;
-
-                        SleepHelper::instance().appLog.info("copying event %s", cur); // TEMPORARY
 
                         bytesUsed += strlen(cur) + 1;
                         if (bytesUsed > maxSize) {
@@ -1090,8 +1100,6 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
     bool doRemoveEvents = false;
 
     if (eventHistory.getHasEvents()) {
-        SleepHelper::instance().appLog.info("has event history events"); // TEMPORARY
-
         memset(buf, 0, maxSize);
         JSONBufferWriter writer(buf, maxSize);
 
@@ -1205,7 +1213,6 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, siz
             }
         }
         if (doRemoveEvents) {
-            SleepHelper::instance().appLog.info("removing event from history events"); // TEMPORARY
             eventHistory.removeEvents();
         }
     }
