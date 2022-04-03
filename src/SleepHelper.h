@@ -1318,6 +1318,31 @@ public:
     }
 
     /**
+     * @brief The data capture function is called on both quick and full wake
+     * 
+     * @param fn 
+     * @return SleepHelper& 
+     * 
+     * The callback has this prototype
+     * 
+     * bool callback()
+     * 
+     * Return true if your situation if you are done capturing data.
+     * 
+     * Return false if you still have things to do for your capture operation.
+     * 
+     * This callback is called during both quick and full wake. For the long
+     * wake, it's called before wake event generation so it's a good place
+     * to put code to add events to the event history that will be published
+     * on wake.
+     * 
+     */
+    SleepHelper &withDataCaptureFunction(std::function<bool()> fn) {
+        dataCaptureFunctions.add(fn);
+        return *this;
+    }
+
+    /**
      * @brief Determine if it's OK to sleep now, when in connected state
      * 
      * @param fn 
@@ -1762,11 +1787,17 @@ protected:
 
     void stateHandlerConnected();
 
+    void stateHandlerConnectedDataCapture();
+
+    void stateHandlerConnectedWakeEvents();
+
     void stateHandlerPublishWait();
 
     void stateHandlerPublishRateLimit();
 
     void stateHandlerReconnectWait();
+
+    void stateHandlerNoConnectionDataCapture();
 
     void stateHandlerNoConnection();
 
@@ -1788,6 +1819,8 @@ protected:
     AppCallback<> setupFunctions;
 
     AppCallback<> loopFunctions;
+
+    AppCallback<> dataCaptureFunctions;
 
 
     AppCallback<system_tick_t> sleepReadyFunctions;

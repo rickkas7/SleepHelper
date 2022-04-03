@@ -191,7 +191,7 @@ void SleepHelper::stateHandlerStart() {
         appLog.info("running in no connection mode");
         SleepHelper::instance().persistentData.setValue_lastQuickWake(Time.now());
 
-        stateHandler = &SleepHelper::stateHandlerNoConnection;
+        stateHandler = &SleepHelper::stateHandlerNoConnectionDataCapture;
         return;
     }
     appLog.info("connecting to cloud");
@@ -247,7 +247,16 @@ void SleepHelper::stateHandlerConnectedStart() {
     withWakeEventFunction(eventsEnabledTimeToConnect, [elapsedMs](JSONWriter &writer, int &priority) {
         writer.value((int)elapsedMs);
     });
+    stateHandler = &SleepHelper::stateHandlerConnectedDataCapture;
+}
 
+void SleepHelper::stateHandlerConnectedDataCapture() {
+    if (dataCaptureFunctions.whileAnyFalse(true)) {
+        stateHandler = &SleepHelper::stateHandlerConnectedWakeEvents;
+    }
+}
+
+void SleepHelper::stateHandlerConnectedWakeEvents() {
 
     if (wakeEventName.length() > 0) {
         // Call the wake event handlers to see if they have JSON data to publish
@@ -321,6 +330,12 @@ void SleepHelper::stateHandlerReconnectWait() {
     if (Particle.connected()) {
         stateHandler = &SleepHelper::stateHandlerConnected;
         return;
+    }
+}
+
+void SleepHelper::stateHandlerNoConnectionDataCapture() {
+    if (dataCaptureFunctions.whileAnyFalse(true)) {
+        stateHandler = &SleepHelper::stateHandlerNoConnection;
     }
 }
 
