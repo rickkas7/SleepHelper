@@ -1296,7 +1296,15 @@ public:
 
 
 #ifndef UNITTEST
-    SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, system_tick_t&)> fn) { 
+    class SleepConfigurationParameters {
+    public:
+        bool isConnected; //!< Currently connected to cellular if true
+        system_tick_t sleepTimeMs; //!< Override setting for sleep duration
+        bool disconnectCellular; //!< Override setting for disconnecting from cellular
+    };
+
+
+    SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, SleepConfigurationParameters&)> fn) { 
         sleepConfigurationFunctions.add(fn); 
         return *this;
     }
@@ -1305,7 +1313,38 @@ public:
         wakeFunctions.add(fn); 
         return *this;
     }
+
+    /**
+     * @brief Sets the minimum time to disconnect from cellular. Default: 13 minutes.
+     * 
+     * @param timeMs 
+     * @return SleepHelper& 
+     * 
+     * You can set this lower than 13 minutes, but beware of aggressive reconnection behavior.
+     */
+    SleepHelper &withMinimumCellularOffTime(std::chrono::milliseconds timeMs) { 
+        minimumCellularOffTimeMs = timeMs.count();
+        return *this;
+    }
+
+    /**
+     * @brief Sets the minimum time to sleep. Default is 10 seconds.
+     * 
+     * @param timeMs 
+     * @return SleepHelper& 
+     * 
+     * If the time to sleep is less than that, we stay awake until the event occurs.
+     */
+    SleepHelper &withMinimumSleepTimeMs(std::chrono::milliseconds timeMs) { 
+        minimumSleepTimeMs = timeMs.count();
+        return *this;
+    }
+
 #endif
+
+
+
+
 
     SleepHelper &withSetupFunction(std::function<bool()> fn) { 
         setupFunctions.add(fn);
@@ -1777,6 +1816,8 @@ protected:
 
     static void systemEventHandlerStatic(system_event_t event, int param);
 
+    void calculateSleepSettings(bool isConnected);
+
     void stateHandlerStart();
 
     void stateHandlerConnectWait();
@@ -1807,11 +1848,14 @@ protected:
 
     void stateHandlerCellularOff();
 
-    void stateHandlerPrepareToSleep();
+    void stateHandlerSleep();
 
-    AppCallback<SystemSleepConfiguration &, system_tick_t&> sleepConfigurationFunctions;
+    AppCallback<SystemSleepConfiguration &, SleepConfigurationParameters&> sleepConfigurationFunctions;
 
     AppCallback<const SystemSleepResult &> wakeFunctions;
+
+    SystemSleepConfiguration sleepConfig;
+    SleepConfigurationParameters sleepParams;
 
 #endif // UNITTEST
 
@@ -1845,7 +1889,11 @@ protected:
 
     uint64_t eventsEnabled = 0xfffffffffffffffful;
 
+
 #ifndef UNITTEST
+    system_tick_t minimumCellularOffTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(13min).count();;
+    system_tick_t minimumSleepTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(10s).count();;
+
     std::function<void(SleepHelper&)> stateHandler = &SleepHelper::stateHandlerStart;
 
     system_tick_t connectAttemptStartMillis = 0;

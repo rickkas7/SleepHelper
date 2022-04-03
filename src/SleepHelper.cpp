@@ -113,6 +113,7 @@ void SleepHelper::setup() {
     withShouldConnectFunction([this](int &connectConviction, int &noConnectConviction) {
         if (!Time.isValid()) {
             // If we don't have an RTC time, connect
+            appLog.info("no RTC time, doing full wake");
             connectConviction = 80;
             return true;
         }
@@ -128,6 +129,7 @@ void SleepHelper::setup() {
         t = scheduleManager.getNextFullWake(conv);
         if (t <= Time.now()) {
             // It's time to do a full wake
+            appLog.info("time to do full wake");
             connectConviction = 80;
             return true;
         }
@@ -183,6 +185,43 @@ void SleepHelper::systemEventHandler(system_event_t event, int param) {
 void SleepHelper::systemEventHandlerStatic(system_event_t event, int param) {
     SleepHelper::instance().systemEventHandler(event, param);
 }
+
+
+void SleepHelper::calculateSleepSettings(bool isConnected) {
+    // Reset setting to default values
+    sleepConfig = SystemSleepConfiguration();
+
+    // Default sleep mode is ULP. Can override by sleepConfigurationFunction
+    sleepConfig.mode(SystemSleepMode::ULTRA_LOW_POWER);
+
+    // Calculate sleep duration (default to 15 minutes if no schedule is set)
+    sleepParams.isConnected = isConnected;
+    sleepParams.sleepTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(15min).count();
+
+    //
+    LocalTimeConvert conv;
+    conv.withCurrentTime().convert();
+    time_t nextWake = scheduleManager.getNextWake(conv);
+    if (nextWake != 0) {
+        sleepParams.sleepTimeMs = (nextWake - Time.now()) * 1000;
+    }
+
+    sleepParams.disconnectCellular = (sleepParams.sleepTimeMs >= minimumCellularOffTimeMs);
+
+    // Allow other sleep configuration to be overridden
+    sleepConfigurationFunctions.forEach(sleepConfig, sleepParams);
+    if (sleepParams.sleepTimeMs < 1000) {
+        sleepParams.sleepTimeMs = 1000;
+    }
+    
+    if (sleepParams.isConnected && !sleepParams.disconnectCellular) {
+        // If we are connected and should not disconnect cellular, use cellular standby mode
+        sleepConfig.network(NETWORK_INTERFACE_CELLULAR);
+    }
+
+    sleepConfig.duration(sleepParams.sleepTimeMs);
+}
+
 
 void SleepHelper::stateHandlerStart() {
     appLog.info("stateHandlerStart");
@@ -344,7 +383,8 @@ void SleepHelper::stateHandlerNoConnection() {
     if (!noConnectionFunctions.whileAnyTrue(false)) {
         // No more noConnectionFunctions need time, so go to sleep now
         appLog.info("done with connection mode, preparing to sleep");
-        stateHandler = &SleepHelper::stateHandlerPrepareToSleep;
+        calculateSleepSettings(false);
+        stateHandler = &SleepHelper::stateHandlerSleep;
         return;
     }
     
@@ -353,6 +393,13 @@ void SleepHelper::stateHandlerNoConnection() {
 }
 
 void SleepHelper::stateHandlerDisconnectBeforeSleep() {
+
+    calculateSleepSettings(true);
+    if (!sleepParams.disconnectCellular) {
+        appLog.info("sleep cycle is short, using cellular standby");
+        stateHandler = &SleepHelper::stateHandlerSleep;
+        return;
+    }
 
     appLog.info("disconnecting from cloud");
 
@@ -380,38 +427,15 @@ void SleepHelper::stateHandlerCellularOff() {
     Cellular.off();
     waitUntil(Cellular.isOff);
 
-    stateHandler = &SleepHelper::stateHandlerPrepareToSleep;
+    stateHandler = &SleepHelper::stateHandlerSleep;
 }
 
-
-void SleepHelper::stateHandlerPrepareToSleep() {
-    appLog.info("stateHandlerPrepareToSleep");
+void SleepHelper::stateHandlerSleep() {
+    appLog.info("stateHandlerSleep");
 
     sleepOrResetFunctions.forEach(false);
 
-    SystemSleepConfiguration sleepConfig;
-
-    // Default sleep mode is ULP. Can override by sleepConfigurationFunction
-    sleepConfig.mode(SystemSleepMode::ULTRA_LOW_POWER);
-
-    // Calculate sleep duration (default to 15 minutes if no schedule is set)
-    system_tick_t sleepTime = std::chrono::duration_cast<std::chrono::milliseconds>(15min).count();
-
-    //
-    LocalTimeConvert conv;
-    conv.withCurrentTime().convert();
-    time_t nextWake = scheduleManager.getNextWake(conv);
-    if (nextWake != 0) {
-        sleepTime = (nextWake - Time.now()) * 1000;
-    }
-
-    //sleepTimeRecommendationFunctions.forEach(sleepTime);
-
-    // Allow other sleep configuration to be overridden
-    sleepConfigurationFunctions.forEach(sleepConfig, sleepTime);
-    sleepConfig.duration(sleepTime);
-
-    appLog.info("sleeping for %d sec", (int)(sleepTime / 1000));
+    appLog.info("sleeping for %d sec", (int)(sleepParams.sleepTimeMs / 1000));
 
     // Sleep!
     SystemSleepResult sleepResult = System.sleep(sleepConfig);
@@ -429,7 +453,7 @@ void SleepHelper::stateHandlerPrepareToSleep() {
 
     wakeOrBootFunctions.forEach();
 
-    appLog.info("exiting stateHandlerPrepareToSleep");
+    appLog.info("exiting stateHandlerSleep");
 }
 #endif // UNITTEST
 
@@ -1042,9 +1066,6 @@ void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events) {
     generateEvents(events, maxSize);
 }
 
-static bool _keyCompare(const String &a, const String &b) {
-    return strcmp(a, b) > 0;
-}
 
 void SleepHelper::EventCombiner::generateEvents(std::vector<String> &events, size_t maxSize) {
     

@@ -18,7 +18,8 @@ void setup() {
 
     SleepHelper::instance()
         .withShouldConnectMinimumSoC(9.0)
-        .withSleepConfigurationFunction([](SystemSleepConfiguration &sleepConfig, system_tick_t&durationMs) {
+        .withMinimumCellularOffTime(5min)
+        .withSleepConfigurationFunction([](SystemSleepConfiguration &sleepConfig, SleepHelper::SleepConfigurationParameters &params) {
             // Add a GPIO wake on button press
             sleepConfig.gpio(BUTTON_PIN, FALLING);
             return true;
