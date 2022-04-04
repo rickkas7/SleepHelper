@@ -100,6 +100,8 @@ public:
      * @brief Base class for a list of zero or more callback functions
      * 
      * @tparam Types 
+     * 
+     * Callbacks can have different parameters, and this template allows the parameters to be specified.
      */
     template<class... Types>
     class AppCallback {
@@ -119,6 +121,8 @@ public:
          * @brief Calls all callbacks, regardless of return value returned.
          * 
          * @param args 
+         * 
+         * The bool result is ignored when using forEach.
          */
         void forEach(Types... args) {
             for(auto it = callbackFunctions.begin(); it != callbackFunctions.end(); ++it) {
@@ -224,6 +228,15 @@ public:
         std::vector<std::function<bool(Types... args)>> callbackFunctions;
     };
 
+    /**
+     * @brief State data for AppCallbackWithState
+     * 
+     * The state data includes an integer state number. Callbacks can also store
+     * additional data in the callbackData field.
+     * 
+     * Since callbacks are typically never removed, you can put an allocated pointer
+     * in the callbackData field.
+     */
     class AppCallbackState {
     public:
         static const int CALLBACK_STATE_START = -1;
@@ -233,6 +246,11 @@ public:
         void *callbackData = 0; //!< Callback can store data here
     };
 
+    /**
+     * @brief Works like AppCallback, but includes additional state data
+     * 
+     * This is used by data capture functions.
+     */
     template<class... Types>
     class AppCallbackWithState {
     public: 
@@ -276,6 +294,7 @@ public:
             return finalRes;
         }
 
+        bool isEmpty() const { return callbackFunctions.empty(); };
 
         std::vector<std::function<bool(AppCallbackState &, Types... args)>> callbackFunctions;
         std::vector<AppCallbackState> callbackState;
@@ -962,6 +981,7 @@ public:
             uint32_t lastUpdateCheck;
             uint32_t lastFullWake;
             uint32_t lastQuickWake;
+            uint32_t nextDataCapture;
             // OK to add more fields here later without incremeting version.
             // New fields will be zero-initialized.
         };
@@ -1016,6 +1036,31 @@ public:
             setValue<uint32_t>(offsetof(SleepHelperData, lastQuickWake), (uint32_t)value);
         }
 
+        /**
+         * @brief Get time of the next data capture
+         * 
+         * @return time_t Unix time at UTC, like the value of Time.now(). Can be 0 (no time set)
+         * 
+         * Note that this setting is the next time, not the last time, as several other settings
+         * are. This improves efficiency and simplifies the code dramatically. On the minus side,
+         * changing the schedule will only affect the next schedule, not the current schedule.
+         * Since the data capture periods tend to be short, regular, and rarely changing this
+         * probably won't be an issue.
+         */
+        time_t getValue_nextDataCapture() const {
+            return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, nextDataCapture));
+        }
+
+        /**
+         * @brief Get time of the next data capture
+         * 
+         * @return time_t Unix time at UTC, like the value of Time.now()
+         */
+        void setValue_nextDataCapture(time_t value) {
+            setValue<uint32_t>(offsetof(SleepHelperData, nextDataCapture), (uint32_t)value);
+        }
+
+    
         static const uint32_t SAVED_DATA_MAGIC = 0xd87cb6ce;
         static const uint16_t SAVED_DATA_VERSION = 1; 
 
@@ -1416,7 +1461,7 @@ public:
     }
 
     /**
-     * @brief The data capture function is called on both quick and full wake
+     * @brief The data capture function is called on a schedule to capture data
      * 
      * @param fn 
      * @return SleepHelper& 
@@ -1425,14 +1470,12 @@ public:
      * 
      * bool callback()
      * 
-     * Return true if your situation if you are done capturing data.
+     * Return true if you need to be called back to finish capturing data
      * 
-     * Return false if you still have things to do for your capture operation.
+     * Return false if you are done capturing data.
      * 
-     * This callback is called during both quick and full wake. For the long
-     * wake, it's called before wake event generation so it's a good place
-     * to put code to add events to the event history that will be published
-     * on wake.
+     * This callback is called for quick wake, full wake, and while connected. It
+     * runs in a parallel state machine to the connection state machine. 
      * 
      */
     SleepHelper &withDataCaptureFunction(std::function<bool(AppCallbackState &state)> fn) {
@@ -1448,14 +1491,16 @@ public:
      * 
      * The sleep ready function prototype is:
      * 
-     * bool callback(system_tick_t connecteTimeMs)
+     * bool callback(AppCallbackState &state, system_tick_t connecteTimeMs)
      * 
-     * Return true if your situation is OK to sleep now. This does not guaranteed that sleep will
+     * Return false if your situation is OK to sleep now. This does not guaranteed that sleep will
      * actually occur, because there can be many sleep ready functions and other calculations.
+     * Once you return false your callback will no longe be called until the next wake cycle.
      * 
-     * Return false if you still have things to do before it's OK to sleep.
+     * Return true if you still have things to do before it's OK to sleep. You callback will
+     * continue to be called until it returns false.
      */
-    SleepHelper &withSleepReadyFunction(std::function<bool(system_tick_t)> fn) {
+    SleepHelper &withSleepReadyFunction(std::function<bool(AppCallbackState &, system_tick_t)> fn) {
         sleepReadyFunctions.add(fn); 
         return *this;
     }
@@ -1676,15 +1721,15 @@ public:
     }
 
 
-    SleepHelper &withMinimumConnectedTime(system_tick_t timeMs) { 
-        return withSleepReadyFunction([timeMs](system_tick_t ms) {
-            return (ms >= timeMs);
+    SleepHelper &withMinimumConnectedTime(AppCallbackState &state, system_tick_t timeMs) { 
+        return withSleepReadyFunction([timeMs](AppCallbackState &state, system_tick_t ms) {
+            return (ms < timeMs);
         }); 
     }
 
     SleepHelper &withMinimumConnectedTime(std::chrono::milliseconds timeMs) { 
-        return withSleepReadyFunction([timeMs](system_tick_t ms) {
-            return (ms >= timeMs.count());
+        return withSleepReadyFunction([timeMs](AppCallbackState &state, system_tick_t ms) {
+            return (ms < timeMs.count());
         }); 
     }
 
@@ -1722,7 +1767,7 @@ public:
 
 #ifdef __PUBLISHQUEUEPOSIXRK_H
     SleepHelper &withPublishQueuePosixRK(std::chrono::milliseconds maxTimeToPublish = 0ms) {
-        return withSleepReadyFunction([maxTimeToPublish](system_tick_t ms) {
+        return withSleepReadyFunction([maxTimeToPublish](AppCallbackState &state, system_tick_t ms) {
             if (maxTimeToPublish.count() != 0 && ms >= maxTimeToPublish.count()) {
                 PublishQueuePosix::instance()::setPausePublishing(true);
             }
@@ -1731,7 +1776,8 @@ public:
                 PublishQueuePosix::instance()::pausePublishing();
                 PublishQueuePosix::instance()::writeQueueToFiles();
             }
-            return canSleep;
+            // This callback returns false when you can sleep, and true to stay awake, so reverse boolean
+            return !canSleep;
         })
     }
 #endif
@@ -1847,6 +1893,16 @@ public:
         return scheduleManager.getScheduleByName("full");
     }
 
+    /**
+     * @brief The data capture schedule determines when to call the data capture callback
+     * 
+     * @return LocalTimeSchedule& 
+     * 
+     */
+    LocalTimeSchedule &getScheduleDataCapture() {
+        return scheduleManager.getScheduleByName("data");
+    }
+
 protected:
     /**
      * @brief The constructor is protected because the class is a singleton
@@ -1877,6 +1933,8 @@ protected:
 
     void calculateSleepSettings(bool isConnected);
 
+    void dataCaptureHandler();
+
     void stateHandlerStart();
 
     void stateHandlerConnectWait();
@@ -1887,8 +1945,6 @@ protected:
 
     void stateHandlerConnected();
 
-    void stateHandlerConnectedDataCapture();
-
     void stateHandlerConnectedWakeEvents();
 
     void stateHandlerPublishWait();
@@ -1896,8 +1952,6 @@ protected:
     void stateHandlerPublishRateLimit();
 
     void stateHandlerReconnectWait();
-
-    void stateHandlerNoConnectionDataCapture();
 
     void stateHandlerNoConnection();
 
@@ -1926,7 +1980,7 @@ protected:
     AppCallbackWithState<> dataCaptureFunctions;
 
 
-    AppCallback<system_tick_t> sleepReadyFunctions;
+    AppCallbackWithState<system_tick_t> sleepReadyFunctions;
 
 
     ShouldConnectAppCallback shouldConnectFunctions;
@@ -1959,6 +2013,7 @@ protected:
     system_tick_t networkConnectedMillis = 0;
     system_tick_t connectedStartMillis = 0;
     bool outOfMemory = false;
+    bool dataCaptureActive = false;
 #endif // UNITTEST
 
     Logger appLog;

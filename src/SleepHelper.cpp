@@ -83,8 +83,10 @@ void SleepHelper::setup() {
     settingsFile.setup();
     persistentData.setup();
 
-    // Setup empty quick and full wake schedules to start
+    // Setup empty quick and full wake schedules to start. Data schedule is a quick wake, but also runs 
+    // while the device is running, including while it's trying to connect.
     getScheduleQuick().withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+    getScheduleDataCapture().withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
     getScheduleFull().withFlags(LocalTimeSchedule::FLAG_FULL_WAKE);
 
     // This library directly uses BackgroundPublishRK to publish from a worker thread to 
@@ -100,9 +102,9 @@ void SleepHelper::setup() {
     wakeOrBootFunctions.forEach();
 
     // Always wait until we have a valid RTC time before sleeping if cloud connected
-    withSleepReadyFunction([](system_tick_t) {
-        // Return true if it's OK to sleep or false if not.
-        return Time.isValid();
+    withSleepReadyFunction([](AppCallbackState &, system_tick_t) {
+        // Return false if it's OK to sleep or true to stay awake
+        return !Time.isValid();
     });
 
     // If reset reason events are enabled, add to the wake event
@@ -144,6 +146,9 @@ void SleepHelper::loop() {
 
     // Call all loop functions
     loopFunctions.forEach();
+
+    // The data capture handler runs in parallel to the main state machine
+    dataCaptureHandler();
 
     // Call the connection state handler
     stateHandler(*this);
@@ -223,6 +228,54 @@ void SleepHelper::calculateSleepSettings(bool isConnected) {
     sleepConfig.duration(sleepParams.sleepTimeMs);
 }
 
+void SleepHelper::dataCaptureHandler() {
+    // Data capture runs in a separate state machine so it will continue to run while in any state
+    // as long as there is valid RTC time
+
+    if (dataCaptureFunctions.isEmpty()) {
+        // If no data capture functions are defined, exit quickly
+        return;
+    }
+
+    if (!Time.isValid()) {
+        // If no RTC time yet, can't check the schedule
+        return;
+    }
+
+    if (dataCaptureActive) {
+        // Previously started capture, waiting for callbacks to finish
+        if (!dataCaptureFunctions.whileAnyTrue()) {
+            dataCaptureActive = false;
+        }
+    }
+    else {
+        bool updateSchedule = false;
+
+        if (!persistentData.getValue_nextDataCapture()) {
+            // There no schedule, so update it
+            updateSchedule = true;
+        }
+        else {
+            if (persistentData.getValue_nextDataCapture() <= Time.now()) {
+                // Capture now
+                dataCaptureFunctions.setStartState();
+                dataCaptureActive = true;
+                updateSchedule = true;
+            }
+        }
+
+        if (updateSchedule) {
+            LocalTimeConvert conv;
+            conv.withCurrentTime().convert();
+
+            time_t t = scheduleManager.getNextDataCapture(conv);
+            if (t != 0) {
+                persistentData.setValue_nextDataCapture(t);
+            }
+        }
+    }
+
+}
 
 void SleepHelper::stateHandlerStart() {
     appLog.info("stateHandlerStart");
@@ -230,8 +283,7 @@ void SleepHelper::stateHandlerStart() {
     // This handles when we do a quick wake cycle by schedule and we've woken up
     // again. There doesn't need to be a handle to handle this common case.
     bool isQuickWake = false;
-    if (Time.isValid() && sleepParams.timeUntilNextFullWakeMs) {
-        
+    if (Time.isValid() && sleepParams.timeUntilNextFullWakeMs) {        
         isQuickWake = (Time.now() < sleepParams.timeUntilNextFullWakeMs);
     }
 
@@ -240,8 +292,7 @@ void SleepHelper::stateHandlerStart() {
         appLog.info("running in no connection mode");
         SleepHelper::instance().persistentData.setValue_lastQuickWake(Time.now());
 
-        dataCaptureFunctions.setStartState();
-        stateHandler = &SleepHelper::stateHandlerNoConnectionDataCapture;
+        stateHandler = &SleepHelper::stateHandlerNoConnection;
         return;
     }
     appLog.info("connecting to cloud");
@@ -298,17 +349,16 @@ void SleepHelper::stateHandlerConnectedStart() {
         writer.value((int)elapsedMs);
     });
 
-    dataCaptureFunctions.setStartState();
-    stateHandler = &SleepHelper::stateHandlerConnectedDataCapture;
+    stateHandler = &SleepHelper::stateHandlerConnectedWakeEvents;
 }
 
-void SleepHelper::stateHandlerConnectedDataCapture() {
-    if (!dataCaptureFunctions.whileAnyTrue()) {
-        stateHandler = &SleepHelper::stateHandlerConnectedWakeEvents;
-    }
-}
 
 void SleepHelper::stateHandlerConnectedWakeEvents() {
+
+    if (dataCaptureActive) {
+        // Wait until data capture is complete before generating events
+        return;
+    }
 
     if (wakeEventName.length() > 0) {
         // Call the wake event handlers to see if they have JSON data to publish
@@ -321,7 +371,7 @@ void SleepHelper::stateHandlerConnectedWakeEvents() {
         }
     }
 
-
+    sleepReadyFunctions.setStartState();
     stateHandler = &SleepHelper::stateHandlerConnected;
 }
 
@@ -355,9 +405,8 @@ void SleepHelper::stateHandlerConnected() {
         return;
     }
 
-
     system_tick_t elapsedMs = millis() - connectedStartMillis;
-    if (sleepReadyFunctions.whileAnyFalse(true, elapsedMs)) {
+    if (!sleepReadyFunctions.whileAnyTrue(elapsedMs)) {
         // Ready to sleep, go into prepare to sleep state
         stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
         return;
@@ -385,17 +434,15 @@ void SleepHelper::stateHandlerReconnectWait() {
     }
 }
 
-void SleepHelper::stateHandlerNoConnectionDataCapture() {
-    if (!dataCaptureFunctions.whileAnyTrue()) {
-        stateHandler = &SleepHelper::stateHandlerNoConnection;
-    }
-}
-
 void SleepHelper::stateHandlerNoConnection() {
-
+    if (dataCaptureActive) {
+        // Wait until data capture completes before calling no connection functions
+        return;
+    }
+    
     if (!noConnectionFunctions.whileAnyTrue(false)) {
         // No more noConnectionFunctions need time, so go to sleep now
-        appLog.info("done with connection mode, preparing to sleep");
+        appLog.info("done with no connection mode, preparing to sleep");
         calculateSleepSettings(false);
         stateHandler = &SleepHelper::stateHandlerSleep;
         return;
