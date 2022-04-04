@@ -1404,6 +1404,7 @@ public:
         bool isConnected; //!< Currently connected to cellular if true
         system_tick_t sleepTimeMs; //!< Override setting for sleep duration
         system_tick_t timeUntilNextFullWakeMs;
+        time_t nextFullWakeTime;
         bool disconnectCellular; //!< Override setting for disconnecting from cellular
     };
 

@@ -210,8 +210,11 @@ void SleepHelper::calculateSleepSettings(bool isConnected) {
     if (nextWake != 0) {
         sleepParams.sleepTimeMs = (nextWake - Time.now()) * 1000;
     }
-    sleepParams.timeUntilNextFullWakeMs = scheduleManager.getNextFullWake(conv);
 
+    sleepParams.nextFullWakeTime = scheduleManager.getNextFullWake(conv);
+    if (sleepParams.nextFullWakeTime != 0) {
+        sleepParams.timeUntilNextFullWakeMs = (sleepParams.nextFullWakeTime - Time.now()) * 1000;
+    }
     sleepParams.disconnectCellular = (sleepParams.timeUntilNextFullWakeMs >= minimumCellularOffTimeMs);
 
     // Allow other sleep configuration to be overridden
@@ -283,8 +286,8 @@ void SleepHelper::stateHandlerStart() {
     // This handles when we do a quick wake cycle by schedule and we've woken up
     // again. There doesn't need to be a handle to handle this common case.
     bool isQuickWake = false;
-    if (Time.isValid() && sleepParams.timeUntilNextFullWakeMs) {        
-        isQuickWake = (Time.now() < sleepParams.timeUntilNextFullWakeMs);
+    if (Time.isValid() && sleepParams.nextFullWakeTime) {        
+        isQuickWake = (Time.now() < sleepParams.nextFullWakeTime);
     }
 
     if (isQuickWake || !shouldConnectFunctions.shouldConnect()) {
