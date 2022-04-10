@@ -23,7 +23,7 @@ void setup() {
             if (Time.isValid()) {
                 SleepHelper::instance().addEvent([](JSONWriter &writer) {
                     writer.name("t").value((int) Time.now());
-                    writer.name("c").value(readTempC());
+                    writer.name("c").value(readTempC(), 1);
                 });
             }
             return false;
@@ -76,3 +76,14 @@ float readTempC() {
 
     return tempC;
 }
+
+#if 0
+        .withWakeEventFunction([](JSONWriter &writer, int &priority) {
+            FuelGauge fuel;
+            writer.name("volt").value(fuel.getVCell());
+            writer.name("soc").value(fuel.getSoC());
+            priority = 50;
+            return false;
+        })        
+
+#endif

@@ -27,7 +27,8 @@ typedef struct {
 static WakeEvents _wakeEvents[] = {
     { SleepHelper::eventsEnabledWakeReason, "wr", 50 },
     { SleepHelper::eventsEnabledTimeToConnect, "ttc", 50 },
-    { SleepHelper::eventsEnabledResetReason, "rr", 50 }
+    { SleepHelper::eventsEnabledResetReason, "rr", 50 },
+    { SleepHelper::eventsEnabledBatterySoC, "soc", 50 },
 };
 
 static const WakeEvents *_findWakeEvent(uint64_t flag) {
@@ -98,8 +99,8 @@ void SleepHelper::setup() {
     // Call all setup functions
     setupFunctions.forEach();
 
-    // Called from setup(), and also after waking from sleep
-    wakeOrBootFunctions.forEach();
+    // Wake or boot functions are called during setup(), after wake, or after an aborted sleep 
+    wakeOrBootFunctions.forEach(WAKEUP_REASON_SETUP);
 
     // Always wait until we have a valid RTC time before sleeping if cloud connected
     withSleepReadyFunction([](AppCallbackState &, system_tick_t) {
@@ -108,7 +109,7 @@ void SleepHelper::setup() {
     });
 
     // If reset reason events are enabled, add to the wake event
-    withWakeEventFunction(eventsEnabledResetReason, [resetReason](JSONWriter &writer, int &priority) {
+    withWakeEventFlagOneTimeFunction(eventsEnabledResetReason, [resetReason](JSONWriter &writer, int &priority) {
         writer.value(resetReason);
     });
 
@@ -222,6 +223,7 @@ void SleepHelper::calculateSleepSettings(bool isConnected) {
     if (sleepParams.sleepTimeMs < 1000) {
         sleepParams.sleepTimeMs = 1000;
     }
+    sleepParams.calculatedMillis = System.millis();
     
     if (sleepParams.isConnected && !sleepParams.disconnectCellular) {
         // If we are connected and should not disconnect cellular, use cellular standby mode
@@ -295,6 +297,7 @@ void SleepHelper::stateHandlerStart() {
         appLog.info("running in no connection mode");
         SleepHelper::instance().persistentData.setValue_lastQuickWake(Time.now());
 
+        noConnectionFunctions.setStartState();
         stateHandler = &SleepHelper::stateHandlerNoConnection;
         return;
     }
@@ -348,9 +351,20 @@ void SleepHelper::stateHandlerConnectedStart() {
     system_tick_t elapsedMs = connectedStartMillis - connectAttemptStartMillis;
     appLog.info("connected to cloud in %lu ms", elapsedMs);
 
-    withWakeEventFunction(eventsEnabledTimeToConnect, [elapsedMs](JSONWriter &writer, int &priority) {
+    withWakeEventFlagOneTimeFunction(eventsEnabledTimeToConnect, [elapsedMs](JSONWriter &writer, int &priority) {
         writer.value((int)elapsedMs);
     });
+
+#if HAL_PLATFORM_POWER_MANAGEMENT
+    withWakeEventFlagOneTimeFunction(eventsEnabledBatterySoC, [](JSONWriter &writer, int &priority) {
+        float soc = System.batteryCharge();
+        if (soc > 0) {
+            writer.value(soc, 1);
+        }
+    });
+#endif // HAL_PLATFORM_POWER_MANAGEMENT
+
+
 
     stateHandler = &SleepHelper::stateHandlerConnectedWakeEvents;
 }
@@ -438,12 +452,19 @@ void SleepHelper::stateHandlerReconnectWait() {
 }
 
 void SleepHelper::stateHandlerNoConnection() {
+    // Prior state: stateHandlerStart
+    // Next state: stateHandlerSleep
+    // Trigger: data capture functions all return false and noConnectionFunctions all return false
+
+    // Be sure to call noConnectionFunctions.setStartState() before entering this state.
+    // This is done from stateHandlerStart.
+
     if (dataCaptureActive) {
         // Wait until data capture completes before calling no connection functions
         return;
     }
     
-    if (!noConnectionFunctions.whileAnyTrue(false)) {
+    if (!noConnectionFunctions.whileAnyTrue()) {
         // No more noConnectionFunctions need time, so go to sleep now
         appLog.info("done with no connection mode, preparing to sleep");
         calculateSleepSettings(false);
@@ -474,50 +495,103 @@ void SleepHelper::stateHandlerDisconnectBeforeSleep() {
 
 void SleepHelper::stateHandlerDisconnectWait() {
     if (Particle.disconnected()) {
-        stateHandler = &SleepHelper::stateHandlerCellularOff;
+        appLog.info("Disconnecting cellular");
+        Cellular.disconnect();
+        stateHandler = &SleepHelper::stateHandlerWaitCellularDisconnected;
         return;
     }
 }
 
-void SleepHelper::stateHandlerCellularOff() {
-    appLog.info("Powering down cellular");
+void SleepHelper::stateHandlerWaitCellularDisconnected() {
+    // Call Cellular.disconnect() before entering this state
+    // Prior state: stateHandlerDisconnectWait (trigger: Particle disconnected)
+    // Next state: stateHandlerWaitCellularOff (trigger: !Cellular.ready())
 
-    // These two operations should be fast, so not necessary to use separate states
-    Cellular.disconnect();
-    waitUntilNot(Cellular.ready);
+    if (!Cellular.ready()) {
+        Cellular.off();
+        stateHandler = &SleepHelper::stateHandlerWaitCellularOff;
+        return;
+    }
+}
 
-    // Turn off modem so it won't be turned on again after wake
-    Cellular.off();
-    waitUntil(Cellular.isOff);
 
-    stateHandler = &SleepHelper::stateHandlerSleep;
+void SleepHelper::stateHandlerWaitCellularOff() {
+    // Call Cellular.off() before entering this state
+    // Prior state: stateHandlerWaitCellularDisconnected (trigger: !Cellular.ready())
+    // Next state: stateHandlerSleep (trigger: Cellular.isOff()
+
+    if (Cellular.isOff()) {
+        stateHandler = &SleepHelper::stateHandlerSleep;
+        return;
+    }
+
 }
 
 void SleepHelper::stateHandlerSleep() {
+    // Prior states:
+    // stateHandlerWaitCellularOff (trigger: cellular is off)
+    // stateHandlerDisconnectBeforeSleep (trigger: not turning cellular off due to short sleep)
     appLog.info("stateHandlerSleep");
 
     sleepOrResetFunctions.forEach(false);
 
-    appLog.info("sleeping for %d sec", (int)(sleepParams.sleepTimeMs / 1000));
+    // Especially in the cloud disconnect case it can take several seconds to disconnect, so
+    // adjust the sleep time here
+    int adjustmentMs = System.millis() - sleepParams.calculatedMillis;
+    if (adjustmentMs < (int)sleepParams.sleepTimeMs) {
+        sleepParams.sleepTimeMs -= adjustmentMs;
+        sleepConfig.duration(sleepParams.sleepTimeMs);
+    }
+    else {
+        sleepParams.sleepTimeMs = 0;
+    }
 
-    // Sleep!
-    SystemSleepResult sleepResult = System.sleep(sleepConfig);
+    wakeReasonInt = 0; // SystemSleepWakeupReason::UNKNOWN
 
-    // Woke from sleep
+    if (sleepParams.sleepTimeMs >= minimumSleepTimeMs) {
+        appLog.info("sleeping for %d sec adjustmentMs=%d", (int)(sleepParams.sleepTimeMs / 1000), adjustmentMs);
+
+        // Sleep!
+        SystemSleepResult sleepResult = System.sleep(sleepConfig);
+
+        wakeFunctions.forEach(sleepResult);
+
+        wakeReasonInt = (int) sleepResult.wakeupReason();
+        stateHandler = &SleepHelper::stateHandlerSleepDone;
+    }
+    else {
+        appLog.info("period too short to sleep %d", sleepParams.sleepTimeMs);
+        wakeReasonInt = WAKEUP_REASON_NO_SLEEP;
+        stateHandler = &SleepHelper::stateHandlerSleepShort;
+        stateTime = millis();
+    }
+    
+
+}
+
+void SleepHelper::stateHandlerSleepDone() {
+    // Set wakeReasonInt before calling
+
+    // Start over
     stateHandler = &SleepHelper::stateHandlerStart;
 
-    wakeFunctions.forEach(sleepResult);
+    // Wake or boot functions are called during setup(), after wake, or after an aborted sleep 
+    wakeOrBootFunctions.forEach(wakeReasonInt);
 
-    int wakeReasonInt = (int) sleepResult.wakeupReason();
-    withWakeEventFunction(eventsEnabledWakeReason, [wakeReasonInt](JSONWriter &writer, int &priority) {
+    withWakeEventFlagOneTimeFunction(eventsEnabledWakeReason, [this](JSONWriter &writer, int &priority) {
         writer.value(wakeReasonInt);
     });     
 
-
-    wakeOrBootFunctions.forEach();
-
-    appLog.info("exiting stateHandlerSleep");
 }
+
+void SleepHelper::stateHandlerSleepShort() {
+    if (millis() - stateTime >= sleepParams.sleepTimeMs) {
+        stateHandler = &SleepHelper::stateHandlerSleepDone;
+        return;
+    }
+}
+
+
 #endif // UNITTEST
 
 //

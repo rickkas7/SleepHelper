@@ -697,12 +697,12 @@ public:
     public:
         class SavedDataHeader { // 16 bytes
         public:
-            uint32_t magic;                 //!< savedDataMagic
-            uint16_t version;               //!< savedDataBersion
+            uint32_t magic;                 //!< savedDataMagic, should rarely, if ever, change
+            uint16_t version;               //!< savedDataVersion, should rarely, if ever, change
             uint16_t size;                  //!< size of the whole structure, including the user data after it
             uint32_t reserved2;             //!< reserved for future use
             uint32_t reserved1;             //!< reserved for future use
-            // You cannot change the size of this structure!
+            // You cannot change the size of this structure without changing the version number!
         };
         
         PersistentDataBase(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
@@ -1406,6 +1406,7 @@ public:
         system_tick_t timeUntilNextFullWakeMs;
         time_t nextFullWakeTime;
         bool disconnectCellular; //!< Override setting for disconnecting from cellular
+        uint64_t calculatedMillis; //!< System.millis() when the sleep duration was calculated
     };
 
 
@@ -1511,12 +1512,26 @@ public:
         return *this; 
     }
 
-    SleepHelper &withWakeOrBootFunction(std::function<bool()> fn) { 
+    /**
+     * @brief Called during setup, after sleep, or an aborted sleep beacause duration was too short
+     * 
+     * @param fn 
+     * @return SleepHelper& 
+     * 
+     * - WAKEUP_REASON_SETUP Called from setup after cold boot or reset
+     * - WAKEUP_REASON_NO_SLEEP Called after sleep aborted as it was too short
+     * - Any result code from for SystemSleepWakeupReason, such as:
+     *   - SystemSleepWakeupReason::BY_GPIO
+     *   - SystemSleepWakeupReason::BY_ADC
+     *   - SystemSleepWakeupReason::BY_RTC
+     *   - SystemSleepWakeupReason::BY_BLE
+     *   - SystemSleepWakeupReason::BY_NETWORK
+     */
+    SleepHelper &withWakeOrBootFunction(std::function<bool(int)> fn) { 
         wakeOrBootFunctions.add(fn); 
         return *this;
     }
 
-    
     
     /**
      * @brief Set the event name used for the wake event. Default: sleepHelper.
@@ -1583,7 +1598,7 @@ public:
      * 
      * 
      */
-    SleepHelper &withWakeEventFunction(uint64_t flag, std::function<void(JSONWriter &, int &)> fn) {
+    SleepHelper &withWakeEventFlagOneTimeFunction(uint64_t flag, std::function<void(JSONWriter &, int &)> fn) {
         if ((eventsEnabled & flag) != 0) {
             wakeEventFunctions.withOneTimeCallback([flag, fn](JSONWriter &writer, int &priority) {
                 const char *name = eventsEnableName(flag);
@@ -1716,7 +1731,7 @@ public:
      * @param fn 
      * @return SleepHelper& 
      */
-    SleepHelper &withNoConnectionFunction(std::function<bool()> fn) {
+    SleepHelper &withNoConnectionFunction(std::function<bool(AppCallbackState &state)> fn) {
         noConnectionFunctions.add(fn); 
         return *this;
     }
@@ -1832,6 +1847,7 @@ public:
     static const uint64_t eventsEnabledWakeReason           = 0x0000000000000001ul;  //!< "wr" wake reason (int) event
     static const uint64_t eventsEnabledTimeToConnect        = 0x0000000000000002ul;  //!< "ttc" time to connect event
     static const uint64_t eventsEnabledResetReason          = 0x0000000000000004ul;  //!< "rr" reset reason event
+    static const uint64_t eventsEnabledBatterySoC           = 0x0000000000000008ul;  //!< "soc" report battery SoC on full wake
 
     SleepHelper &withEventsEnabledEnable(uint64_t flag) {
         eventsEnabled |= flag;
@@ -1904,6 +1920,11 @@ public:
         return scheduleManager.getScheduleByName("data");
     }
 
+    
+    static const int WAKEUP_REASON_SETUP        = 0x10001; //!< Wakeup reason used on reset or cold boot, from setup()
+    static const int WAKEUP_REASON_NO_SLEEP     = 0x10002; //!< Wakeup reason when we didn't actually sleep because the period was too short
+
+
 protected:
     /**
      * @brief The constructor is protected because the class is a singleton
@@ -1960,9 +1981,15 @@ protected:
 
     void stateHandlerDisconnectWait();
 
-    void stateHandlerCellularOff();
+    void stateHandlerWaitCellularDisconnected();
+
+    void stateHandlerWaitCellularOff();
 
     void stateHandlerSleep();
+
+    void stateHandlerSleepDone();
+
+    void stateHandlerSleepShort();
 
     AppCallback<SystemSleepConfiguration &, SleepConfigurationParameters&> sleepConfigurationFunctions;
 
@@ -1987,36 +2014,64 @@ protected:
     ShouldConnectAppCallback shouldConnectFunctions;
 
 
-    AppCallback<> wakeOrBootFunctions;
+    AppCallback<int> wakeOrBootFunctions;
 
     AppCallback<bool> sleepOrResetFunctions;
 
     AppCallback<system_tick_t> maximumTimeToConnectFunctions;
 
-    AppCallback<> noConnectionFunctions;
+    /**
+     * @brief 
+     * 
+     * When in no connection (quick wake) mode, after the data capture functions are called the 
+     * no connection functions are called. 
+     */
+    AppCallbackWithState<> noConnectionFunctions;
 
-    String wakeEventName = "sleepHelper";
-    EventCombiner wakeEventFunctions;
+    String wakeEventName = "sleepHelper"; //!< Event name for wake events. Default: "sleepHelper"
+    EventCombiner wakeEventFunctions; //!< Handlers to create wake events
+    int wakeReasonInt; 
 
-    std::vector<PublishData> publishData;
-    system_tick_t stateTime = 0;
+    std::vector<PublishData> publishData; //!< Wake event data to publish (JSON strings)
 
+    /**
+     * @brief Which event history events are enabled (default: all)
+     * 
+     * See constants such as eventsEnabledWakeReason, eventsEnabledTimeToConnect for flag values
+     */
     uint64_t eventsEnabled = 0xfffffffffffffffful;
 
 
 #ifndef UNITTEST
-    system_tick_t minimumCellularOffTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(13min).count();;
-    system_tick_t minimumSleepTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(10s).count();;
+    system_tick_t minimumCellularOffTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(13min).count();; //!< Default value for the minimum time to turn cellular off
+    system_tick_t minimumSleepTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(10s).count();; //!< Default value for the minimum time to sleep
 
-    std::function<void(SleepHelper&)> stateHandler = &SleepHelper::stateHandlerStart;
+    std::function<void(SleepHelper&)> stateHandler = &SleepHelper::stateHandlerStart; //!< state handler function
+    system_tick_t stateTime = 0; //!< millis counter used in certain state handlers
 
-    system_tick_t connectAttemptStartMillis = 0;
-    system_tick_t networkConnectedMillis = 0;
-    system_tick_t connectedStartMillis = 0;
-    bool outOfMemory = false;
+    system_tick_t connectAttemptStartMillis = 0; //!< millis value when Particle.connect was called
+    system_tick_t networkConnectedMillis = 0; //!< mills value when Cellular.connected returned true
+    system_tick_t connectedStartMillis = 0; //!< millis value when Particle.connected returned true
+
+    bool outOfMemory = false; //!< Set to true if an out of memory system event occurs
+    
+    /**
+     * @brief True if data capture handlers are being called
+     * 
+     * This goes true right before they are called and will remain true until the last
+     * one returns false. At this point, sleep can occur.
+     */
     bool dataCaptureActive = false;
 #endif // UNITTEST
 
+    /**
+     * @brief Logger instance used by SleepHelper
+     * 
+     * All logging messages use the category app.sleep so you can control the level in 
+     * your log handler instances. 
+     * 
+     * Within this library, always use appLog.info() instead of Log.info(), for example.
+     */
     Logger appLog;
 
     /**
