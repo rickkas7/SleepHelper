@@ -7,8 +7,9 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 
 
 void setup() {
-    waitFor(Serial.isConnected, 10000);
-    delay(2000);
+    // Uncomment this to wait for a serial connection for 10 seconds so you can see the debug log messages
+    // waitFor(Serial.isConnected, 10000);
+    // delay(2000);
 
     SleepHelper::instance()
         .withShouldConnectMinimumSoC(9.0)

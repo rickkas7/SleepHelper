@@ -315,7 +315,7 @@ void SleepHelper::stateHandlerConnectWait() {
         stateHandler = &SleepHelper::stateHandlerTimeValidWait;
         return;
     }
-    if (!networkConnectedMillis && Cellular.ready()) {
+    if (!networkConnectedMillis && network.ready()) {
         networkConnectedMillis = millis();
 
         system_tick_t elapsedMs = networkConnectedMillis - connectAttemptStartMillis;
@@ -377,17 +377,11 @@ void SleepHelper::stateHandlerConnectedWakeEvents() {
         return;
     }
 
-    if (wakeEventName.length() > 0) {
-        // Call the wake event handlers to see if they have JSON data to publish
-        std::vector<String> events;
-        wakeEventFunctions.generateEvents(events);
+    // Call the wake event handlers to see if they have JSON data to publish
+    std::vector<String> events;
+    wakeEventFunctions.generateEvents(events);
 
-        // If there are events, add to the publish queue
-        for(auto it = events.begin(); it != events.end(); ++it) {
-            publishData.push_back(PublishData(wakeEventName, *it));            
-        }
-    }
-
+    lastEventHistoryCheckMillis = 0;
     sleepReadyFunctions.setStartState();
     stateHandler = &SleepHelper::stateHandlerConnected;
 }
@@ -398,6 +392,19 @@ void SleepHelper::stateHandlerConnected() {
         return;        
     }
 
+    // This is here, instead of the previous state, so new event history can be published immediately 
+    // while waiting to sleep
+    if (wakeEventName.length() > 0) {
+        if (!lastEventHistoryCheckMillis || millis() - lastEventHistoryCheckMillis >= 1000) {
+            lastEventHistoryCheckMillis = millis();
+
+            // If there are events, add to the publish queue
+            for(auto it = events.begin(); it != events.end(); ++it) {
+                publishData.push_back(PublishData(wakeEventName, *it));            
+            }
+        }
+    }
+
     if (!publishData.empty()) {
         PublishData event = publishData.front();
 
@@ -406,6 +413,14 @@ void SleepHelper::stateHandlerConnected() {
         // TODO: Pause PublishQueuePosixRK processing until our immediate events are finished
 
         stateHandler = &SleepHelper::stateHandlerPublishWait;
+
+        // 
+        if (logEnableEnabled(logEnabledPublishData)) {
+            appLog.trace("publishing name=%s flags=0x%x", event.eventName.c_str(), (int)event.flags.value());
+            appLog.write(LOG_LEVEL_TRACE, event.eventData.c_str(), event.eventData.length());
+            appLog.write(LOG_LEVEL_TRACE, "\r\n", 2);
+        }
+        
 
         bool bResult = BackgroundPublishRK::instance().publish(event.eventName, event.eventData, event.flags, 
             [this](bool succeeded, const char *event_name, const char *event_data, const void *event_context) {
@@ -479,11 +494,13 @@ void SleepHelper::stateHandlerNoConnection() {
 void SleepHelper::stateHandlerDisconnectBeforeSleep() {
 
     calculateSleepSettings(true);
+#if Wiring_Cellular
     if (!sleepParams.disconnectCellular) {
         appLog.info("sleep cycle is short, using cellular standby");
         stateHandler = &SleepHelper::stateHandlerSleep;
         return;
     }
+#endif
 
     appLog.info("disconnecting from cloud");
 
@@ -496,19 +513,19 @@ void SleepHelper::stateHandlerDisconnectBeforeSleep() {
 void SleepHelper::stateHandlerDisconnectWait() {
     if (Particle.disconnected()) {
         appLog.info("Disconnecting cellular");
-        Cellular.disconnect();
+        network.disconnect();
         stateHandler = &SleepHelper::stateHandlerWaitCellularDisconnected;
         return;
     }
 }
 
 void SleepHelper::stateHandlerWaitCellularDisconnected() {
-    // Call Cellular.disconnect() before entering this state
+    // Call network.disconnect() before entering this state
     // Prior state: stateHandlerDisconnectWait (trigger: Particle disconnected)
-    // Next state: stateHandlerWaitCellularOff (trigger: !Cellular.ready())
+    // Next state: stateHandlerWaitCellularOff (trigger: !network.ready())
 
-    if (!Cellular.ready()) {
-        Cellular.off();
+    if (!network.ready()) {
+        network.off();
         stateHandler = &SleepHelper::stateHandlerWaitCellularOff;
         return;
     }
@@ -516,11 +533,11 @@ void SleepHelper::stateHandlerWaitCellularDisconnected() {
 
 
 void SleepHelper::stateHandlerWaitCellularOff() {
-    // Call Cellular.off() before entering this state
-    // Prior state: stateHandlerWaitCellularDisconnected (trigger: !Cellular.ready())
-    // Next state: stateHandlerSleep (trigger: Cellular.isOff()
+    // Call network.off() before entering this state
+    // Prior state: stateHandlerWaitCellularDisconnected (trigger: !network.ready())
+    // Next state: stateHandlerSleep (trigger: network.isOff()
 
-    if (Cellular.isOff()) {
+    if (network.isOff()) {
         stateHandler = &SleepHelper::stateHandlerSleep;
         return;
     }
@@ -560,7 +577,7 @@ void SleepHelper::stateHandlerSleep() {
         stateHandler = &SleepHelper::stateHandlerSleepDone;
     }
     else {
-        appLog.info("period too short to sleep %d", sleepParams.sleepTimeMs);
+        appLog.info("period too short to sleep %d", (int)sleepParams.sleepTimeMs);
         wakeReasonInt = WAKEUP_REASON_NO_SLEEP;
         stateHandler = &SleepHelper::stateHandlerSleepShort;
         stateTime = millis();
@@ -1044,6 +1061,13 @@ void SleepHelper::PersistentDataFile::flush(bool force) {
 
 
 void SleepHelper::EventHistory::addEvent(const char *jsonObj) {
+    // Log
+    if (SleepHelper::instance().logEnableEnabled(SleepHelper::logEnabledHistoryData)) {
+        SleepHelper::instance().appLog.trace("EventHistory::addEvent");
+        SleepHelper::instance().appLog.write(LOG_LEVEL_TRACE, jsonObj, strlen(jsonObj));
+        SleepHelper::instance().appLog.write(LOG_LEVEL_TRACE, "\r\n", 2);
+    }
+
     // Append to the file
     WITH_LOCK(*this) {
         int fd = open(path, O_RDWR | O_CREAT | O_APPEND, 0666);

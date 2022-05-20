@@ -42,9 +42,6 @@ public:
         mutable os_mutex_recursive_t handle_;
 
     public:
-        /**
-         * Creates a shared mutex.
-         */
         SleepHelperRecursiveMutex(os_mutex_recursive_t handle) : handle_(handle) {
         }
 
@@ -1776,7 +1773,7 @@ public:
         });
     }
 #else
-    SleepHelper &withMinimumSoC(float minSoC, int conviction = 100) {
+    SleepHelper &withShouldConnectMinimumSoC(float minSoC, int conviction = 100) {
         return *this;
     }
 #endif
@@ -1785,16 +1782,16 @@ public:
     SleepHelper &withPublishQueuePosixRK(std::chrono::milliseconds maxTimeToPublish = 0ms) {
         return withSleepReadyFunction([maxTimeToPublish](AppCallbackState &state, system_tick_t ms) {
             if (maxTimeToPublish.count() != 0 && ms >= maxTimeToPublish.count()) {
-                PublishQueuePosix::instance()::setPausePublishing(true);
+                PublishQueuePosix::instance().setPausePublishing(true);
             }
-            bool canSleep = PublishQueuePosix::instance()::getCanSleep();
+            bool canSleep = PublishQueuePosix::instance().getCanSleep();
             if (canSleep) {
-                PublishQueuePosix::instance()::pausePublishing();
-                PublishQueuePosix::instance()::writeQueueToFiles();
+                PublishQueuePosix::instance().setPausePublishing(true);
+                PublishQueuePosix::instance().writeQueueToFiles();
             }
             // This callback returns false when you can sleep, and true to stay awake, so reverse boolean
             return !canSleep;
-        })
+        });
     }
 #endif
 
@@ -1853,7 +1850,7 @@ public:
         eventsEnabled |= flag;
         return *this;
     }
-
+    
     SleepHelper &withEventsEnabledDisable(uint64_t flag) {
         eventsEnabled &= ~flag;
         return *this;
@@ -1866,6 +1863,36 @@ public:
     static int eventsEnablePriority(uint64_t flag);
 
     static const char *eventsEnableName(uint64_t flag);
+
+    // Logging enable flags
+    static const uint64_t logEnabledNormal                  = 0x0000000000fffffful;  //!< Enable all normal message (default)
+    static const uint64_t logEnabledVerbose                 = 0x000000ffff000000ul;  //!< Enable more verbose messages
+    static const uint64_t logEnabledDebugging               = 0x00ffff0000000000ul;  //!< Enable debugging message
+    static const uint64_t logEnabledAll                     = 0xfffffffffffffffful;  //!< Enable all messages
+
+    // logEnabledNormal
+    static const uint64_t logEnabledPublish                 = 0x0000000000000001ul;  //!< Log on each publish
+
+    // logEnabledVerbose
+
+    // logEnabledDebugging
+    static const uint64_t logEnabledPublishData             = 0x0000010000000000ul;  //!< Log the full publish data
+    static const uint64_t logEnabledHistoryData             = 0x0000020000000000ul;  //!< Log the full history data
+
+    SleepHelper &withLogEnabledEnable(uint64_t flag) {
+        logEnabled |= flag;
+        return *this;
+    }
+    
+    SleepHelper &withLogEnabledDisable(uint64_t flag) {
+        logEnabled &= ~flag;
+        return *this;
+    }
+    
+    bool logEnableEnabled(uint64_t flag) const {
+        return (logEnabled & flag) != 0;
+    }
+
 
     /**
      * @brief Perform setup operations; call this from global application setup()
@@ -2041,6 +2068,12 @@ protected:
      */
     uint64_t eventsEnabled = 0xfffffffffffffffful;
 
+    /**
+     * @brief Which logging messages to enable
+     * 
+     * Default: logEnabledNormal
+     */
+    uint64_t logEnabled = logEnabledNormal;
 
 #ifndef UNITTEST
     system_tick_t minimumCellularOffTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(13min).count();; //!< Default value for the minimum time to turn cellular off
@@ -2052,6 +2085,7 @@ protected:
     system_tick_t connectAttemptStartMillis = 0; //!< millis value when Particle.connect was called
     system_tick_t networkConnectedMillis = 0; //!< mills value when Cellular.connected returned true
     system_tick_t connectedStartMillis = 0; //!< millis value when Particle.connected returned true
+    system_tick_t lastEventHistoryCheckMillis = 0; //!< millis value the last time the event history was checked
 
     bool outOfMemory = false; //!< Set to true if an out of memory system event occurs
     
@@ -2062,6 +2096,17 @@ protected:
      * one returns false. At this point, sleep can occur.
      */
     bool dataCaptureActive = false;
+
+    /**
+     * @brief Used instead of Cellular.ready(), etc.
+     */     
+#if Wiring_Cellular
+    NetworkClass &network = Cellular;
+#endif
+#if Wiring_WiFi
+    NetworkClass &network = WiFi;
+#endif
+
 #endif // UNITTEST
 
     /**
@@ -2073,6 +2118,7 @@ protected:
      * Within this library, always use appLog.info() instead of Log.info(), for example.
      */
     Logger appLog;
+
 
     /**
      * @brief Singleton instance of this class

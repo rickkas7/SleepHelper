@@ -45,7 +45,7 @@ void setup() {
             }
             return true;
         })
-        .withNoConnectionFunction([](AppCallbackState &state) {
+        .withNoConnectionFunction([](SleepHelper::AppCallbackState &state) {
             // If woken by pin, wait until button is released
             if (pinWakeMillis) {
                 // return true to stay awake, false to allow sleep
