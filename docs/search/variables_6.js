@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['reserved1_0',['reserved1',['../class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header.html#a57b5e9744223f1f7ed59017f2ea2b163',1,'SleepHelper::PersistentDataBase::SavedDataHeader']]],
-  ['reserved2_1',['reserved2',['../class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header.html#aa25a3e53a26b5b54e8def7411d4fca53',1,'SleepHelper::PersistentDataBase::SavedDataHeader']]]
+  ['hasevents_0',['hasEvents',['../class_sleep_helper_1_1_event_history.html#a8394d000fb433b82f53b7303cb7a979a',1,'SleepHelper::EventHistory']]],
+  ['hash_5fseed_1',['HASH_SEED',['../class_sleep_helper_1_1_cloud_settings_file.html#a6c66f4f0bf2235038b55aecb10b20ca7',1,'SleepHelper::CloudSettingsFile']]],
+  ['header_2',['header',['../class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data.html#a8dd2b01a39923defba527b3ab9677261',1,'SleepHelper::PersistentData::SleepHelperData']]]
 ];

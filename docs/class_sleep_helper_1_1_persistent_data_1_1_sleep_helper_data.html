@@ -81,16 +81,24 @@ $(function() {
 Data Fields</h2></td></tr>
 <tr class="memitem:a8dd2b01a39923defba527b3ab9677261"><td class="memItemLeft" align="right" valign="top"><a id="a8dd2b01a39923defba527b3ab9677261" name="a8dd2b01a39923defba527b3ab9677261"></a>
 <a class="el" href="class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header.html">SavedDataHeader</a>&#160;</td><td class="memItemRight" valign="bottom"><b>header</b></td></tr>
+<tr class="memdesc:a8dd2b01a39923defba527b3ab9677261"><td class="mdescLeft">&#160;</td><td class="mdescRight">Must be at the beginning of the data structure. <br /></td></tr>
 <tr class="separator:a8dd2b01a39923defba527b3ab9677261"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac94cfc30c96b7aa4f5546f5836779080"><td class="memItemLeft" align="right" valign="top"><a id="ac94cfc30c96b7aa4f5546f5836779080" name="ac94cfc30c96b7aa4f5546f5836779080"></a>
 uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>lastUpdateCheck</b></td></tr>
+<tr class="memdesc:ac94cfc30c96b7aa4f5546f5836779080"><td class="mdescLeft">&#160;</td><td class="mdescRight">time_t last update check (Unix time, UTC) <br /></td></tr>
 <tr class="separator:ac94cfc30c96b7aa4f5546f5836779080"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afa8006479d6e74bcdc34cdaa0be07c00"><td class="memItemLeft" align="right" valign="top"><a id="afa8006479d6e74bcdc34cdaa0be07c00" name="afa8006479d6e74bcdc34cdaa0be07c00"></a>
-uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>lastPublish</b></td></tr>
-<tr class="separator:afa8006479d6e74bcdc34cdaa0be07c00"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a7a9c7fe929daa8a9a695e8044d7443"><td class="memItemLeft" align="right" valign="top"><a id="a5a7a9c7fe929daa8a9a695e8044d7443" name="a5a7a9c7fe929daa8a9a695e8044d7443"></a>
+uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>lastFullWake</b></td></tr>
+<tr class="memdesc:a5a7a9c7fe929daa8a9a695e8044d7443"><td class="mdescLeft">&#160;</td><td class="mdescRight">time_t last full wake (Unix time, UTC) <br /></td></tr>
+<tr class="separator:a5a7a9c7fe929daa8a9a695e8044d7443"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4dc2baaae5fa1bd81436acb60b649a4b"><td class="memItemLeft" align="right" valign="top"><a id="a4dc2baaae5fa1bd81436acb60b649a4b" name="a4dc2baaae5fa1bd81436acb60b649a4b"></a>
 uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>lastQuickWake</b></td></tr>
+<tr class="memdesc:a4dc2baaae5fa1bd81436acb60b649a4b"><td class="mdescLeft">&#160;</td><td class="mdescRight">time_t last quick wake (Unix time, UTC) <br /></td></tr>
 <tr class="separator:a4dc2baaae5fa1bd81436acb60b649a4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a75d1b20e029bfaba10393bd1d4cfd257"><td class="memItemLeft" align="right" valign="top"><a id="a75d1b20e029bfaba10393bd1d4cfd257" name="a75d1b20e029bfaba10393bd1d4cfd257"></a>
+uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>nextDataCapture</b></td></tr>
+<tr class="memdesc:a75d1b20e029bfaba10393bd1d4cfd257"><td class="mdescLeft">&#160;</td><td class="mdescRight">time_t next data capture time (Unix time, UTC) <br /></td></tr>
+<tr class="separator:a75d1b20e029bfaba10393bd1d4cfd257"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p >Structure saved to the persistent data file (binary) </p>

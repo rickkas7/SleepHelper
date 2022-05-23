@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['version_0',['version',['../class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header.html#addade822b86e4cabf105863ecef038a3',1,'SleepHelper::PersistentDataBase::SavedDataHeader']]]
+  ['json_0',['json',['../class_sleep_helper_1_1_event_combiner_1_1_event_info.html#a2847275110096626bb554c8a9566a9ca',1,'SleepHelper::EventCombiner::EventInfo']]]
 ];

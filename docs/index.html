@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.2"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>SleepExample1: SleepExample1</title>
+<title>SleepExample1: SleepHelper</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -62,10 +62,272 @@ $(function() {
 </div>
 
 <div><div class="header">
-  <div class="headertitle"><div class="title">SleepExample1 </div></div>
+  <div class="headertitle"><div class="title"><a class="el" href="class_sleep_helper.html">SleepHelper</a> </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p ><a class="anchor" id="md_README"></a>Example program for sleep </p>
+<div class="textblock"><p ><a class="anchor" id="md_README"></a> <em>Library for simplifying Particle applications that use sleep modes</em></p>
+<p >Note that this library is currently incomplete and may still contain bugs. I'm releasing it now to get initial feedback and feature suggestions.</p>
+<p >Especially important are any places where you think you'll need additional callback functions to customize behavior so that you can use the library without having to modify it.</p>
+<h1>Example</h1>
+<p >This is the simplest example, from the "01-simple" example directory:</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &quot;SleepHelper.h&quot;</span></div>
+<div class="line"> </div>
+<div class="line">SerialLogHandler logHandler;</div>
+<div class="line"> </div>
+<div class="line">SYSTEM_THREAD(ENABLED);</div>
+<div class="line">SYSTEM_MODE(SEMI_AUTOMATIC);</div>
+<div class="line"> </div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">void</span> setup() {</div>
+<div class="line">    <a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a4ab2c66f32bb196cfc556953a07658e9">withShouldConnectMinimumSoC</a>(9.0);</div>
+<div class="line"> </div>
+<div class="line">    <a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#aa55dc9d8e2627cf697ac1bd6a1db9c2d">setup</a>();</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">void</span> loop() {</div>
+<div class="line">    <a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a8dac8eec4a7beb5a0ae8e6060e51764e">loop</a>();</div>
+<div class="line">}</div>
+<div class="ttc" id="aclass_sleep_helper_html_a4ab2c66f32bb196cfc556953a07658e9"><div class="ttname"><a href="class_sleep_helper.html#a4ab2c66f32bb196cfc556953a07658e9">SleepHelper::withShouldConnectMinimumSoC</a></div><div class="ttdeci">SleepHelper &amp; withShouldConnectMinimumSoC(float minSoC, int conviction=100)</div><div class="ttdoc">Require a minimum battery SoC to connect to cellular.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:2073</div></div>
+<div class="ttc" id="aclass_sleep_helper_html_a8dac8eec4a7beb5a0ae8e6060e51764e"><div class="ttname"><a href="class_sleep_helper.html#a8dac8eec4a7beb5a0ae8e6060e51764e">SleepHelper::loop</a></div><div class="ttdeci">void loop()</div><div class="ttdoc">Perform application loop operations; call this from global application loop()</div><div class="ttdef"><b>Definition:</b> SleepHelper.cpp:148</div></div>
+<div class="ttc" id="aclass_sleep_helper_html_aa55dc9d8e2627cf697ac1bd6a1db9c2d"><div class="ttname"><a href="class_sleep_helper.html#aa55dc9d8e2627cf697ac1bd6a1db9c2d">SleepHelper::setup</a></div><div class="ttdeci">void setup()</div><div class="ttdoc">Perform setup operations; call this from global application setup()</div><div class="ttdef"><b>Definition:</b> SleepHelper.cpp:81</div></div>
+<div class="ttc" id="aclass_sleep_helper_html_ad424c11c0781ea2ebbdd96a43521ea06"><div class="ttname"><a href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a></div><div class="ttdeci">static SleepHelper &amp; instance()</div><div class="ttdoc">Gets the singleton instance of this class, allocating it if necessary.</div><div class="ttdef"><b>Definition:</b> SleepHelper.cpp:14</div></div>
+</div><!-- fragment --><p >Things to note in this code:</p>
+<div class="fragment"><div class="line">SYSTEM_THREAD(ENABLED);</div>
+<div class="line">SYSTEM_MODE(SEMI_AUTOMATIC);</div>
+</div><!-- fragment --><p >You must enable the system thread and use SEMI_AUTOMATIC system mode. The library will not work properly in other modes.</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a4ab2c66f32bb196cfc556953a07658e9">withShouldConnectMinimumSoC</a>(9.0);</div>
+</div><!-- fragment --><p >This pattern is used to set configuration parameters. The <a class="el" href="class_sleep_helper.html">SleepHelper</a> class is a singleton so you always use <code><a class="el" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06" title="Gets the singleton instance of this class, allocating it if necessary.">SleepHelper::instance()</a></code> to access it. This method is fast and you should just call it every time instead of saving the value in a variable. You then add additional statements for what you want to configure. This this case, it will only connect to cellular if the battery SoC (state of charge) is greater than 9.0 %.</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#aa55dc9d8e2627cf697ac1bd6a1db9c2d">setup</a>();</div>
+</div><!-- fragment --><p> Once you've set all parameters, call the setup() method:</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a8dac8eec4a7beb5a0ae8e6060e51764e">loop</a>();</div>
+</div><!-- fragment --><p> In loop(), always call the loop method:</p>
+<p >There are descriptions of additional examples at the end of this page.</p>
+<h1>Design</h1>
+<p >The library is intended to be completely configurable and extendable without modifying the core library itself.</p>
+<h2>Adding functions</h2>
+<p >For example:</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#aa1f6f65d443e1d3e3765101e60e1ca04">withSleepConfigurationFunction</a>([](SystemSleepConfiguration &amp;sleepConfig, <a class="code hl_class" href="class_sleep_helper_1_1_sleep_configuration_parameters.html">SleepHelper::SleepConfigurationParameters</a> &amp;params) {</div>
+<div class="line">        <span class="comment">// Add a GPIO wake on button press</span></div>
+<div class="line">        sleepConfig.gpio(BUTTON_PIN, FALLING);</div>
+<div class="line">        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line">    })</div>
+<div class="ttc" id="aclass_sleep_helper_1_1_sleep_configuration_parameters_html"><div class="ttname"><a href="class_sleep_helper_1_1_sleep_configuration_parameters.html">SleepHelper::SleepConfigurationParameters</a></div><div class="ttdoc">Structure of information about the next planned sleep.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1576</div></div>
+<div class="ttc" id="aclass_sleep_helper_html_aa1f6f65d443e1d3e3765101e60e1ca04"><div class="ttname"><a href="class_sleep_helper.html#aa1f6f65d443e1d3e3765101e60e1ca04">SleepHelper::withSleepConfigurationFunction</a></div><div class="ttdeci">SleepHelper &amp; withSleepConfigurationFunction(std::function&lt; bool(SystemSleepConfiguration &amp;, SleepConfigurationParameters &amp;)&gt; fn)</div><div class="ttdoc">Register a function to be called to configure sleep.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1605</div></div>
+</div><!-- fragment --><p >This example adds a sleep configuration function. It allows you to execute code to customize sleep behavior before going to sleep. This uses C++11 lambdas to allow the code to be written inline, right inside the setup() function. You can use a standard function call, instead. Just remember that the body of the lambda is executed later, right before sleep, not during setup.</p>
+<p >In this specific example, a GPIO wake from a button is added to allow wake from button press.</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#ac633b93687b39b6b9e5ce18caa205dff">withWakeFunction</a>([](<span class="keyword">const</span> SystemSleepResult &amp;sleepResult) {</div>
+<div class="line">        <span class="keywordflow">if</span> (sleepResult.wakeupReason() == SystemSleepWakeupReason::BY_GPIO) {</div>
+<div class="line">            pin_t whichPin = sleepResult.wakeupPin();</div>
+<div class="line">            Log.info(<span class="stringliteral">&quot;wake by pin %d&quot;</span>, whichPin);</div>
+<div class="line">            if (whichPin == BUTTON_PIN) {</div>
+<div class="line">                logButtonPress();</div>
+<div class="line">                lastButtonPress = pinWakeMillis = millis();</div>
+<div class="line">            }</div>
+<div class="line">            <span class="keywordflow">else</span> {</div>
+<div class="line">                pinWakeMillis = 0;</div>
+<div class="line">            }</div>
+<div class="line">        }</div>
+<div class="line">        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line">    })</div>
+<div class="ttc" id="aclass_sleep_helper_html_ac633b93687b39b6b9e5ce18caa205dff"><div class="ttname"><a href="class_sleep_helper.html#ac633b93687b39b6b9e5ce18caa205dff">SleepHelper::withWakeFunction</a></div><div class="ttdeci">SleepHelper &amp; withWakeFunction(std::function&lt; bool(const SystemSleepResult &amp;)&gt; fn)</div><div class="ttdoc">Register a function to be called on wake from sleep.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1624</div></div>
+</div><!-- fragment --><p >This adds a wake function, which is called immediately after wake. This is done so we can keep track of the reason we woke (button or time).</p>
+<h2>Quick wake vs. full wake</h2>
+<p >The library supports two different levels of wake:</p>
+<ul>
+<li>A quick wake or non-connected wake will wake up the device and go back to sleep very quickly, without connecting to cellular</li>
+<li>A full wake or connected wake will wake up and connect to the cloud</li>
+</ul>
+<p >A quick wake might be used to read a sensor, save the data to flash, and go back to sleep. Or for a button press, vehicle sensor, etc. it might count the event, then go back to sleep. Often this can be done in under a second.</p>
+<p >A full wake allows the data to be uploaded to the cloud, but takes longer and uses more power.</p>
+<p >It's also possible to use the library with cellular standby mode, and also with Wi-Fi devices, but the concepts are similar.</p>
+<h2>Management of modem power</h2>
+<p >For most applications that sleep longer than 15 minutes, cellular off mode is the recommended mode.</p>
+<p >For sleep cycles less than 10 minutes, however, you run the risk of getting your SIM banned from the cellular network for aggressive reconnection if you completely power it off.</p>
+<p >The library provides the option of automatically optimizing the modem power-down behavior so short sleep cycles keep the modem on, to avoid aggressive reconnection. This can also save time and sometimes power because reconnecting to cellular may use more power than is saved by shutting down the modem for short sleep cycles, especially on 2G/3G devices.</p>
+<h2>Wake events</h2>
+<p >The library includes an "EventCombiner" feature that allows your code to register a function (or lambda) to add JSON data to an event that is published at wake. You also set the priority of your data (1 - 100).</p>
+<p >This allows multiple independent parts of the code to add data to a single JSON event to minimize data operations. If there is sufficient high priority data, multiple events are automatically created, but if possible the data is combined.</p>
+<p >If the event is full and there is low priority data (less than priority 50), the lowest priority is discarded first to allow the data to fit in a single event instead of creating multiple events.</p>
+<p >There are also a number of built-in wake events, each of which can be turned off if you don't want the information. For example:</p>
+<div class="fragment"><div class="line">{&quot;soc&quot;:8.8,&quot;ttc&quot;:16186,&quot;wr&quot;:4}</div>
+</div><!-- fragment --><ul>
+<li>soc is the battery state of charge (0-100%)</li>
+<li>ttc is the time to connect to the cloud in milliseconds</li>
+<li>wr is the wake reason code (4 = by time)</li>
+</ul>
+<h2>Data capture</h2>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#a9cdf24fe882a82663a70075aa6dd4a14">withDataCaptureFunction</a>([](<a class="code hl_class" href="class_sleep_helper_1_1_app_callback_state.html">SleepHelper::AppCallbackState</a> &amp;state) {</div>
+<div class="line">        <span class="keywordflow">if</span> (Time.isValid()) {</div>
+<div class="line">            SleepHelper::instance().addEvent([](JSONWriter &amp;writer) {</div>
+<div class="line">                writer.name(<span class="stringliteral">&quot;t&quot;</span>).value((int) Time.now());</div>
+<div class="line">                writer.name(<span class="stringliteral">&quot;c&quot;</span>).value(readTempC(), 1);</div>
+<div class="line">            });</div>
+<div class="line">        }</div>
+<div class="line">        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line">    })</div>
+<div class="ttc" id="aclass_sleep_helper_1_1_app_callback_state_html"><div class="ttname"><a href="class_sleep_helper_1_1_app_callback_state.html">SleepHelper::AppCallbackState</a></div><div class="ttdoc">State data for AppCallbackWithState.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:280</div></div>
+<div class="ttc" id="aclass_sleep_helper_html_a9cdf24fe882a82663a70075aa6dd4a14"><div class="ttname"><a href="class_sleep_helper.html#a9cdf24fe882a82663a70075aa6dd4a14">SleepHelper::withDataCaptureFunction</a></div><div class="ttdeci">SleepHelper &amp; withDataCaptureFunction(std::function&lt; bool(AppCallbackState &amp;state)&gt; fn)</div><div class="ttdoc">The data capture function is called on a schedule to capture data.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1705</div></div>
+</div><!-- fragment --><p >In addition to simple quick and full wake cycles, the library supports the concept of a data capture function. This function is called according to a schedule, such as every 30 seconds, or even more complicated scenarios. The difference is that the library will adjust the sleep timing so the data capture function is called, and also continues to call the function if the device is already connecting, or attempting to connect ot the cloud. This assures consistent data acquisition regardless of cellular conditions. The data is saved in the flash file system and is uploaded in a data operation efficient manner, explained below.</p>
+<h2>Event history</h2>
+<p >Event history allows small chunks of JSON data to be saved. For example, the data capture example above stores a timestamp (32 bit integer) and a floating point temperature value (with one decimal place).</p>
+<p >The event history data is uploaded as an array in an event, so it's data operation efficient. Many small data points can be uploaded in a single event. Additionally, the event history is combined with the wake event data, so you may be able to get both the wake event and event history data uploaded using a single data operation.</p>
+<div class="fragment"><div class="line">{&quot;soc&quot;:8.6,&quot;ttc&quot;:16183,&quot;wr&quot;:4,&quot;eh&quot;:[{&quot;b&quot;:1653305824}]}</div>
+</div><!-- fragment --><p >This is an example of one button press in the 02-button example that occurred as a quick wake with no cloud connection. When the full wake occurred later, the eh (event history) key included the b event with the timestamp of the button press.</p>
+<div class="fragment"><div class="line">{&quot;soc&quot;:8.4,&quot;ttc&quot;:12094,&quot;rr&quot;:0,&quot;eh&quot;:[{&quot;b&quot;:1653307929},{&quot;b&quot;:1653307941},{&quot;b&quot;:1653307950}]}</div>
+</div><!-- fragment --><p >This example contains three button presses. If you had so many button presses that it could not fit in a single event, it will automatically overflow into multiple events, but the default representation is data-efficient and can typically upload all of the data using only a single data operation.</p>
+<h2>Scheduling</h2>
+<p >The underlying Device OS sleep API is relative; you specify the amount of time to sleep, but this is not always the most useful. This library works using a time schedule for when to capture or upload data to the cloud.</p>
+<p >Additionally, for devices in a fixed location, it's possible to configure time calculations to be in local time, including automatic support for daylight saving time. Otherwise, time calculation can be done at UTC.</p>
+<div class="fragment"><div class="line"><span class="comment">// Full wake and publish every 15 minutes</span></div>
+<div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a192bde753499516571c45387d29f202b">getScheduleFull</a>()</div>
+<div class="line">    .withMinuteOfHour(15);</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Data capture every 2 minutes</span></div>
+<div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a59174d8e958315d585a89855f7ef87d2">getScheduleDataCapture</a>()</div>
+<div class="line">    .withMinuteOfHour(2);</div>
+<div class="ttc" id="aclass_sleep_helper_html_a192bde753499516571c45387d29f202b"><div class="ttname"><a href="class_sleep_helper.html#a192bde753499516571c45387d29f202b">SleepHelper::getScheduleFull</a></div><div class="ttdeci">LocalTimeSchedule &amp; getScheduleFull()</div><div class="ttdoc">Get the full wake schedule.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:2294</div></div>
+<div class="ttc" id="aclass_sleep_helper_html_a59174d8e958315d585a89855f7ef87d2"><div class="ttname"><a href="class_sleep_helper.html#a59174d8e958315d585a89855f7ef87d2">SleepHelper::getScheduleDataCapture</a></div><div class="ttdeci">LocalTimeSchedule &amp; getScheduleDataCapture()</div><div class="ttdoc">The data capture schedule determines when to call the data capture callback.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:2304</div></div>
+</div><!-- fragment --><p >In the simplest case, you might have something like this; full wake and publish every 15 minutes and data capture every 2 minutes. This does not require any time zone information.</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a192bde753499516571c45387d29f202b">getScheduleFull</a>()</div>
+<div class="line">    .withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS(<span class="stringliteral">&quot;09:00:00&quot;</span>), LocalTimeHMS(<span class="stringliteral">&quot;16:59:59&quot;</span>)))</div>
+</div><!-- fragment --><p >Or every 15 minutes, but only from 9:00 AM to 5:00 PM (local time).</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a192bde753499516571c45387d29f202b">getScheduleFull</a>()</div>
+<div class="line">    .withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS(<span class="stringliteral">&quot;09:00:00&quot;</span>), LocalTimeHMS(<span class="stringliteral">&quot;16:59:59&quot;</span>)))</div>
+<div class="line">    .withHourOfDay(2);</div>
+</div><!-- fragment --><p >Or every 15 minutes from 9:00 AM to 5:00 PM (local time), and every 2 hours the rest of the day.</p>
+<p >The scheduling is significantly more powerful than this; see the <a href="https://github.com/rickkas7/LocalTimeRK">LocalTimeRK</a> library for more information.</p>
+<h2>State machines</h2>
+<p >The library is built as multiple finite state machines. One manages the cellular connection. Another handles the data capture functions, which is why data capture continues independent of whether you're connected to cellular or not, or attempting to connect.</p>
+<p >In most cases you will perform a quick non-blocking data from your callback functions. However, certain callback functions are designed so you can perform lengthy operations in your own state machine.</p>
+<p >These callback are passed a modifiable <code>AppCallbackState</code> object and include:</p>
+<ul>
+<li>withDataCaptureFunction()</li>
+<li>withSleepReadyFunction()</li>
+<li>withNoConnectionFunction()</li>
+<li>withMinimumConnectedTime()</li>
+</ul>
+<p >For example, with the sleep ready function, your callback:</p>
+<ul>
+<li>Returns false if your situation is OK to sleep now. This does not guaranteed that sleep will actually occur, because there can be many sleep ready functions and other calculations. Once you return false your callback will no longer be called until the next wake cycle.</li>
+<li>Returns true if you still have things to do before it's OK to sleep. You callback will continue to be called until it returns false.</li>
+</ul>
+<p >The declaration for <code>AppCallbackState</code> is:</p>
+<div class="fragment"><div class="line"><span class="keyword">class </span>AppCallbackState {</div>
+<div class="line"><span class="keyword">public</span>:</div>
+<div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">int</span> CALLBACK_STATE_START = -1;</div>
+<div class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">int</span> CALLBACK_START_RETURNED_FALSE = -2;</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordtype">int</span> callbackState = CALLBACK_STATE_START;</div>
+<div class="line">    <span class="keywordtype">void</span> *callbackData = 0; </div>
+<div class="line">};</div>
+</div><!-- fragment --><p >For example, in the sleep ready function, in each sleep cycle, the state will start at CALLBACK_STATE_START. Your callback is free to set the <code>callbackState</code> to any positive value so you can implement your own state machine. You can also store data in the <code>callbackData</code> pointer, if desired, or you can just store it in your own class or mutable lambda capture value.</p>
+<h1>Callback functions</h1>
+<p >The following functions are available to customize the behavior of the library:</p>
+<h1>Cloud-based configuration</h1>
+<p >While the device-side code is in the library, the server-side code has not been written yet. When complete, this option feature will work like this:</p>
+<p >Cloud-based configuration allows JSON settings to be stored and configured on the cloud-side. When a device connects to the cloud, it will periodically ask the cloud if there is a new configuration, in case the configuration was updated while the device was asleep. This is done by sending a hash of the current settings so it's data-efficient.</p>
+<p >If the cloud has newer settings, it will send them by a function call to the device, which will update the settings stored in the flash file system.</p>
+<p >Code can register a callback function to be notified if the settings change.</p>
+<p >Settings include fleet defaults, group defaults, and device-specific settings.</p>
+<h1>Examples</h1>
+<h2>01-simple example</h2>
+<p >This is a minimal example that just shows how the callback functions are registered. It doesn't really do anything interesting.</p>
+<h2>02-button example</h2>
+<p >This example shows how to both quick and full wakes, and customized sleep.</p>
+<p >A momentary switch is connected between pin D2 and ground. Every time the button is pressed, a timestamp is logged. You could imagine the same technique being used for a door sensor, vehicle sensor, rain gauge, etc..</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#a72696a8a6b34bf4ccc352f472d7a75bd">withMinimumCellularOffTime</a>(5min);</div>
+<div class="ttc" id="aclass_sleep_helper_html_a72696a8a6b34bf4ccc352f472d7a75bd"><div class="ttname"><a href="class_sleep_helper.html#a72696a8a6b34bf4ccc352f472d7a75bd">SleepHelper::withMinimumCellularOffTime</a></div><div class="ttdeci">SleepHelper &amp; withMinimumCellularOffTime(std::chrono::milliseconds timeMs)</div><div class="ttdoc">Sets the minimum time to disconnect from cellular. Default: 13 minutes.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1637</div></div>
+</div><!-- fragment --><p >This example optimizes the cellular modem to avoid aggressive reconnection. If the cellular modem would be off for less than 5 minutes, the library will instead use network standby mode to stay connected to cellular. This uses more power keeping the modem powered, but it also saves power by using less power to reconnect and having a nearly instantaneous reconnection time.</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#aa1f6f65d443e1d3e3765101e60e1ca04">withSleepConfigurationFunction</a>([](SystemSleepConfiguration &amp;sleepConfig, <a class="code hl_class" href="class_sleep_helper_1_1_sleep_configuration_parameters.html">SleepHelper::SleepConfigurationParameters</a> &amp;params) {</div>
+<div class="line">        <span class="comment">// Add a GPIO wake on button press</span></div>
+<div class="line">        sleepConfig.gpio(BUTTON_PIN, FALLING);</div>
+<div class="line">        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line">    });</div>
+</div><!-- fragment --><p >Since this example wakes by GPIO pin, it uses a sleep configuration function to add GPIO wake to the <code>SystemSleepConfiguration</code> before sleep.</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#ac633b93687b39b6b9e5ce18caa205dff">withWakeFunction</a>([](<span class="keyword">const</span> SystemSleepResult &amp;sleepResult) {</div>
+<div class="line">        <span class="keywordflow">if</span> (sleepResult.wakeupReason() == SystemSleepWakeupReason::BY_GPIO) {</div>
+<div class="line">            pin_t whichPin = sleepResult.wakeupPin();</div>
+<div class="line">            Log.info(<span class="stringliteral">&quot;wake by pin %d&quot;</span>, whichPin);</div>
+<div class="line">            if (whichPin == BUTTON_PIN) {</div>
+<div class="line">                logButtonPress();</div>
+<div class="line">                lastButtonPress = pinWakeMillis = millis();</div>
+<div class="line">            }</div>
+<div class="line">            <span class="keywordflow">else</span> {</div>
+<div class="line">                pinWakeMillis = 0;</div>
+<div class="line">            }</div>
+<div class="line">        }</div>
+<div class="line">        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line">    });</div>
+</div><!-- fragment --><p >In order to handle wake from GPIO pin, a wake function is also added. If the wake occurred from the button GPIO pin, this is logged.</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#aabfb4418f8fb006b50d8efff7edbee4d">withShouldConnectFunction</a>([](<span class="keywordtype">int</span> &amp;connectConviction, <span class="keywordtype">int</span> &amp;noConnectConviction) {</div>
+<div class="line">        <span class="keywordflow">if</span> (pinWakeMillis) {</div>
+<div class="line">            <span class="comment">// We probably don&#39;t want to connect if woken by pin</span></div>
+<div class="line">            noConnectConviction = 60;</div>
+<div class="line">        }</div>
+<div class="line">        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line">    });</div>
+<div class="ttc" id="aclass_sleep_helper_html_aabfb4418f8fb006b50d8efff7edbee4d"><div class="ttname"><a href="class_sleep_helper.html#aabfb4418f8fb006b50d8efff7edbee4d">SleepHelper::withShouldConnectFunction</a></div><div class="ttdeci">SleepHelper &amp; withShouldConnectFunction(std::function&lt; bool(int &amp;connectConviction, int &amp;noConnectConviction)&gt; fn)</div><div class="ttdoc">Function to call to determine if a full wake should be done.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1754</div></div>
+</div><!-- fragment --><p >In this example we don't want to do a full wake on button press unless it's also the scheduled time to do a full wake. Using a should connect handler allows this behavior to be fine-tuned.</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#ae5024de1d0301a413314ae08f1676399">withNoConnectionFunction</a>([](<a class="code hl_class" href="class_sleep_helper_1_1_app_callback_state.html">SleepHelper::AppCallbackState</a> &amp;state) {</div>
+<div class="line">        <span class="comment">// If woken by pin, wait until button is released</span></div>
+<div class="line">        <span class="keywordflow">if</span> (pinWakeMillis) {</div>
+<div class="line">            <span class="comment">// return true to stay awake, false to allow sleep</span></div>
+<div class="line">            <span class="keywordflow">return</span> (digitalRead(BUTTON_PIN) == LOW);</div>
+<div class="line">        }</div>
+<div class="line">        <span class="keywordflow">else</span> {</div>
+<div class="line">            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line">        }</div>
+<div class="line">    });</div>
+<div class="ttc" id="aclass_sleep_helper_html_ae5024de1d0301a413314ae08f1676399"><div class="ttname"><a href="class_sleep_helper.html#ae5024de1d0301a413314ae08f1676399">SleepHelper::withNoConnectionFunction</a></div><div class="ttdeci">SleepHelper &amp; withNoConnectionFunction(std::function&lt; bool(AppCallbackState &amp;state)&gt; fn)</div><div class="ttdoc">Register a callback for when in the no connection state.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1992</div></div>
+</div><!-- fragment --><p >One minor thing: If doing a quick wake, the button cloud still be pressed when the device is ready to go to sleep. This special case is handled here. If the button is still pressed, it will wait for it to be released before trying to go to sleep.</p>
+<div class="fragment"><div class="line"><span class="comment">// Full wake and publish every 15 minutes</span></div>
+<div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a192bde753499516571c45387d29f202b">getScheduleFull</a>()</div>
+<div class="line">    .withMinuteOfHour(15);</div>
+</div><!-- fragment --><p >It's configured to connect to the cloud every 15 minutes and upload the timestamps of the button presses.</p>
+<div class="fragment"><div class="line"><span class="keywordtype">void</span> logButtonPress() {</div>
+<div class="line">    Log.info(<span class="stringliteral">&quot;button press&quot;</span>);</div>
+<div class="line">    <a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a949ca2293dcadd62e02b577085cb4ea3">addEvent</a>([](JSONWriter &amp;writer) {</div>
+<div class="line">        writer.name(<span class="stringliteral">&quot;b&quot;</span>).value(Time.isValid() ? Time.now() : 0);</div>
+<div class="line">    });</div>
+<div class="line">}</div>
+<div class="ttc" id="aclass_sleep_helper_html_a949ca2293dcadd62e02b577085cb4ea3"><div class="ttname"><a href="class_sleep_helper.html#a949ca2293dcadd62e02b577085cb4ea3">SleepHelper::addEvent</a></div><div class="ttdeci">SleepHelper &amp; addEvent(const char *jsonObj)</div><div class="ttdoc">Adds an event to the event history (preformatted JSON)</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1877</div></div>
+</div><!-- fragment --><p >Finally, button presses are logged using the Event History feature. Event History is data-efficient because it will store all of the events in mini-events, saved into a JSON array. This allows many data points to be uploaded via a single Particle.publish, saving data operations and also speeding the upload, since publishes are rate limited to approximately one per second.</p>
+<p >Event history also supports overflow, so if the data exceeds the publish limit of 1024 bytes, it will be spread across multiple events as necessary. This happens automatically.</p>
+<h2>03-temperature example</h2>
+<p >This example shows how to use data collection mode to periodically sense temperature. The actual code uses a TMP36 analog temperature sensor, but you could use it with any sensor by replacing the readTempC() function, and of course you could sample other kinds of data other than temperature.</p>
+<div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#a9cdf24fe882a82663a70075aa6dd4a14">withDataCaptureFunction</a>([](<a class="code hl_class" href="class_sleep_helper_1_1_app_callback_state.html">SleepHelper::AppCallbackState</a> &amp;state) {</div>
+<div class="line">        <span class="keywordflow">if</span> (Time.isValid()) {</div>
+<div class="line">            SleepHelper::instance().addEvent([](JSONWriter &amp;writer) {</div>
+<div class="line">                writer.name(<span class="stringliteral">&quot;t&quot;</span>).value((int) Time.now());</div>
+<div class="line">                writer.name(<span class="stringliteral">&quot;c&quot;</span>).value(readTempC(), 1);</div>
+<div class="line">            });</div>
+<div class="line">        }</div>
+<div class="line">        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line">    });</div>
+</div><!-- fragment --><p >The most important thing in this example is the data capture function. It's called on a schedule to sample data, and this can occur after a quick wake (no cellular connection), while connecting, or while connected to the cloud.</p>
+<p >This example stores a timestamp ("t") and a temperature value ("c") but since it's JSON you could store more key/value pairs. For example, you might store temperature and humidity.</p>
+<div class="fragment"><div class="line"><span class="comment">// Full wake and publish every 15 minutes</span></div>
+<div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a192bde753499516571c45387d29f202b">getScheduleFull</a>()</div>
+<div class="line">    .withMinuteOfHour(15);</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Data capture every 2 minutes</span></div>
+<div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a59174d8e958315d585a89855f7ef87d2">getScheduleDataCapture</a>()</div>
+<div class="line">    .withMinuteOfHour(2);</div>
+</div><!-- fragment --><p >This schedule is simple: full wake and publish every 15 minutes, and capture temperature every 2 minutes. Since the schedule uses only minute of hour, this does not require a valid timezone to be set.</p>
+<h1>Version History</h1>
+<h2>0.0.1 (2022-05-23)</h2>
+<ul>
+<li>Initial version (incomplete) </li>
+</ul>
 </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- start footer part -->

@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['load_0',['load',['../class_sleep_helper_1_1_settings_file.html#a86c1223740ecac78d495172d4a86c9f8',1,'SleepHelper::SettingsFile::load()'],['../class_sleep_helper_1_1_persistent_data_base.html#a8093c806a04b1827de64f34692a6bc5b',1,'SleepHelper::PersistentDataBase::load()'],['../class_sleep_helper_1_1_persistent_data_file.html#aa81dab5081da864009b9f404555cbeb4',1,'SleepHelper::PersistentDataFile::load()']]],
-  ['loop_1',['loop',['../class_sleep_helper.html#a8dac8eec4a7beb5a0ae8e6060e51764e',1,'SleepHelper']]]
+  ['json_0',['json',['../class_sleep_helper_1_1_event_combiner_1_1_event_info.html#a2847275110096626bb554c8a9566a9ca',1,'SleepHelper::EventCombiner::EventInfo']]],
+  ['jsoncopy_1',['JSONCopy',['../class_sleep_helper.html#a2b7b34ca5957b1ecd4f9bdce18fc30fd',1,'SleepHelper::JSONCopy(const char *src, JSONWriter &amp;writer)'],['../class_sleep_helper.html#ace0d210f239546ce904aef702310478d',1,'SleepHelper::JSONCopy(const JSONValue &amp;src, JSONWriter &amp;writer)']]]
 ];

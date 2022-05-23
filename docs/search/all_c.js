@@ -1,9 +1,8 @@
 var searchData=
 [
-  ['persistentdata_0',['PersistentData',['../class_sleep_helper_1_1_persistent_data.html#a4ac3bcfd2284851c92ac66e1b8ac58d5',1,'SleepHelper::PersistentData']]],
-  ['persistentdata_1',['persistentData',['../class_sleep_helper.html#a47b6cf4b7036b8ab39b55e0aa6278f6b',1,'SleepHelper']]],
-  ['persistentdata_2',['PersistentData',['../class_sleep_helper_1_1_persistent_data.html',1,'SleepHelper']]],
-  ['persistentdatabase_3',['PersistentDataBase',['../class_sleep_helper_1_1_persistent_data_base.html#aa3c802d58213d8364f6b6226630f6fd3',1,'SleepHelper::PersistentDataBase::PersistentDataBase()'],['../class_sleep_helper_1_1_persistent_data_base.html',1,'SleepHelper::PersistentDataBase']]],
-  ['persistentdatafile_4',['PersistentDataFile',['../class_sleep_helper_1_1_persistent_data_file.html#a6f7d5d67998f0cdd764536ce3313fc5e',1,'SleepHelper::PersistentDataFile::PersistentDataFile()'],['../class_sleep_helper_1_1_persistent_data_file.html',1,'SleepHelper::PersistentDataFile']]],
-  ['priority_5',['priority',['../class_sleep_helper_1_1_event_combiner_1_1_event_info.html#ac7475cc8466fe617b29c0510d31c8e7a',1,'SleepHelper::EventCombiner::EventInfo']]]
+  ['magic_0',['magic',['../class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header.html#a2b782bed30238df63772aa2ecb5447fa',1,'SleepHelper::PersistentDataBase::SavedDataHeader']]],
+  ['maximumtimetoconnectfunctions_1',['maximumTimeToConnectFunctions',['../class_sleep_helper.html#a775b5b367463b986c8c1c929adccf97f',1,'SleepHelper']]],
+  ['minimumcellularofftimems_2',['minimumCellularOffTimeMs',['../class_sleep_helper.html#a5f9efdd9e57e02116c47754726e8c98b',1,'SleepHelper']]],
+  ['minimumsleeptimems_3',['minimumSleepTimeMs',['../class_sleep_helper.html#ae0e65c8b5b18958cbd38f44a9d68b92f',1,'SleepHelper']]],
+  ['murmur3_5f32_4',['murmur3_32',['../class_sleep_helper_1_1_cloud_settings_file.html#afe5cf12a3155b1021f363a0fca5ad9a7',1,'SleepHelper::CloudSettingsFile']]]
 ];

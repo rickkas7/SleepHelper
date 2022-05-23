@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['persistentdata_0',['persistentData',['../class_sleep_helper.html#a47b6cf4b7036b8ab39b55e0aa6278f6b',1,'SleepHelper']]],
-  ['priority_1',['priority',['../class_sleep_helper_1_1_event_combiner_1_1_event_info.html#ac7475cc8466fe617b29c0510d31c8e7a',1,'SleepHelper::EventCombiner::EventInfo']]]
+  ['firstrun_0',['firstRun',['../class_sleep_helper_1_1_event_history.html#a5143ef296f0d3c671069ac11723782fb',1,'SleepHelper::EventHistory']]],
+  ['flag_1',['flag',['../struct_wake_events.html#a69abd689acf65018951017ad1319d988',1,'WakeEvents']]],
+  ['flags_2',['flags',['../class_sleep_helper_1_1_publish_data.html#a57ef25839995447b18834bc5b78e59f3',1,'SleepHelper::PublishData']]]
 ];

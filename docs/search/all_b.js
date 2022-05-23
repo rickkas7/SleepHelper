@@ -1,4 +1,21 @@
 var searchData=
 [
-  ['operator_3d_0',['operator=',['../class_sleep_helper_1_1_settings_file.html#af3cdb2e1347e544be021cc3f3849b612',1,'SleepHelper::SettingsFile::operator=()'],['../class_sleep_helper_1_1_persistent_data_base.html#a5a99923acf23273899b0c57a0e87fcbb',1,'SleepHelper::PersistentDataBase::operator=()'],['../class_sleep_helper_1_1_persistent_data_file.html#acd0c03f212cedcefca62dfb2c0aee772',1,'SleepHelper::PersistentDataFile::operator=()'],['../class_sleep_helper_1_1_event_combiner.html#a73f14ab4f2a136283235bc7f8ff87e1b',1,'SleepHelper::EventCombiner::operator=()'],['../class_sleep_helper.html#a4c086ef306238bde738d7837c0e52bbb',1,'SleepHelper::operator=()']]]
+  ['lasteventhistorycheckmillis_0',['lastEventHistoryCheckMillis',['../class_sleep_helper.html#a7cc5d24e3dee3010d326fb639a6d4227',1,'SleepHelper']]],
+  ['lastfullwake_1',['lastFullWake',['../class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data.html#a5a7a9c7fe929daa8a9a695e8044d7443',1,'SleepHelper::PersistentData::SleepHelperData']]],
+  ['lastquickwake_2',['lastQuickWake',['../class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data.html#a4dc2baaae5fa1bd81436acb60b649a4b',1,'SleepHelper::PersistentData::SleepHelperData']]],
+  ['lastupdate_3',['lastUpdate',['../class_sleep_helper_1_1_persistent_data_file.html#abc2b99517c7547a03cb7a07030996549',1,'SleepHelper::PersistentDataFile']]],
+  ['lastupdatecheck_4',['lastUpdateCheck',['../class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data.html#ac94cfc30c96b7aa4f5546f5836779080',1,'SleepHelper::PersistentData::SleepHelperData']]],
+  ['load_5',['load',['../class_sleep_helper_1_1_settings_file.html#a86c1223740ecac78d495172d4a86c9f8',1,'SleepHelper::SettingsFile::load()'],['../class_sleep_helper_1_1_persistent_data_base.html#a8093c806a04b1827de64f34692a6bc5b',1,'SleepHelper::PersistentDataBase::load()'],['../class_sleep_helper_1_1_persistent_data_file.html#aa81dab5081da864009b9f404555cbeb4',1,'SleepHelper::PersistentDataFile::load()']]],
+  ['lock_6',['lock',['../class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#ae36dee79d37ac9610cd4c76c845c5386',1,'SleepHelper::SleepHelperRecursiveMutex']]],
+  ['logenabled_7',['logEnabled',['../class_sleep_helper.html#a09b263fcc80c29a710e8eb1ce8a09110',1,'SleepHelper']]],
+  ['logenabledall_8',['logEnabledAll',['../class_sleep_helper.html#af13f910d531d1b2ed2e379a606eab7ec',1,'SleepHelper']]],
+  ['logenableddebugging_9',['logEnabledDebugging',['../class_sleep_helper.html#af8a5c5d49cf963e92e8c75a924f145ac',1,'SleepHelper']]],
+  ['logenabledhistorydata_10',['logEnabledHistoryData',['../class_sleep_helper.html#afde8d070c56c313c3b83890bfd3b8b78',1,'SleepHelper']]],
+  ['logenablednormal_11',['logEnabledNormal',['../class_sleep_helper.html#a8bf99b92d73b3096465bc6d7d290823a',1,'SleepHelper']]],
+  ['logenabledpublish_12',['logEnabledPublish',['../class_sleep_helper.html#ad77a84d38fd6b8b4e0cf30dd3b07dcfc',1,'SleepHelper']]],
+  ['logenabledpublishdata_13',['logEnabledPublishData',['../class_sleep_helper.html#a94c46bea3a502d7735daa47f2b064d5e',1,'SleepHelper']]],
+  ['logenabledverbose_14',['logEnabledVerbose',['../class_sleep_helper.html#ab03d0cf6aec6e4ce160979c48c1a3dc8',1,'SleepHelper']]],
+  ['logenableenabled_15',['logEnableEnabled',['../class_sleep_helper.html#ade486a051d5f7aea0b7a08410dc1844c',1,'SleepHelper']]],
+  ['loop_16',['loop',['../class_sleep_helper.html#a8dac8eec4a7beb5a0ae8e6060e51764e',1,'SleepHelper']]],
+  ['loopfunctions_17',['loopFunctions',['../class_sleep_helper.html#a4aa8bc1eef9fc012ace84e22a0c6dd03',1,'SleepHelper']]]
 ];

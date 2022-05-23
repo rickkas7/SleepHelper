@@ -1,5 +1,9 @@
 var searchData=
 [
-  ['eventcombiner_0',['EventCombiner',['../class_sleep_helper_1_1_event_combiner.html#a348617cf948cdb5fd95e128e389cd4b0',1,'SleepHelper::EventCombiner::EventCombiner()'],['../class_sleep_helper_1_1_event_combiner.html#ab03dfe32d0a889b87b976dd2fa3db0d7',1,'SleepHelper::EventCombiner::EventCombiner(const EventCombiner &amp;)=delete'],['../class_sleep_helper_1_1_event_combiner.html',1,'SleepHelper::EventCombiner']]],
-  ['eventinfo_1',['EventInfo',['../class_sleep_helper_1_1_event_combiner_1_1_event_info.html#a20fcb4174c7a1274486812a89fabdd43',1,'SleepHelper::EventCombiner::EventInfo::EventInfo()'],['../class_sleep_helper_1_1_event_combiner_1_1_event_info.html#ae4b6cb8aa37fb0e044ce0aa9bff7807b',1,'SleepHelper::EventCombiner::EventInfo::EventInfo(const char *jsonStr, int priority)'],['../class_sleep_helper_1_1_event_combiner_1_1_event_info.html',1,'SleepHelper::EventCombiner::EventInfo']]]
+  ['datacaptureactive_0',['dataCaptureActive',['../class_sleep_helper.html#a827e17ce8073dd989d7984031f9ee70f',1,'SleepHelper']]],
+  ['datacapturefunctions_1',['dataCaptureFunctions',['../class_sleep_helper.html#a0baa5051c4929da8fb0bd27f4ba04baf',1,'SleepHelper']]],
+  ['datacapturehandler_2',['dataCaptureHandler',['../class_sleep_helper.html#ab4a41ebdfc787caa47dd8842ad3a6779',1,'SleepHelper']]],
+  ['defaultvalues_3',['defaultValues',['../class_sleep_helper_1_1_settings_file.html#aa496babc997844677026805acf56a0fa',1,'SleepHelper::SettingsFile']]],
+  ['disconnectcellular_4',['disconnectCellular',['../class_sleep_helper_1_1_sleep_configuration_parameters.html#a2eb66744889bfa20bedce252ea25e62c',1,'SleepHelper::SleepConfigurationParameters']]],
+  ['dispose_5',['dispose',['../class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#a3c9e1311d1d26a58afb1c8f8d32fcf69',1,'SleepHelper::SleepHelperRecursiveMutex']]]
 ];

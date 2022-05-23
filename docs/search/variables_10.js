@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['saved_5fdata_5fmagic_0',['SAVED_DATA_MAGIC',['../class_sleep_helper_1_1_persistent_data.html#a4d5f374953f979acfe480db12bb50258',1,'SleepHelper::PersistentData']]],
+  ['saved_5fdata_5fversion_1',['SAVED_DATA_VERSION',['../class_sleep_helper_1_1_persistent_data.html#a2f352dc062d34c99956436c495d1892e',1,'SleepHelper::PersistentData']]],
+  ['saveddataheader_2',['savedDataHeader',['../class_sleep_helper_1_1_persistent_data_base.html#ab720fe91ade2ae4de848d2f2e05c7214',1,'SleepHelper::PersistentDataBase']]],
+  ['saveddatamagic_3',['savedDataMagic',['../class_sleep_helper_1_1_persistent_data_base.html#a53ceb74ed3d72cae9b3c7cbf951920be',1,'SleepHelper::PersistentDataBase']]],
+  ['saveddatasize_4',['savedDataSize',['../class_sleep_helper_1_1_persistent_data_base.html#aa0caff0a7bc69dcbbadcf0ed90183918',1,'SleepHelper::PersistentDataBase']]],
+  ['saveddataversion_5',['savedDataVersion',['../class_sleep_helper_1_1_persistent_data_base.html#ae83f350dae5800773fb77c5b926b88a8',1,'SleepHelper::PersistentDataBase']]],
+  ['savedelayms_6',['saveDelayMs',['../class_sleep_helper_1_1_persistent_data_file.html#ab719ecb9cb475bc2acdaaed348cc4f77',1,'SleepHelper::PersistentDataFile']]],
+  ['schedulemanager_7',['scheduleManager',['../class_sleep_helper.html#a39398c7821ad9cdec66c4836f11aaba8',1,'SleepHelper']]],
+  ['settingchangefunctions_8',['settingChangeFunctions',['../class_sleep_helper_1_1_settings_file.html#ad51309909967dae8f9b7062e9173c47f',1,'SleepHelper::SettingsFile']]],
+  ['settingsfile_9',['settingsFile',['../class_sleep_helper.html#a7a8fcf09815441b0de5478f492cf67aa',1,'SleepHelper']]],
+  ['setupfunctions_10',['setupFunctions',['../class_sleep_helper.html#aab6eb4ae918d1cc5f8d3b9f8de4ef233',1,'SleepHelper']]],
+  ['shouldconnectfunctions_11',['shouldConnectFunctions',['../class_sleep_helper.html#a4dc8cbdd5b7a7ef3d292f3c225011e71',1,'SleepHelper']]],
+  ['size_12',['size',['../class_sleep_helper_1_1_persistent_data_base_1_1_saved_data_header.html#a270b86493b9837cee1bd901788116016',1,'SleepHelper::PersistentDataBase::SavedDataHeader']]],
+  ['sleepconfig_13',['sleepConfig',['../class_sleep_helper.html#ad02621204c1827fd6e2cbb3875462266',1,'SleepHelper']]],
+  ['sleepconfigurationfunctions_14',['sleepConfigurationFunctions',['../class_sleep_helper.html#a77cffbed845c60300be6c6fcaf28f87e',1,'SleepHelper']]],
+  ['sleephelperdata_15',['sleepHelperData',['../class_sleep_helper_1_1_persistent_data.html#a2aa49f35b17fc9ed2850df050bd3e392',1,'SleepHelper::PersistentData']]],
+  ['sleeporresetfunctions_16',['sleepOrResetFunctions',['../class_sleep_helper.html#adfe77dceb8caff70bdba400abb3b2533',1,'SleepHelper']]],
+  ['sleepparams_17',['sleepParams',['../class_sleep_helper.html#a566a4ccb69e8cd74971906615536e53c',1,'SleepHelper']]],
+  ['sleepreadyfunctions_18',['sleepReadyFunctions',['../class_sleep_helper.html#aa5f00e59c77710112d0a436e901f4915',1,'SleepHelper']]],
+  ['sleeptimems_19',['sleepTimeMs',['../class_sleep_helper_1_1_sleep_configuration_parameters.html#aa32e97d12e57b2d601a20ba2e91eeb1b',1,'SleepHelper::SleepConfigurationParameters']]],
+  ['statehandler_20',['stateHandler',['../class_sleep_helper.html#a9cda0d070ecd63b3df79215cbd2bd300',1,'SleepHelper']]],
+  ['statetime_21',['stateTime',['../class_sleep_helper.html#ada560a51075ce32ada364ec6af9a3151',1,'SleepHelper']]]
+];

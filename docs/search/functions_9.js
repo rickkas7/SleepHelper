@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['removeall_0',['removeAll',['../class_sleep_helper_1_1_app_callback.html#a2c991e67a5341f63edae20b133bb1a13',1,'SleepHelper::AppCallback']]]
+  ['murmur3_5f32_0',['murmur3_32',['../class_sleep_helper_1_1_cloud_settings_file.html#afe5cf12a3155b1021f363a0fca5ad9a7',1,'SleepHelper::CloudSettingsFile']]]
 ];

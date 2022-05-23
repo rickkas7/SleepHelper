@@ -82,32 +82,43 @@ Inheritance diagram for SleepHelper::SleepHelperRecursiveMutex:</div>
  <div class="center">
   <img src="class_sleep_helper_1_1_sleep_helper_recursive_mutex.png" usemap="#SleepHelper::SleepHelperRecursiveMutex_map" alt=""/>
   <map id="SleepHelper::SleepHelperRecursiveMutex_map" name="SleepHelper::SleepHelperRecursiveMutex_map">
-<area href="class_sleep_helper_1_1_persistent_data_base.html" title="Base class for storing persistent binary data to a file or retained memory." alt="SleepHelper::PersistentDataBase" shape="rect" coords="0,56,249,80"/>
-<area href="class_sleep_helper_1_1_settings_file.html" title="Class for managing the SleepHelper settings file." alt="SleepHelper::SettingsFile" shape="rect" coords="259,56,508,80"/>
-<area href="class_sleep_helper_1_1_persistent_data_file.html" title="Base class for persistent data stored in a file." alt="SleepHelper::PersistentDataFile" shape="rect" coords="0,112,249,136"/>
-<area href="class_sleep_helper_1_1_cloud_settings_file.html" title="Cloud-based settings." alt="SleepHelper::CloudSettingsFile" shape="rect" coords="259,112,508,136"/>
-<area href="class_sleep_helper_1_1_persistent_data.html" title="Class for storing small data used by SleepHelper in the flash file system." alt="SleepHelper::PersistentData" shape="rect" coords="0,168,249,192"/>
+<area href="class_sleep_helper_1_1_event_history.html" title="Class to manage small events, typically used for time-series data." alt="SleepHelper::EventHistory" shape="rect" coords="0,56,249,80"/>
+<area href="class_sleep_helper_1_1_persistent_data_base.html" title="Base class for storing persistent binary data to a file or retained memory." alt="SleepHelper::PersistentDataBase" shape="rect" coords="259,56,508,80"/>
+<area href="class_sleep_helper_1_1_settings_file.html" title="Class for managing the SleepHelper settings file." alt="SleepHelper::SettingsFile" shape="rect" coords="518,56,767,80"/>
+<area href="class_sleep_helper_1_1_persistent_data_file.html" title="Base class for persistent data stored in a file." alt="SleepHelper::PersistentDataFile" shape="rect" coords="259,112,508,136"/>
+<area href="class_sleep_helper_1_1_cloud_settings_file.html" title="Cloud-based settings." alt="SleepHelper::CloudSettingsFile" shape="rect" coords="518,112,767,136"/>
+<area href="class_sleep_helper_1_1_persistent_data.html" title="Class for storing small data used by SleepHelper in the flash file system." alt="SleepHelper::PersistentData" shape="rect" coords="259,168,508,192"/>
   </map>
 </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:af25f1073f79d12bb4f57a7c1f6629aa8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#af25f1073f79d12bb4f57a7c1f6629aa8">SleepHelperRecursiveMutex</a> (os_mutex_recursive_t handle)</td></tr>
+<tr class="memdesc:af25f1073f79d12bb4f57a7c1f6629aa8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a <a class="el" href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html" title="This is a wrapper around a recursive mutex, similar to Device OS RecursiveMutex.">SleepHelperRecursiveMutex</a> wrapper object from an existing recursive mutex.  <a href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#af25f1073f79d12bb4f57a7c1f6629aa8">More...</a><br /></td></tr>
 <tr class="separator:af25f1073f79d12bb4f57a7c1f6629aa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb7f25e9fab9e82496908e5726b7e812"><td class="memItemLeft" align="right" valign="top"><a id="acb7f25e9fab9e82496908e5726b7e812" name="acb7f25e9fab9e82496908e5726b7e812"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SleepHelperRecursiveMutex</b> ()</td></tr>
+<tr class="memdesc:acb7f25e9fab9e82496908e5726b7e812"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor with no mutex - one will be created on first lock. <br /></td></tr>
+<tr class="separator:acb7f25e9fab9e82496908e5726b7e812"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaeecb1cb2dea4299c77275757cb69016"><td class="memItemLeft" align="right" valign="top"><a id="aaeecb1cb2dea4299c77275757cb69016" name="aaeecb1cb2dea4299c77275757cb69016"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>~SleepHelperRecursiveMutex</b> ()</td></tr>
+<tr class="memdesc:aaeecb1cb2dea4299c77275757cb69016"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys the underlying mutex object. <br /></td></tr>
+<tr class="separator:aaeecb1cb2dea4299c77275757cb69016"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3c9e1311d1d26a58afb1c8f8d32fcf69"><td class="memItemLeft" align="right" valign="top"><a id="a3c9e1311d1d26a58afb1c8f8d32fcf69" name="a3c9e1311d1d26a58afb1c8f8d32fcf69"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>dispose</b> ()</td></tr>
+<tr class="memdesc:a3c9e1311d1d26a58afb1c8f8d32fcf69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys the mutex object. <br /></td></tr>
 <tr class="separator:a3c9e1311d1d26a58afb1c8f8d32fcf69"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae36dee79d37ac9610cd4c76c845c5386"><td class="memItemLeft" align="right" valign="top"><a id="ae36dee79d37ac9610cd4c76c845c5386" name="ae36dee79d37ac9610cd4c76c845c5386"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>lock</b> () const</td></tr>
+<tr class="memitem:ae36dee79d37ac9610cd4c76c845c5386"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#ae36dee79d37ac9610cd4c76c845c5386">lock</a> () const</td></tr>
+<tr class="memdesc:ae36dee79d37ac9610cd4c76c845c5386"><td class="mdescLeft">&#160;</td><td class="mdescRight">Locks the mutex. Creates a new recursive mutex object if it does not exist yet.  <a href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#ae36dee79d37ac9610cd4c76c845c5386">More...</a><br /></td></tr>
 <tr class="separator:ae36dee79d37ac9610cd4c76c845c5386"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a34bb756e26a98c673610396cbf06e7b7"><td class="memItemLeft" align="right" valign="top"><a id="a34bb756e26a98c673610396cbf06e7b7" name="a34bb756e26a98c673610396cbf06e7b7"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>trylock</b> () const</td></tr>
+<tr class="memitem:a34bb756e26a98c673610396cbf06e7b7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#a34bb756e26a98c673610396cbf06e7b7">trylock</a> () const</td></tr>
+<tr class="memdesc:a34bb756e26a98c673610396cbf06e7b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempts to lock the mutex. Creates a new recursive mutex object if it does not exist yet.  <a href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#a34bb756e26a98c673610396cbf06e7b7">More...</a><br /></td></tr>
 <tr class="separator:a34bb756e26a98c673610396cbf06e7b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a1f53c6f4b467ddfd988d8defd8c478"><td class="memItemLeft" align="right" valign="top"><a id="a6a1f53c6f4b467ddfd988d8defd8c478" name="a6a1f53c6f4b467ddfd988d8defd8c478"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>try_lock</b> () const</td></tr>
+<tr class="memitem:a6a1f53c6f4b467ddfd988d8defd8c478"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#a6a1f53c6f4b467ddfd988d8defd8c478">try_lock</a> () const</td></tr>
+<tr class="memdesc:a6a1f53c6f4b467ddfd988d8defd8c478"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempts to lock the mutex. Creates a new recursive mutex object if it does not exist yet.  <a href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#a6a1f53c6f4b467ddfd988d8defd8c478">More...</a><br /></td></tr>
 <tr class="separator:a6a1f53c6f4b467ddfd988d8defd8c478"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad89bbb20eae4ef07b147fe69f688c765"><td class="memItemLeft" align="right" valign="top"><a id="ad89bbb20eae4ef07b147fe69f688c765" name="ad89bbb20eae4ef07b147fe69f688c765"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>unlock</b> () const</td></tr>
+<tr class="memitem:ad89bbb20eae4ef07b147fe69f688c765"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#ad89bbb20eae4ef07b147fe69f688c765">unlock</a> () const</td></tr>
+<tr class="memdesc:ad89bbb20eae4ef07b147fe69f688c765"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unlocks the mutex.  <a href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#ad89bbb20eae4ef07b147fe69f688c765">More...</a><br /></td></tr>
 <tr class="separator:ad89bbb20eae4ef07b147fe69f688c765"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -141,7 +152,129 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>unlock</b> () const</
   </tr>
 </table>
 </div><div class="memdoc">
-<p >Creates a shared mutex. </p>
+
+<p>Construct a <a class="el" href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html" title="This is a wrapper around a recursive mutex, similar to Device OS RecursiveMutex.">SleepHelperRecursiveMutex</a> wrapper object from an existing recursive mutex. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">handle</td><td>The mutex handle</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>Ownership of the mutex handle is transferred to this object and it will be destroyed when this object is deleted. </p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ae36dee79d37ac9610cd4c76c845c5386" name="ae36dee79d37ac9610cd4c76c845c5386"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae36dee79d37ac9610cd4c76c845c5386">&#9670;&nbsp;</a></span>lock()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void SleepHelper::SleepHelperRecursiveMutex::lock </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Locks the mutex. Creates a new recursive mutex object if it does not exist yet. </p>
+<p >Blocks if another thread has obtained the mutex, continues when the other thread releases it.</p>
+<p >Never call lock from a SINGLE_THREADED_BLOCK since deadlock can occur. </p>
+
+</div>
+</div>
+<a id="a6a1f53c6f4b467ddfd988d8defd8c478" name="a6a1f53c6f4b467ddfd988d8defd8c478"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a1f53c6f4b467ddfd988d8defd8c478">&#9670;&nbsp;</a></span>try_lock()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SleepHelper::SleepHelperRecursiveMutex::try_lock </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Attempts to lock the mutex. Creates a new recursive mutex object if it does not exist yet. </p>
+<p >Returns true if the mutex was locked or false if another thread has already locked it. </p>
+
+</div>
+</div>
+<a id="a34bb756e26a98c673610396cbf06e7b7" name="a34bb756e26a98c673610396cbf06e7b7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34bb756e26a98c673610396cbf06e7b7">&#9670;&nbsp;</a></span>trylock()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool SleepHelper::SleepHelperRecursiveMutex::trylock </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Attempts to lock the mutex. Creates a new recursive mutex object if it does not exist yet. </p>
+<p >Returns true if the mutex was locked or false if another thread has already locked it. </p>
+
+</div>
+</div>
+<a id="ad89bbb20eae4ef07b147fe69f688c765" name="ad89bbb20eae4ef07b147fe69f688c765"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad89bbb20eae4ef07b147fe69f688c765">&#9670;&nbsp;</a></span>unlock()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void SleepHelper::SleepHelperRecursiveMutex::unlock </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Unlocks the mutex. </p>
+<p >If another thread is blocked on locking the mutex, that thread will resume. </p>
 
 </div>
 </div>

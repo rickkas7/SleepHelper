@@ -67,7 +67,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle"><div class="title">SleepHelper::EventCombiner::EventInfo Class Reference</div></div>
 </div><!--header-->
@@ -78,16 +77,6 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="_sleep_helper_8h_source.html">SleepHelper.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a20fcb4174c7a1274486812a89fabdd43"><td class="memItemLeft" align="right" valign="top"><a id="a20fcb4174c7a1274486812a89fabdd43" name="a20fcb4174c7a1274486812a89fabdd43"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>EventInfo</b> ()</td></tr>
-<tr class="memdesc:a20fcb4174c7a1274486812a89fabdd43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor. <br /></td></tr>
-<tr class="separator:a20fcb4174c7a1274486812a89fabdd43"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4b6cb8aa37fb0e044ce0aa9bff7807b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper_1_1_event_combiner_1_1_event_info.html#ae4b6cb8aa37fb0e044ce0aa9bff7807b">EventInfo</a> (const char *jsonStr, int <a class="el" href="class_sleep_helper_1_1_event_combiner_1_1_event_info.html#ac7475cc8466fe617b29c0510d31c8e7a">priority</a>)</td></tr>
-<tr class="memdesc:ae4b6cb8aa37fb0e044ce0aa9bff7807b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor with values to fill int.  <a href="class_sleep_helper_1_1_event_combiner_1_1_event_info.html#ae4b6cb8aa37fb0e044ce0aa9bff7807b">More...</a><br /></td></tr>
-<tr class="separator:ae4b6cb8aa37fb0e044ce0aa9bff7807b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a2847275110096626bb554c8a9566a9ca"><td class="memItemLeft" align="right" valign="top"><a id="a2847275110096626bb554c8a9566a9ca" name="a2847275110096626bb554c8a9566a9ca"></a>
@@ -98,57 +87,15 @@ String&#160;</td><td class="memItemRight" valign="bottom"><b>json</b></td></tr>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>priority</b> = 0</td></tr>
 <tr class="memdesc:ac7475cc8466fe617b29c0510d31c8e7a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Priority 0 - 100 inclusive. <br /></td></tr>
 <tr class="separator:ac7475cc8466fe617b29c0510d31c8e7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aedefdde39996604e6cae60beb294c19a"><td class="memItemLeft" align="right" valign="top"><a id="aedefdde39996604e6cae60beb294c19a" name="aedefdde39996604e6cae60beb294c19a"></a>
+std::vector&lt; String &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>keys</b></td></tr>
+<tr class="memdesc:aedefdde39996604e6cae60beb294c19a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Top level keys. <br /></td></tr>
+<tr class="separator:aedefdde39996604e6cae60beb294c19a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p >Container to hold a JSON fragment and a priority value 0 - 100. </p>
 <p >Note that this is only a fragment, basically an object without the surrounding {}! </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ae4b6cb8aa37fb0e044ce0aa9bff7807b" name="ae4b6cb8aa37fb0e044ce0aa9bff7807b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae4b6cb8aa37fb0e044ce0aa9bff7807b">&#9670;&nbsp;</a></span>EventInfo()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">SleepHelper::EventCombiner::EventInfo::EventInfo </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>jsonStr</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>priority</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Constructor with values to fill int. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">jsonStr</td><td>The fragment of JSON to save </td></tr>
-    <tr><td class="paramname">priority</td><td>The priority 0 - 100 </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+</div><hr/>The documentation for this class was generated from the following file:<ul>
 <li>src/<a class="el" href="_sleep_helper_8h_source.html">SleepHelper.h</a></li>
 </ul>
 </div><!-- contents -->
