@@ -18,10 +18,13 @@ SleepHelper &SleepHelper::instance() {
     return *_instance;
 }
 
+/**
+ * @brief Structure that defines wake events and the JSON keys used for them
+ */
 typedef struct {
-    uint64_t flag;
-    String name;
-    int priority;
+    uint64_t flag;  //!< Flag bit for enabling
+    String name;    //!< JSON key for the wake event
+    int priority;   //!< priority (1 to 100) for inclusion in the wake event
 } WakeEvents;
 
 static WakeEvents _wakeEvents[] = {
@@ -307,6 +310,7 @@ void SleepHelper::stateHandlerStart() {
     stateHandler = &SleepHelper::stateHandlerConnectWait;
     connectAttemptStartMillis = millis();
     networkConnectedMillis = 0;
+    reconnectAttemptStartMillis = 0;
 }
 
 
@@ -378,8 +382,7 @@ void SleepHelper::stateHandlerConnectedWakeEvents() {
     }
 
     // Call the wake event handlers to see if they have JSON data to publish
-    std::vector<String> events;
-    wakeEventFunctions.generateEvents(events);
+    wakeEventFunctions.generateEvents(wakeEventPayload);
 
     lastEventHistoryCheckMillis = 0;
     sleepReadyFunctions.setStartState();
@@ -388,6 +391,7 @@ void SleepHelper::stateHandlerConnectedWakeEvents() {
 
 void SleepHelper::stateHandlerConnected() {
     if (!Particle.connected()) {
+        reconnectAttemptStartMillis = millis();
         stateHandler = &SleepHelper::stateHandlerReconnectWait;
         return;        
     }
@@ -399,9 +403,10 @@ void SleepHelper::stateHandlerConnected() {
             lastEventHistoryCheckMillis = millis();
 
             // If there are events, add to the publish queue
-            for(auto it = events.begin(); it != events.end(); ++it) {
+            for(auto it = wakeEventPayload.begin(); it != wakeEventPayload.end(); ++it) {
                 publishData.push_back(PublishData(wakeEventName, *it));            
             }
+            wakeEventPayload.clear();
         }
     }
 
@@ -462,6 +467,14 @@ void SleepHelper::stateHandlerPublishRateLimit() {
 void SleepHelper::stateHandlerReconnectWait() {
     if (Particle.connected()) {
         stateHandler = &SleepHelper::stateHandlerConnected;
+        return;
+    }
+
+    system_tick_t elapsedMs = millis() - reconnectAttemptStartMillis;
+
+    if (maximumTimeToConnectFunctions.whileAnyFalse(false, elapsedMs)) {
+        appLog.info("timed out reconnecting to cloud");
+        stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
         return;
     }
 }

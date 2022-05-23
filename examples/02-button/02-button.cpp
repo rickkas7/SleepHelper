@@ -17,7 +17,6 @@ void setup() {
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
     SleepHelper::instance()
-        .withShouldConnectMinimumSoC(9.0)
         .withMinimumCellularOffTime(5min)
         .withSleepConfigurationFunction([](SystemSleepConfiguration &sleepConfig, SleepHelper::SleepConfigurationParameters &params) {
             // Add a GPIO wake on button press

@@ -2,6 +2,10 @@
 
 *Library for simplifying Particle applications that use sleep modes*
 
+Note that this library is currently incomplete and may still contain bugs. I'm releasing it now to get initial feedback and feature suggestions.
+
+Especially important are any places where you think you'll need additional callback functions to customize behavior so that you can use the library without having to modify it.
+
 ## Example
 
 This is the simplest example, from the "01-simple" example directory:
@@ -55,6 +59,8 @@ SleepHelper::instance().loop();
 ```
 In loop(), always call the loop method:
 
+There are descriptions of additional examples at the end of this page.
+
 ## Design
 
 The library is intended to be completely configurable and extendable without modifying the core library itself. 
@@ -96,16 +102,16 @@ SleepHelper::instance()
 
 This adds a wake function, which is called immediately after wake. This is done so we can keep track of the reason we woke (button or time).
 
-### Short wake vs. full wake
+### Quick wake vs. full wake
 
 The library supports two different levels of wake:
 
-- A short wake or non-connected wake will wake up the device and go back to sleep very quickly, without connecting to cellular
-- A long wake or connected wake will wake up and connect to the cloud
+- A quick wake or non-connected wake will wake up the device and go back to sleep very quickly, without connecting to cellular
+- A full wake or connected wake will wake up and connect to the cloud
 
-A short wake might be used to read a sensor, save the data to flash, and go back to sleep. Or for a button press, vehicle sensor, etc. it might count the event, then go back to sleep. Often this can be done in under a second.
+A quick wake might be used to read a sensor, save the data to flash, and go back to sleep. Or for a button press, vehicle sensor, etc. it might count the event, then go back to sleep. Often this can be done in under a second.
 
-A long wake allows the data to be uploaded to the cloud, but takes longer and uses more power.
+A full wake allows the data to be uploaded to the cloud, but takes longer and uses more power.
 
 It's also possible to use the library with cellular standby mode, and also with Wi-Fi devices, but the concepts are similar.
 
@@ -125,6 +131,16 @@ This allows multiple independent parts of the code to add data to a single JSON 
 
 If the event is full and there is low priority data (less than priority 50), the lowest priority is discarded first to allow the data to fit in a single event instead of creating multiple events.
 
+There are also a number of built-in wake events, each of which can be turned off if you don't want the information. For example:
+
+```json
+{"soc":8.8,"ttc":16186,"wr":4}
+```
+
+- soc is the battery state of charge (0-100%)
+- ttc is the time to connect to the cloud in milliseconds
+- wr is the wake reason code (4 = by time)
+
 ### Data capture
 
 ```cpp
@@ -140,13 +156,26 @@ SleepHelper::instance()
     })
 ```
 
-In addition to simple short and long wake cycles, the library supports the concept of a data capture function. This function is called according to a schedule, such as every 30 seconds, or even more complicated scenarios. The difference is that the library will adjust the sleep timing so the data capture function is called, and also continues to call the function if the device is already connecting, or attempting to connect ot the cloud. This assures consistent data acquisition regardless of cellular conditions. The data is saved in the flash file system and is uploaded in a data operation efficient manner, explained below.
+In addition to simple quick and full wake cycles, the library supports the concept of a data capture function. This function is called according to a schedule, such as every 30 seconds, or even more complicated scenarios. The difference is that the library will adjust the sleep timing so the data capture function is called, and also continues to call the function if the device is already connecting, or attempting to connect ot the cloud. This assures consistent data acquisition regardless of cellular conditions. The data is saved in the flash file system and is uploaded in a data operation efficient manner, explained below.
 
 ### Event history
 
 Event history allows small chunks of JSON data to be saved. For example, the data capture example above stores a timestamp (32 bit integer) and a floating point temperature value (with one decimal place). 
 
 The event history data is uploaded as an array in an event, so it's data operation efficient. Many small data points can be uploaded in a single event. Additionally, the event history is combined with the wake event data, so you may be able to get both the wake event and event history data uploaded using a single data operation.
+
+```json
+{"soc":8.6,"ttc":16183,"wr":4,"eh":[{"b":1653305824}]}
+```
+
+This is an example of one button press in the 02-button example that occurred as a quick wake with no cloud connection. When the full wake occurred later, the eh (event history) key included the b event with the timestamp of the button press.
+
+```json
+{"soc":8.4,"ttc":12094,"rr":0,"eh":[{"b":1653307929},{"b":1653307941},{"b":1653307950}]}
+```
+
+This example contains three button presses. If you had so many button presses that it could not fit in a single event, it will automatically overflow into multiple events, but the default representation is data-efficient and can typically upload all of the data using only a single data operation.
+
 
 ### Scheduling
 
@@ -243,7 +272,7 @@ This is a minimal example that just shows how the callback functions are registe
 
 ### 02-button example
 
-This example shows how to do short and long wake, and customized sleep.
+This example shows how to both quick and full wakes, and customized sleep.
 
 A momentary switch is connected between pin D2 and ground. Every time the button is pressed, a timestamp is logged. You could imagine the same technique being used for a door sensor, vehicle sensor, rain gauge, etc..
 
@@ -338,6 +367,7 @@ Finally, button presses are logged using the Event History feature. Event Histor
 Event history also supports overflow, so if the data exceeds the publish limit of 1024 bytes, it will be spread across multiple events as necessary. This happens automatically.
 
 
+
 ### 03-temperature example
 
 This example shows how to use data collection mode to periodically sense temperature. The actual code uses a TMP36 analog temperature sensor, but you could use it with any sensor by replacing the readTempC() function, and of course you could sample other kinds of data other than temperature. 
@@ -355,7 +385,7 @@ SleepHelper::instance()
     });
 ```
 
-The most important thing in this example is the data capture function. It's called on a schedule to sample data, and this can occur after a short wake (no cellular connection), while connecting, or while connected to the cloud. 
+The most important thing in this example is the data capture function. It's called on a schedule to sample data, and this can occur after a quick wake (no cellular connection), while connecting, or while connected to the cloud. 
 
 This example stores a timestamp ("t") and a temperature value ("c") but since it's JSON you could store more key/value pairs. For example, you might store temperature and humidity.
 
@@ -372,3 +402,8 @@ SleepHelper::instance().getScheduleDataCapture()
 
 This schedule is simple: full wake and publish every 15 minutes, and capture temperature every 2 minutes. Since the schedule uses only minute of hour, this does not require a valid timezone to be set.
 
+## Version History
+
+### 0.0.1 (2022-05-23)
+
+- Initial version (incomplete)

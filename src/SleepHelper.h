@@ -42,16 +42,35 @@ public:
         mutable os_mutex_recursive_t handle_;
 
     public:
+        /**
+         * @brief Construct a SleepHelperRecursiveMutex wrapper object from an existing recursive mutex
+         * 
+         * @param handle The mutex handle
+         * 
+         * Ownership of the mutex handle is transferred to this object and it will be destroyed when this
+         * object is deleted.
+         */
         SleepHelperRecursiveMutex(os_mutex_recursive_t handle) : handle_(handle) {
         }
 
+        /**
+         * @brief Default constructor with no mutex - one will be created on first lock
+         * 
+         */
         SleepHelperRecursiveMutex() : handle_(nullptr) {
         }
 
+        /**
+         * @brief Destroys the underlying mutex object.
+         * 
+         */
         ~SleepHelperRecursiveMutex() {
             dispose();
         }
 
+        /**
+         * @brief Destroys the mutex object
+         */
         void dispose() {
             if (handle_) {
                 os_mutex_recursive_destroy(handle_);
@@ -59,21 +78,45 @@ public:
             }
         }
 
+        /**
+         * @brief Locks the mutex. Creates a new recursive mutex object if it does not exist yet.
+         * 
+         * Blocks if another thread has obtained the mutex, continues when the other thread releases it.
+         * 
+         * Never call lock from a SINGLE_THREADED_BLOCK since deadlock can occur.
+         */
         void lock() const { 
             if (!handle_) {
                 os_mutex_recursive_create(&handle_);
             }
             os_mutex_recursive_lock(handle_); 
         }
+        /**
+         * @brief Attempts to lock the mutex. Creates a new recursive mutex object if it does not exist yet.
+         * 
+         * Returns true if the mutex was locked or false if another thread has already locked it.
+         */
         bool trylock() const { 
             if (!handle_) {
                 os_mutex_recursive_create(&handle_);
             }
             return os_mutex_recursive_trylock(handle_)==0; 
         }
+
+        /**
+         * @brief Attempts to lock the mutex. Creates a new recursive mutex object if it does not exist yet.
+         * 
+         * Returns true if the mutex was locked or false if another thread has already locked it.
+         */
         bool try_lock() const { 
             return trylock(); 
         }
+
+        /**
+         * @brief Unlocks the mutex
+         * 
+         * If another thread is blocked on locking the mutex, that thread will resume.
+         */
         void unlock() const { 
             os_mutex_recursive_unlock(handle_); 
         }
@@ -236,10 +279,10 @@ public:
      */
     class AppCallbackState {
     public:
-        static const int CALLBACK_STATE_START = -1;
-        static const int CALLBACK_START_RETURNED_FALSE = -2;
+        static const int CALLBACK_STATE_START = -1; //!< The callback has just started this wake cycle
+        static const int CALLBACK_START_RETURNED_FALSE = -2; //!< The callback return false and should not be called again for this wake cycle
 
-        int callbackState = CALLBACK_STATE_START;
+        int callbackState = CALLBACK_STATE_START; //!< The current state of this callback
         void *callbackData = 0; //!< Callback can store data here
     };
 
@@ -263,16 +306,38 @@ public:
             callbackState.push_back(AppCallbackState());
         }
 
+        /**
+         * @brief Set the state
+         * 
+         * @param newState The state number, such as CALLBACK_STATE_START
+         * 
+         * User code can use positive values for their own state
+         */
         void setState(int newState) {
             for(auto it = callbackState.begin(); it != callbackState.end(); ++it) {
                 it->callbackState = newState;
             }
         }
 
+        /**
+         * @brief Set the state to CALLBACK_STATE_START
+         * 
+         * This is done on each wake cycle.
+         */
         void setStartState() {
             setState(AppCallbackState::CALLBACK_STATE_START);
         }
 
+        /**
+         * @brief Keeps calling the callback function while any callback returns true
+         * 
+         * @param args Parameters to pass to the callbacks
+         * @return true Call this function again, as not all callbacks are done for this wake cycle.
+         * @return false All callbacks are done
+         * 
+         * Once your callback returns false it will not be called again for this wake cycle.
+         * Once all callbacks return false, this function returns false.
+         */
         bool whileAnyTrue(Types... args) {
             bool finalRes = false;
 
@@ -291,10 +356,16 @@ public:
             return finalRes;
         }
 
+        /**
+         * @brief Returns true if there are no callbacks registered
+         * 
+         * @return true No callbacks registered
+         * @return false At least one callback is registered
+         */
         bool isEmpty() const { return callbackFunctions.empty(); };
 
-        std::vector<std::function<bool(AppCallbackState &, Types... args)>> callbackFunctions;
-        std::vector<AppCallbackState> callbackState;
+        std::vector<std::function<bool(AppCallbackState &, Types... args)>> callbackFunctions; //!< The callback functions
+        std::vector<AppCallbackState> callbackState; //!< The state for the callback functions. The array indexes match callbackFunctions.
 
     };
 
@@ -321,6 +392,31 @@ public:
      */
     class ShouldConnectAppCallback : public AppCallback<int&, int&> {
     public:
+        /**
+         * @brief Determine if a cloud connection should occur
+         * 
+         * @return true Should connect to the cloud
+         * @return false Should not connect to the cloud
+         * 
+         * This is determined by calling all of the shouldConnect functions. Each function is passed
+         * a connectConviction and a noConnectConviction, both initialized to true.
+         * 
+         * If the callback believes a connection should be made, the connectConviction should be 
+         * set to a value from 1 to 100. A typical value would be 60. This would encourage connection
+         * but still could be overridden for other reasons, such as insufficient battery power.
+         * 
+         * If the callback believes a connection should not be made, it sets noConnectConviction to
+         * a value from 1 to 100, 100 being definitely do not connect.
+         * 
+         * If the highest connection conviction is greater than the highest no connection 
+         * conviction, then a connection will be attempted.
+         * 
+         * Callback prototype:
+         * 
+         * bool shouldConnectCallback(int &connectConviction, int &noConnectConviction);
+         * 
+         * Return true from the function in all cases.
+         */
         bool shouldConnect() {
             int maxConnectConviction = 0;
             int maxNoConnectConviction = 0;
@@ -560,11 +656,11 @@ public:
          */
         SettingsFile& operator=(const SettingsFile&) = delete;
 
-        JsonParserStatic<particle::protocol::MAX_EVENT_DATA_LENGTH, 50> parser;
+        JsonParserStatic<particle::protocol::MAX_EVENT_DATA_LENGTH, 50> parser; //!< Parser for JSON data in settings file
 
-        AppCallback<const char *> settingChangeFunctions;
-        String path;
-        const char *defaultValues = 0;
+        AppCallback<const char *> settingChangeFunctions; //!< Functions to call whenb settings change
+        String path; //!< Path to the settings file
+        const char *defaultValues = 0; //!< Default values for settings (not used with cloud-based settings)
     };
 
     /**
@@ -692,6 +788,9 @@ public:
      */
     class PersistentDataBase : public SleepHelperRecursiveMutex {
     public:
+        /**
+         * @brief Header at the beginning of all saved data stored in RAM, retained memory, or a file.
+         */
         class SavedDataHeader { // 16 bytes
         public:
             uint32_t magic;                 //!< savedDataMagic, should rarely, if ever, change
@@ -702,6 +801,14 @@ public:
             // You cannot change the size of this structure without changing the version number!
         };
         
+        /**
+         * @brief Base class for persistent data saved in file or RAM
+         * 
+         * @param savedDataHeader Pointer to the header
+         * @param savedDataSize size of the whole structure, including the user data after it 
+         * @param savedDataMagic Magic bytes to use for this data
+         * @param savedDataVersion Version to use for this data
+         */
         PersistentDataBase(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
             savedDataHeader(savedDataHeader), savedDataSize(savedDataSize), savedDataMagic(savedDataMagic), savedDataVersion(savedDataVersion)  {
         };
@@ -848,6 +955,14 @@ public:
      */
     class PersistentDataFile : public PersistentDataBase {
     public:
+        /**
+         * @brief Base class for persistent data saved in file
+         * 
+         * @param savedDataHeader Pointer to the saved data header
+         * @param savedDataSize size of the whole structure, including the user data after it 
+         * @param savedDataMagic Magic bytes to use for this data
+         * @param savedDataVersion Version to use for this data
+         */
         PersistentDataFile(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
             PersistentDataBase(savedDataHeader, savedDataSize, savedDataMagic, savedDataVersion) {
         };
@@ -942,10 +1057,10 @@ public:
          */
         PersistentDataFile& operator=(const PersistentDataFile&) = delete;
         
-        uint32_t lastUpdate = 0;
-        uint32_t saveDelayMs = 1000;
+        uint32_t lastUpdate = 0; //!< Last time the file was updated. 0 = file has not changed since writing to disk.
+        uint32_t saveDelayMs = 1000; //!< How long to wait to save before writing file to disk. Set to 0 to write immediately.
 
-        String path;
+        String path; //!< Path to data file
     };
 
     /**
@@ -974,11 +1089,11 @@ public:
          */
         class SleepHelperData {
         public:
-            SavedDataHeader header;
-            uint32_t lastUpdateCheck;
-            uint32_t lastFullWake;
-            uint32_t lastQuickWake;
-            uint32_t nextDataCapture;
+            SavedDataHeader header; //!< Must be at the beginning of the data structure
+            uint32_t lastUpdateCheck; //!< time_t last update check (Unix time, UTC)
+            uint32_t lastFullWake; //!< time_t last full wake (Unix time, UTC)
+            uint32_t lastQuickWake; //!< time_t last quick wake (Unix time, UTC)
+            uint32_t nextDataCapture; //!< time_t next data capture time (Unix time, UTC)
             // OK to add more fields here later without incremeting version.
             // New fields will be zero-initialized.
         };
@@ -1005,6 +1120,11 @@ public:
             return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, lastUpdateCheck));
         }
 
+        /**
+         * @brief Set lastUpdateCheck value (Unix time, UTC)
+         * 
+         * @param value time_t Unix time at UTC, like the value of Time.now()
+         */
         void setValue_lastUpdateCheck(time_t value) {
             setValue<uint32_t>(offsetof(SleepHelperData, lastUpdateCheck), (uint32_t) value);
         }
@@ -1017,6 +1137,11 @@ public:
         time_t getValue_lastFullWake() const {
             return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, lastFullWake));
         }
+        /**
+         * @brief Set lastFullWake value (Unix time, UTC)
+         * 
+         * @param value time_t Unix time at UTC, like the value of Time.now()
+         */
         void setValue_lastFullWake(time_t value) {
             setValue<uint32_t>(offsetof(SleepHelperData, lastFullWake), (uint32_t)value);
         }
@@ -1029,6 +1154,12 @@ public:
         time_t getValue_lastQuickWake() const {
             return (time_t) getValue<uint32_t>(offsetof(SleepHelperData, lastQuickWake));
         }
+
+        /**
+         * @brief Set lastQuickWake value (Unix time, UTC)
+         * 
+         * @param value time_t Unix time at UTC, like the value of Time.now()
+         */
         void setValue_lastQuickWake(time_t value) {
             setValue<uint32_t>(offsetof(SleepHelperData, lastQuickWake), (uint32_t)value);
         }
@@ -1058,12 +1189,12 @@ public:
         }
 
     
-        static const uint32_t SAVED_DATA_MAGIC = 0xd87cb6ce;
-        static const uint16_t SAVED_DATA_VERSION = 1; 
+        static const uint32_t SAVED_DATA_MAGIC = 0xd87cb6ce; //!< Magic bytes in the data structure
+        static const uint16_t SAVED_DATA_VERSION = 1; //!< Version of the data structure
 
 
     protected:
-        SleepHelperData sleepHelperData;
+        SleepHelperData sleepHelperData; //!< Data stored in the persistent data file
     };
 
 
@@ -1148,7 +1279,7 @@ public:
          * By default, events are removed automatically so there is no need to call
          * this. The function exists so you can do a two-phase removal. 
          * 
-         * It's safe to add events in the time period bretween getEvents() and
+         * It's safe to add events in the time period between getEvents() and
          * removeEvents() however you should not have multiple getEvents() in a row
          * or from different threads, as you will get the same events multiple times
          * and data corruption can occur.
@@ -1185,10 +1316,10 @@ public:
          */
         EventHistory& operator=(const EventHistory&) = delete;
 
-        String path;
-        bool firstRun = true;
-        bool hasEvents = false;
-        size_t removeOffset = 0;
+        String path; //!< path to the event history file
+        bool firstRun = true; //!< Used to flag the first time the file has been accessed
+        bool hasEvents = false; //!< True if there are events in the event history file
+        size_t removeOffset = 0; //!< Where to remove events from
     };
 
     /**
@@ -1348,24 +1479,64 @@ public:
          */
         EventCombiner& operator=(const EventCombiner&) = delete;
 
+        /**
+         * @brief Used internally to generate events based on priority
+         * 
+         * @param callback The callback to call
+         * @param buf The event buffer
+         * @param maxSize The size of the event buffer
+         * @param infoArray Data to be added to the event
+         * 
+         * A separate function is used because the process is run twice, once for the regular callbacks and once for the one-time callbacks.
+         */
         void generateEventInternal(std::function<void(JSONWriter &, int &)> callback, char *buf, size_t maxSize, std::vector<EventInfo> &infoArray);
 
         AppCallback<JSONWriter &, int &> callbacks; //!< Callback functions
         AppCallback<JSONWriter &, int &> oneTimeCallbacks; //!< One-time use callback functions 
-        EventHistory eventHistory; 
-        String eventHistoryKey;
+        EventHistory eventHistory; //!< Event history
+        String eventHistoryKey; //!< Key to use when publishing the event history
     };
 
+    /**
+     * @brief Class to hold data to be published by Particle.publish
+     */
     class PublishData {
     public:
+        /**
+         * @brief Initialize empty object
+         */
         PublishData() {};
+
+        /**
+         * @brief Initialize object with event name, no data payload, and default flags
+         * 
+         * @param eventName Event name (64 characters maximum)
+         */
         PublishData(const char *eventName) : eventName(eventName) {}
+
+        /**
+         * @brief Initialize object with event name, event data, and default flags
+         * 
+         * @param eventName Event name (64 characters maximum)
+         * 
+         * @param eventData Event data (typically 1024 characters, but may be less in some cases)
+         */
         PublishData(const char *eventName, const char *eventData) : eventName(eventName), eventData(eventData) {}
+
+        /**
+         * @brief Initialize object with event name, event data, and flags
+         * 
+         * @param eventName Event name (64 characters maximum)
+         * 
+         * @param eventData Event data (typically 1024 characters, but may be less in some cases)
+         * 
+         * @param flags Flags such as PRIVATE or NO_ACK
+         */
         PublishData(const char *eventName, const char *eventData, PublishFlags flags) : eventName(eventName), eventData(eventData), flags(flags) {}
 
-        String eventName;
-        String eventData;
-        PublishFlags flags = PRIVATE;
+        String eventName; //!< Particle event name
+        String eventData; //!< Particle event payload
+        PublishFlags flags = PRIVATE; //!< Flags. Default is PRIVATE, can also use NO_ACK
     };
 
     /**
@@ -1396,22 +1567,60 @@ public:
 
 
 #ifndef UNITTEST
+    /**
+     * @brief Structure of information about the next planned sleep
+     * 
+     * The sleep configuration function is passed this object and can modify the fields marked 
+     * "override setting" to change the sleep behavior. The other fields are informational.
+     */
     class SleepConfigurationParameters {
     public:
+        // Informational fields to help you determine if you need to modify sleep behavior
         bool isConnected; //!< Currently connected to cellular if true
-        system_tick_t sleepTimeMs; //!< Override setting for sleep duration
-        system_tick_t timeUntilNextFullWakeMs;
-        time_t nextFullWakeTime;
-        bool disconnectCellular; //!< Override setting for disconnecting from cellular
+        system_tick_t timeUntilNextFullWakeMs; //!< Number of milliseconds until next full wake
+        time_t nextFullWakeTime; //!< Time of next full wake (Unix time seconds since January 1, 1970, at UTC)
         uint64_t calculatedMillis; //!< System.millis() when the sleep duration was calculated
+
+        // You can update these to change the sleep behavior
+        system_tick_t sleepTimeMs; //!< Override setting for sleep duration
+        bool disconnectCellular; //!< Override setting for disconnecting from cellular
     };
 
 
+    /**
+     * @brief Register a function to be called to configure sleep
+     * 
+     * @param fn Callback function or C++11 lambda to call.
+     * @return SleepHelper& 
+     * 
+     * The callback function has the prototype:
+     * 
+     * bool callback(SystemSleepConfiguration &sleepConfiguration, SleepConfigurationParameters &sleepParameters)
+     * 
+     * - sleepConfiguration is the object that is passed to `System.sleep()` you can refer to this or modify it, however
+     * some parameters like duration should be set via the sleepParameters.
+     * - sleepParameters include both informational fields (like whether you're currently connected to cellular)
+     * as well as fields you can change to modify the sleep behavior.
+     */
     SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, SleepConfigurationParameters&)> fn) { 
         sleepConfigurationFunctions.add(fn); 
         return *this;
     }
 
+    /**
+     * @brief Register a function to be called on wake from sleep
+     * 
+     * @param fn Callback function or C++11 lambda to call.
+     * @return SleepHelper& 
+     * 
+     * The wake function has the prototype:
+     * 
+     * bool callback(const SystemSleepResult &sleepResult);
+     * 
+     * - sleepResult is a const reference to the SystemSleepResult that was obtained right after wake.
+     * 
+     * You should return true in all cases from your callback.
+     */
     SleepHelper &withWakeFunction(std::function<bool(const SystemSleepResult &)> fn) { 
         wakeFunctions.add(fn); 
         return *this;
@@ -1447,13 +1656,29 @@ public:
 
 
 
-
-
+    /**
+     * @brief Adds a function to be called during setup()
+     * 
+     * @param fn Callback function or C++11 lambda to call.
+     * @return SleepHelper& 
+     * 
+     * You must register this callback before actually calling setup() for obvious
+     * reasons. You will probably never need to use this, but it exists just in case.
+     */
     SleepHelper &withSetupFunction(std::function<bool()> fn) { 
         setupFunctions.add(fn);
         return *this;
     }
 
+    /**
+     * @brief Adds a function to be called on every call to loop()
+     * 
+     * @param fn Callback function or C++11 lambda to call.
+     * @return SleepHelper& 
+     * 
+     * You will normally register a more specific function, such as a data capture function, no connect function, etc.
+     * but this function is provided just in case.
+     */
     SleepHelper &withLoopFunction(std::function<bool()> fn) { 
         loopFunctions.add(fn); 
         return *this;
@@ -1462,7 +1687,7 @@ public:
     /**
      * @brief The data capture function is called on a schedule to capture data
      * 
-     * @param fn 
+     * @param fn Callback function or C++11 lambda to call.
      * @return SleepHelper& 
      * 
      * The callback has this prototype
@@ -1485,7 +1710,7 @@ public:
     /**
      * @brief Determine if it's OK to sleep now, when in connected state
      * 
-     * @param fn 
+     * @param fn Callback function or C++11 lambda to call.
      * @return SleepHelper& 
      * 
      * The sleep ready function prototype is:
@@ -1504,13 +1729,35 @@ public:
         return *this;
     }
 
+    /**
+     * @brief Function to call to determine if a full wake should be done
+     * 
+     * @param fn Callback function or C++11 lambda to call.
+     * @return SleepHelper& 
+     * 
+     * The callback has the prototype:
+     * 
+     * bool callback(int &connectConviction, int &noConnectConviction)
+     * 
+     * If the callback believes a connection should be made, the connectConviction should be 
+     * set to a value from 1 to 100. A typical value would be 60. This would encourage connection
+     * but still could be overridden for other reasons, such as insufficient battery power.
+     * 
+     * If the callback believes a connection should not be made, it sets noConnectConviction to
+     * a value from 1 to 100, 100 being definitely do not connect.
+     * 
+     * If the highest connection conviction is greater than the highest no connection 
+     * conviction, then a connection will be attempted.
+     * 
+     * Your function should return true in all cases.
+     */
     SleepHelper &withShouldConnectFunction(std::function<bool(int &connectConviction, int &noConnectConviction)> fn) { 
         shouldConnectFunctions.add(fn); 
         return *this; 
     }
 
     /**
-     * @brief Called during setup, after sleep, or an aborted sleep beacause duration was too short
+     * @brief Called during setup, after sleep, or an aborted sleep because duration was too short
      * 
      * @param fn 
      * @return SleepHelper& 
@@ -1697,8 +1944,12 @@ public:
     /**
      * @brief Sets the maximum time to connect to the cloud. If this limit is exceeded, the device will go to sleep.
      * 
-     * @param timeMs 
+     * @param timeMs Time in milliseconds
      * @return SleepHelper& 
+     * 
+     * Ideally this should be at least 11 minutes. If you need to conserve power you can set it as low as 5 minutes or
+     * so, however only do so if you use a sleep mode that will completely power down the modem. Otherwise, it's 
+     * possible that then modem will never be fully reset.
      */
     SleepHelper &withMaximumTimeToConnect(system_tick_t timeMs) { 
         return withMaximumTimeToConnectFunction([timeMs](system_tick_t ms) {
@@ -1706,6 +1957,16 @@ public:
         }); 
     }
 
+    /**
+     * @brief Sets the maximum time to connect to the cloud. If this limit is exceeded, the device will go to sleep.
+     * 
+     * @param timeMs Time as a chrono literal, such as 5min for 5 minutes. 
+     * @return SleepHelper& 
+     * 
+     * Ideally this should be at least 11 minutes. If you need to conserve power you can set it as low as 5 minutes or
+     * so, however only do so if you use a sleep mode that will completely power down the modem. Otherwise, it's 
+     * possible that then modem will never be fully reset.
+     */
     SleepHelper &withMaximumTimeToConnect(std::chrono::milliseconds timeMs) { 
         return withMaximumTimeToConnectFunction([timeMs](system_tick_t ms) {
             return (ms >= timeMs.count());
@@ -1733,19 +1994,46 @@ public:
         return *this;
     }
 
-
-    SleepHelper &withMinimumConnectedTime(AppCallbackState &state, system_tick_t timeMs) { 
+    /**
+     * @brief Set the minimum amount of time to stay connected to the cloud (optional)
+     * 
+     * @param timeMs Time in milliseconds. There is also an overload that takes a chrono literal.
+     * @return SleepHelper& 
+     */
+    SleepHelper &withMinimumConnectedTime(system_tick_t timeMs) { 
         return withSleepReadyFunction([timeMs](AppCallbackState &state, system_tick_t ms) {
             return (ms < timeMs);
         }); 
     }
 
+    /**
+     * @brief Set the minimum amount of time to stay connected to the cloud (optional)
+     * 
+     * @param timeMs Time as a chrono literal, such as 30s for 30 seconds. 
+     * @return SleepHelper& 
+     */
     SleepHelper &withMinimumConnectedTime(std::chrono::milliseconds timeMs) { 
         return withSleepReadyFunction([timeMs](AppCallbackState &state, system_tick_t ms) {
             return (ms < timeMs.count());
         }); 
     }
 
+    /**
+     * @brief Function to call when settings change
+     * 
+     * @param fn The function or C++ lambda to call
+     * @return SleepHelper& 
+     * 
+     * The setting change callback has the prototype:
+     *
+     * bool callback(const char *key)
+     * 
+     * - key is the settings key that was modified
+     * 
+     * You should return true from the function in all cases.
+     * 
+     * This is only called when the setting changes, not on every boot.
+     */
     SleepHelper &withSettingChangeFunction(std::function<bool(const char *)> fn) { 
         settingsFile.withSettingChangeFunction(fn);
         return *this;
@@ -1773,6 +2061,15 @@ public:
         });
     }
 #else
+    /**
+     * @brief Require a minimum battery SoC to connect to cellular
+     * 
+     * @param minSoC The minimum required in the range of 0.0 to 100.0
+     * @param conviction The noConnect conviction level to use. If this is greater than the connection
+     * conviction form other should connect functions, then connection will be prevented. Default: 100
+     * 
+     * @return SleepHelper& 
+     */
     SleepHelper &withShouldConnectMinimumSoC(float minSoC, int conviction = 100) {
         return *this;
     }
@@ -1846,22 +2143,54 @@ public:
     static const uint64_t eventsEnabledResetReason          = 0x0000000000000004ul;  //!< "rr" reset reason event
     static const uint64_t eventsEnabledBatterySoC           = 0x0000000000000008ul;  //!< "soc" report battery SoC on full wake
 
+    /**
+     * @brief Enable an eventsEnable flag. These determine whether the add values to the wake event
+     * 
+     * @param flag Flag bit value such as eventsEnabledWakeReason. Can pass multiple flags bits to this function.
+     * @return SleepHelper& 
+     */
     SleepHelper &withEventsEnabledEnable(uint64_t flag) {
         eventsEnabled |= flag;
         return *this;
     }
     
+    /**
+     * @brief Disable an eventsEnable flag. These determine whether the add values to the wake event
+     * 
+     * @param flag Flag bit value to clear, such as eventsEnabledWakeReason. Can pass multiple flags bits to this function.
+     * @return SleepHelper& 
+     */
     SleepHelper &withEventsEnabledDisable(uint64_t flag) {
         eventsEnabled &= ~flag;
         return *this;
     }
     
+
+    /**
+     * @brief Returns true if the eventsEnable flag is set
+     * 
+     * @param flag Flag bit value to test, such as eventsEnabledWakeReason
+     * @return true 
+     * @return false 
+     */
     bool eventsEnableEnabled(uint64_t flag) const {
         return (eventsEnabled & flag) != 0;
     }
 
+    /**
+     * @brief Returns the priority value (0 - 100) for a given flag
+     * 
+     * @param flag Flag bit to get the priority for, such as eventsEnabledWakeReason
+     * @return int Priority value. Returns 0 for an invalid flag bit.
+     */
     static int eventsEnablePriority(uint64_t flag);
 
+    /**
+     * @brief Returns the event name (const c-string) for a given flag
+     * 
+     * @param flag Flag bit to get the priority for, such as eventsEnabledWakeReason
+     * @return const char * event name, or empty string if an invalid flag name
+     */
     static const char *eventsEnableName(uint64_t flag);
 
     // Logging enable flags
@@ -1879,16 +2208,35 @@ public:
     static const uint64_t logEnabledPublishData             = 0x0000010000000000ul;  //!< Log the full publish data
     static const uint64_t logEnabledHistoryData             = 0x0000020000000000ul;  //!< Log the full history data
 
+    /**
+     * @brief Enable logging for a specific type of log
+     * 
+     * @param flag The flag bit such as logEnabledPublish. Can specify multiple flags logically ORed together.
+     * @return SleepHelper& 
+     */
     SleepHelper &withLogEnabledEnable(uint64_t flag) {
         logEnabled |= flag;
         return *this;
     }
     
+    /**
+     * @brief Disable logging for a specific type of log
+     * 
+     * @param flag The flag bit such as logEnabledPublish. Can specify multiple flags logically ORed together.
+     * @return SleepHelper& 
+     */
     SleepHelper &withLogEnabledDisable(uint64_t flag) {
         logEnabled &= ~flag;
         return *this;
     }
     
+    /**
+     * @brief Returns true if the specified logging flag is set.
+     * 
+     * @param flag The flag bit such as logEnabledPublish. 
+     * @return true Logging enabled for this flag
+     * @return false Logging disabled for this flag
+     */
     bool logEnableEnabled(uint64_t flag) const {
         return (logEnabled & flag) != 0;
     }
@@ -1929,10 +2277,20 @@ public:
      */
     LocalTimeScheduleManager scheduleManager;
 
+    /**
+     * @brief Get the quick wake schedule
+     * 
+     * @return LocalTimeSchedule& 
+     */
     LocalTimeSchedule &getScheduleQuick() {
         return scheduleManager.getScheduleByName("quick");
     }
 
+    /**
+     * @brief Get the full wake schedule
+     * 
+     * @return LocalTimeSchedule& 
+     */
     LocalTimeSchedule &getScheduleFull() {
         return scheduleManager.getScheduleByName("full");
     }
@@ -1976,76 +2334,262 @@ protected:
     SleepHelper& operator=(const SleepHelper&) = delete;
 
 #ifndef UNITTEST
+    /**
+     * @brief A system event handler is so the code can be notified of things like firmware update started
+     * 
+     * @param event system event code (uint64_t)
+     * @param param data depending on the event code
+     */
     void systemEventHandler(system_event_t event, int param);
 
+    /**
+     * @brief A system event handler is so the code can be notified of things like firmware update started
+     * 
+     * @param event system event code (uint64_t)
+     * @param param data depending on the event code
+     * 
+     * The Device OS API doesn't take a class member and instance so this static function is used instead.
+     * Since the SleepHelper is a singleton, this is easy.
+     */
     static void systemEventHandlerStatic(system_event_t event, int param);
 
+    /**
+     * @brief Calculate sleep settings 
+     * 
+     * @param isConnected True if currently connected to cellular
+     * 
+     * This uses the last and future cellular connection times and the sleep configuration callbacks. 
+     * It's a separate function because it's called from both stateHandlerNoConnection and 
+     * stateHandlerDisconnectBeforeSleep.
+     */
     void calculateSleepSettings(bool isConnected);
 
+    /**
+     * @brief Calls the data capture handlers
+     * 
+     * This method is called continuously from loop(). This function determines if a 
+     * capture is currently in progress (non-blocking) of if it's time to start a new
+     * capture.
+     */
     void dataCaptureHandler();
 
+    /**
+     * @brief Initial state at boot or after sleep
+     * 
+     * Next state: 
+     * - stateHandlerNoConnection if a quick wake cycle
+     * - stateHandlerConnectWait if a full wake cycle (cloud connection started before going into this state)
+     */
     void stateHandlerStart();
 
+    /**
+     * @brief Waits for the Particle cloud connection to be made
+     * 
+     * Previous state:
+     * - stateHandlerStart Cloud connections is started in stateHandlerStart.
+     * 
+     * Next state:
+     * - stateHandlerTimeValidWait Connected to the cloud, waiting for a valid RTC 
+     * - stateHandlerDisconnectBeforeSleep Took too long to connect to the cloud, go into sleep mode instead
+     */
     void stateHandlerConnectWait();
 
+    /**
+     * @brief Wait for time synchronization from the cloud. This normally occurs very quickly (under 1 second).
+     * 
+     * Next state:
+     * - stateHandlerConnectedStart
+     */
     void stateHandlerTimeValidWait();
 
+    /**
+     * @brief Handles things after connecting to the cloud on a full wake
+     * 
+     * Steps include:
+     * - Recording the full wake time in the persistent data file
+     * - Storing the time to connect (ttc) wake event data (if enabled)
+     * - Storing the battery SoC (soc) wake event data (if enabled)
+     * 
+     * Next state:
+     * - stateHandlerConnectedWakeEvents
+     */
     void stateHandlerConnectedStart();
 
-    void stateHandlerConnected();
-
+    
+    /**
+     * @brief Prepares wake event data
+     * 
+     * - Waits for data capture to complete (should normally be done by now)
+     * - Set the sleepReady state handler states to start
+     * - Generate event payload from event history and wake events
+     * 
+     * Next state:
+     * - stateHandlerConnected
+     */
     void stateHandlerConnectedWakeEvents();
 
+    /**
+     * @brief Handles things while connected to the cloud
+     * 
+     * Attempts to publish all saved data. Once all data has been published, the sleep ready functions are 
+     * called to see if all callbacks agree it's time to sleep.
+     * 
+     * Next state:
+     * - stateHandlerPublishWait if a publish is in progress
+     * - stateHandlerPublishRateLimit if a publish was successful and we need to wait before publishing more data 
+     * - stateHandlerConnected stays in state if a publish failed
+     * - stateHandlerDisconnectBeforeSleep all data has been published and sleep ready function indicate time to sleep
+     * - stateHandlerReconnectWait if the cloud connection is lost
+     */
+    void stateHandlerConnected();
+
+    /**
+     * @brief Wait for a publish to complete
+     * 
+     * The state transition occurs from the background publish lambda implemented in stateHandlerConnected.
+     *
+     * Previous state:
+     * - stateHandlerConnected
+     * 
+     * Next state:
+     * - stateHandlerPublishRateLimit
+     */
     void stateHandlerPublishWait();
 
+    /**
+     * @brief Waits so publishes only occur once per second
+     * 
+     * Next state: 
+     * - stateHandlerConnected
+     */
     void stateHandlerPublishRateLimit();
 
+    /**
+     * @brief If the cloud connection is lost, waits here
+     * 
+     * Next state:
+     * - stateHandlerConnected Successfully reconnected to the cloud
+     * - stateHandlerDisconnectBeforeSleep Timed out reconnecting to the cloud
+     */
     void stateHandlerReconnectWait();
 
+    /**
+     * @brief Called on quick wake
+     * 
+     * Stays in this state until data capture is completed and all noConnectionFunctions return false.
+     * 
+     * Previous state:
+     * - stateHandlerStart
+     * 
+     * Next state:
+     * - stateHandlerSleep
+     */
     void stateHandlerNoConnection();
 
+    /**
+     * @brief Possibly disconnect from cellular before sleep
+     * 
+     * Calls calculateSleepSettings() to calculate the sleep settings. A short wake cycle or
+     * a sleep configuration function can override the settings and use cellular standby
+     * mode instead.
+     * 
+     * If disconnecting, the Cellular.disconnect occurs while in this state.
+     * 
+     * Next state:
+     * - stateHandlerSleep Sleep with cellular one
+     * - stateHandlerDisconnectWait Wait for Cellular.disconnect to complete
+     */
     void stateHandlerDisconnectBeforeSleep();
 
+    /**
+     * @brief Waits for Particle.disconnected() to be true
+     * 
+     * Once the cloud is disconnected, calls either Cellular.disconnect() or WiFi.disconnect().
+     * 
+     * Next state:
+     * - stateHandlerWaitCellularDisconnected
+     */
     void stateHandlerDisconnectWait();
 
+    /**
+     * @brief Waits for Cellular.ready or WiFi.ready to be false
+     * 
+     * Once disconnected, calls Cellular.off() or WiFi.off()
+     * 
+     * Next state:
+     * - stateHandlerWaitCellularOff
+     */
     void stateHandlerWaitCellularDisconnected();
 
+    /**
+     * @brief Waits until Cellular.isOff or WiFi.isOff to be true
+     * 
+     * Next state:
+     * - stateHandlerSleep
+     */
     void stateHandlerWaitCellularOff();
 
+    /**
+     * @brief Handles sleep
+     * 
+     * - Calls sleepOrResetFunctions 
+     * - Adjust sleep time to account for the time to disconnect from the cloud and cellular (could be a couple seconds)
+     * - Uses System.sleep to sleep
+     * - Records the wakeup reason after wake
+     * 
+     * Next state: 
+     * - stateHandlerSleepDone We've woken up
+     * - stateHandlerSleepShort After adjusting sleep duration, the duration was too short so not sleeping at all
+     */
     void stateHandlerSleep();
 
+    /**
+     * @brief Handles wake operations
+     * 
+     * - Calls wakeOrBootFunctions
+     * - Records the wake reason (wr) in the wake event
+     * 
+     * Next state:
+     * - stateHandlerStart
+     */
     void stateHandlerSleepDone();
-
+    
+    /**
+     * @brief Handles sleep periods less than minimumSleepTimeMs (default: 10 seconds) without actually sleeping
+     * 
+     * Next state:
+     * - stateHandlerSleepDone
+     */
     void stateHandlerSleepShort();
 
-    AppCallback<SystemSleepConfiguration &, SleepConfigurationParameters&> sleepConfigurationFunctions;
+    AppCallback<SystemSleepConfiguration &, SleepConfigurationParameters&> sleepConfigurationFunctions; //!< Callback functions for adjusting sleep behavior
 
-    AppCallback<const SystemSleepResult &> wakeFunctions;
+    AppCallback<const SystemSleepResult &> wakeFunctions; //!< Callback functions called on wake from sleep
 
-    SystemSleepConfiguration sleepConfig;
-    SleepConfigurationParameters sleepParams;
+    SystemSleepConfiguration sleepConfig; //!< Passed to sleep configuration functions
+    SleepConfigurationParameters sleepParams;  //!< Passed to sleep configuration functions
 
 #endif // UNITTEST
 
 
-    AppCallback<> setupFunctions;
+    AppCallback<> setupFunctions; //!< Callback functions called during setup()
 
-    AppCallback<> loopFunctions;
+    AppCallback<> loopFunctions; //!< Callback functions called during loop()
 
-    AppCallbackWithState<> dataCaptureFunctions;
-
-
-    AppCallbackWithState<system_tick_t> sleepReadyFunctions;
+    AppCallbackWithState<> dataCaptureFunctions; //!< Callback functions called for data capture
 
 
-    ShouldConnectAppCallback shouldConnectFunctions;
+    AppCallbackWithState<system_tick_t> sleepReadyFunctions; //!< Callback functions to determine if it's time to sleep
 
 
-    AppCallback<int> wakeOrBootFunctions;
+    ShouldConnectAppCallback shouldConnectFunctions; //!< Callback functions to determine whether to do a quick or full wake
 
-    AppCallback<bool> sleepOrResetFunctions;
 
-    AppCallback<system_tick_t> maximumTimeToConnectFunctions;
+    AppCallback<int> wakeOrBootFunctions; //!< Called at either boot or after wake
+
+    AppCallback<bool> sleepOrResetFunctions; //!< Called right before sleep or before reset
+
+    AppCallback<system_tick_t> maximumTimeToConnectFunctions; //!< Callback to determine if the maximum time to connect has been exceeded
 
     /**
      * @brief 
@@ -2057,7 +2601,7 @@ protected:
 
     String wakeEventName = "sleepHelper"; //!< Event name for wake events. Default: "sleepHelper"
     EventCombiner wakeEventFunctions; //!< Handlers to create wake events
-    int wakeReasonInt; 
+    int wakeReasonInt = 0; //!< Wake reason after sleep
 
     std::vector<PublishData> publishData; //!< Wake event data to publish (JSON strings)
 
@@ -2076,13 +2620,14 @@ protected:
     uint64_t logEnabled = logEnabledNormal;
 
 #ifndef UNITTEST
-    system_tick_t minimumCellularOffTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(13min).count();; //!< Default value for the minimum time to turn cellular off
-    system_tick_t minimumSleepTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(10s).count();; //!< Default value for the minimum time to sleep
+    system_tick_t minimumCellularOffTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(13min).count(); //!< Default value for the minimum time to turn cellular off
+    system_tick_t minimumSleepTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(10s).count(); //!< Default value for the minimum time to sleep
 
     std::function<void(SleepHelper&)> stateHandler = &SleepHelper::stateHandlerStart; //!< state handler function
     system_tick_t stateTime = 0; //!< millis counter used in certain state handlers
 
     system_tick_t connectAttemptStartMillis = 0; //!< millis value when Particle.connect was called
+    system_tick_t reconnectAttemptStartMillis = 0; //!< millis value when Particle.connected returned false after being connected
     system_tick_t networkConnectedMillis = 0; //!< mills value when Cellular.connected returned true
     system_tick_t connectedStartMillis = 0; //!< millis value when Particle.connected returned true
     system_tick_t lastEventHistoryCheckMillis = 0; //!< millis value the last time the event history was checked
@@ -2096,6 +2641,11 @@ protected:
      * one returns false. At this point, sleep can occur.
      */
     bool dataCaptureActive = false;
+
+    /**
+     * @brief Wake events are stored in this vector to be published, rate limited, later
+     */
+    std::vector<String> wakeEventPayload;
 
     /**
      * @brief Used instead of Cellular.ready(), etc.

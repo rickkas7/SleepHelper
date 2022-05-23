@@ -16,7 +16,6 @@ void setup() {
     digitalWrite(TMP36_POWER_PIN, LOW);
 
     SleepHelper::instance()
-        .withShouldConnectMinimumSoC(9.0)
         .withMinimumCellularOffTime(5min)
         .withMaximumTimeToConnect(11min)
         .withDataCaptureFunction([](SleepHelper::AppCallbackState &state) {
