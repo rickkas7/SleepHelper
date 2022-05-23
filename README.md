@@ -4,7 +4,7 @@
 
 ## Example
 
-This is the simplest example, in the "01-simple" example directory:
+This is the simplest example, from the "01-simple" example directory:
 
 ```cpp
 #include "SleepHelper.h"
@@ -16,14 +16,7 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 
 
 void setup() {
-    SleepHelper::instance()
-        .withShouldConnectMinimumSoC(9.0)
-        .withMaximumTimeToConnect(11min);
-
-    SleepHelper::instance().withSetupFunction([]() {
-        Log.info("test setup!");
-        return true;
-    });
+    SleepHelper::instance().withShouldConnectMinimumSoC(9.0);
 
     SleepHelper::instance().setup();
 }
@@ -35,9 +28,347 @@ void loop() {
 
 Things to note in this code:
 
-You must enable the system thread and use SEMI_AUTOMATIC system mode.
 
 ```cpp
 SYSTEM_THREAD(ENABLED);
 SYSTEM_MODE(SEMI_AUTOMATIC);
 ```
+
+You must enable the system thread and use SEMI_AUTOMATIC system mode. The library will not work properly in other modes.
+
+
+```cpp
+SleepHelper::instance().withShouldConnectMinimumSoC(9.0);
+```
+
+This pattern is used to set configuration parameters. The SleepHelper class is a singleton so you always use `SleepHelper::instance()` to access it. This method is fast and you should just call it every time instead of saving the value in a variable. You then add additional statements for what you want to configure. This this case, it will only connect to cellular if the battery SoC (state of charge) is greater than 9.0 %. 
+
+
+```cpp
+SleepHelper::instance().setup();
+```
+Once you've set all parameters, call the setup() method:
+
+
+```cpp
+SleepHelper::instance().loop();
+```
+In loop(), always call the loop method:
+
+## Design
+
+The library is intended to be completely configurable and extendable without modifying the core library itself. 
+
+### Adding functions
+
+For example:
+
+```cpp
+SleepHelper::instance()
+    .withSleepConfigurationFunction([](SystemSleepConfiguration &sleepConfig, SleepHelper::SleepConfigurationParameters &params) {
+        // Add a GPIO wake on button press
+        sleepConfig.gpio(BUTTON_PIN, FALLING);
+        return true;
+    })
+```
+
+This example adds a sleep configuration function. It allows you to execute code to customize sleep behavior before going to sleep. This uses C++11 lambdas to allow the code to be written inline, right inside the setup() function. You can use a standard function call, instead. Just remember that the body of the lambda is executed later, right before sleep, not during setup.
+
+In this specific example, a GPIO wake from a button is added to allow wake from button press.
+
+```cpp
+SleepHelper::instance()
+    .withWakeFunction([](const SystemSleepResult &sleepResult) {
+        if (sleepResult.wakeupReason() == SystemSleepWakeupReason::BY_GPIO) {
+            pin_t whichPin = sleepResult.wakeupPin();
+            Log.info("wake by pin %d", whichPin);
+            if (whichPin == BUTTON_PIN) {
+                logButtonPress();
+                lastButtonPress = pinWakeMillis = millis();
+            }
+            else {
+                pinWakeMillis = 0;
+            }
+        }
+        return true;
+    })
+```
+
+This adds a wake function, which is called immediately after wake. This is done so we can keep track of the reason we woke (button or time).
+
+### Short wake vs. full wake
+
+The library supports two different levels of wake:
+
+- A short wake or non-connected wake will wake up the device and go back to sleep very quickly, without connecting to cellular
+- A long wake or connected wake will wake up and connect to the cloud
+
+A short wake might be used to read a sensor, save the data to flash, and go back to sleep. Or for a button press, vehicle sensor, etc. it might count the event, then go back to sleep. Often this can be done in under a second.
+
+A long wake allows the data to be uploaded to the cloud, but takes longer and uses more power.
+
+It's also possible to use the library with cellular standby mode, and also with Wi-Fi devices, but the concepts are similar.
+
+### Management of modem power
+
+For most applications that sleep longer than 15 minutes, cellular off mode is the recommended mode. 
+
+For sleep cycles less than 10 minutes, however, you run the risk of getting your SIM banned from the cellular network for aggressive reconnection if you completely power it off.
+
+The library provides the option of automatically optimizing the modem power-down behavior so short sleep cycles keep the modem on, to avoid aggressive reconnection. This can also save time and sometimes power because reconnecting to cellular may use more power than is saved by shutting down the modem for short sleep cycles, especially on 2G/3G devices.
+
+### Wake events
+
+The library includes an "EventCombiner" feature that allows your code to register a function (or lambda) to add JSON data to an event that is published at wake. You also set the priority of your data (1 - 100).
+
+This allows multiple independent parts of the code to add data to a single JSON event to minimize data operations. If there is sufficient high priority data, multiple events are automatically created, but if possible the data is combined. 
+
+If the event is full and there is low priority data (less than priority 50), the lowest priority is discarded first to allow the data to fit in a single event instead of creating multiple events.
+
+### Data capture
+
+```cpp
+SleepHelper::instance()
+    .withDataCaptureFunction([](SleepHelper::AppCallbackState &state) {
+        if (Time.isValid()) {
+            SleepHelper::instance().addEvent([](JSONWriter &writer) {
+                writer.name("t").value((int) Time.now());
+                writer.name("c").value(readTempC(), 1);
+            });
+        }
+        return false;
+    })
+```
+
+In addition to simple short and long wake cycles, the library supports the concept of a data capture function. This function is called according to a schedule, such as every 30 seconds, or even more complicated scenarios. The difference is that the library will adjust the sleep timing so the data capture function is called, and also continues to call the function if the device is already connecting, or attempting to connect ot the cloud. This assures consistent data acquisition regardless of cellular conditions. The data is saved in the flash file system and is uploaded in a data operation efficient manner, explained below.
+
+### Event history
+
+Event history allows small chunks of JSON data to be saved. For example, the data capture example above stores a timestamp (32 bit integer) and a floating point temperature value (with one decimal place). 
+
+The event history data is uploaded as an array in an event, so it's data operation efficient. Many small data points can be uploaded in a single event. Additionally, the event history is combined with the wake event data, so you may be able to get both the wake event and event history data uploaded using a single data operation.
+
+### Scheduling
+
+The underlying Device OS sleep API is relative; you specify the amount of time to sleep, but this is not always the most useful. This library works using a time schedule for when to capture or upload data to the cloud. 
+
+Additionally, for devices in a fixed location, it's possible to configure time calculations to be in local time, including automatic support for daylight saving time. Otherwise, time calculation can be done at UTC.
+
+```cpp
+// Full wake and publish every 15 minutes
+SleepHelper::instance().getScheduleFull()
+    .withMinuteOfHour(15);
+
+// Data capture every 2 minutes
+SleepHelper::instance().getScheduleDataCapture()
+    .withMinuteOfHour(2);
+```
+
+In the simplest case, you might have something like this; full wake and publish every 15 minutes and data capture every 2 minutes. This does not require any time zone information. 
+
+
+```cpp
+SleepHelper::instance().getScheduleFull()
+    .withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")))
+```
+
+Or every 15 minutes, but only from 9:00 AM to 5:00 PM (local time).
+
+```cpp
+SleepHelper::instance().getScheduleFull()
+    .withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")))
+    .withHourOfDay(2);
+```
+
+Or every 15 minutes from 9:00 AM to 5:00 PM (local time), and every 2 hours the rest of the day.
+
+The scheduling is significantly more powerful than this; see the [LocalTimeRK](https://github.com/rickkas7/LocalTimeRK) library for more information.
+
+### State machines
+
+The library is built as multiple finite state machines. One manages the cellular connection. Another handles the data capture functions, which is why data capture continues independent of whether you're connected to cellular or not, or attempting to connect.
+
+In most cases you will perform a quick non-blocking data from your callback functions. However, certain callback functions are designed so you can perform lengthy operations in your own state machine.
+
+These callback are passed a modifiable `AppCallbackState` object and include:
+
+- withDataCaptureFunction()
+- withSleepReadyFunction()
+- withNoConnectionFunction()
+- withMinimumConnectedTime()
+
+For example, with the sleep ready function, your callback:
+
+- Returns false if your situation is OK to sleep now. This does not guaranteed that sleep will actually occur, because there can be many sleep ready functions and other calculations. Once you return false your callback will no longer be called until the next wake cycle.
+- Returns true if you still have things to do before it's OK to sleep. You callback will continue to be called until it returns false.
+
+The declaration for `AppCallbackState` is:
+
+```cpp
+class AppCallbackState {
+public:
+    static const int CALLBACK_STATE_START = -1;
+    static const int CALLBACK_START_RETURNED_FALSE = -2;
+
+    int callbackState = CALLBACK_STATE_START;
+    void *callbackData = 0; //!< Callback can store data here
+};
+```
+
+For example, in the sleep ready function, in each sleep cycle, the state will start at CALLBACK_STATE_START. Your callback is free to set the `callbackState` to any positive value so you can implement your own state machine. You can also store data in the `callbackData` pointer, if desired, or you can just store it in your own class or mutable lambda capture value.
+
+
+## Callback functions
+
+The following functions are available to customize the behavior of the library:
+
+
+## Cloud-based configuration
+
+While the device-side code is in the library, the server-side code has not been written yet. When complete, this option feature will work like this:
+
+Cloud-based configuration allows JSON settings to be stored and configured on the cloud-side. When a device connects to the cloud, it will periodically ask the cloud if there is a new configuration, in case the configuration was updated while the device was asleep. This is done by sending a hash of the current settings so it's data-efficient.
+
+If the cloud has newer settings, it will send them by a function call to the device, which will update the settings stored in the flash file system.
+
+Code can register a callback function to be notified if the settings change.
+
+Settings include fleet defaults, group defaults, and device-specific settings.
+
+## Examples
+
+### 01-simple example
+
+This is a minimal example that just shows how the callback functions are registered. It doesn't really do anything interesting.
+
+### 02-button example
+
+This example shows how to do short and long wake, and customized sleep.
+
+A momentary switch is connected between pin D2 and ground. Every time the button is pressed, a timestamp is logged. You could imagine the same technique being used for a door sensor, vehicle sensor, rain gauge, etc..
+
+```cpp
+SleepHelper::instance()
+    .withMinimumCellularOffTime(5min);
+```
+
+This example optimizes the cellular modem to avoid aggressive reconnection. If the cellular modem would be off for less than 5 minutes, the library will instead use network standby mode to stay connected to cellular. This uses more power keeping the modem powered, but it also saves power by using less power to reconnect and having a nearly instantaneous reconnection time.
+
+```cpp
+SleepHelper::instance()
+    .withSleepConfigurationFunction([](SystemSleepConfiguration &sleepConfig, SleepHelper::SleepConfigurationParameters &params) {
+        // Add a GPIO wake on button press
+        sleepConfig.gpio(BUTTON_PIN, FALLING);
+        return true;
+    });
+```    
+
+Since this example wakes by GPIO pin, it uses a sleep configuration function to add GPIO wake to the `SystemSleepConfiguration` before sleep.
+
+
+```cpp
+SleepHelper::instance()
+    .withWakeFunction([](const SystemSleepResult &sleepResult) {
+        if (sleepResult.wakeupReason() == SystemSleepWakeupReason::BY_GPIO) {
+            pin_t whichPin = sleepResult.wakeupPin();
+            Log.info("wake by pin %d", whichPin);
+            if (whichPin == BUTTON_PIN) {
+                logButtonPress();
+                lastButtonPress = pinWakeMillis = millis();
+            }
+            else {
+                pinWakeMillis = 0;
+            }
+        }
+        return true;
+    });
+```
+
+In order to handle wake from GPIO pin, a wake function is also added. If the wake occurred from the button GPIO pin, this is logged. 
+
+
+```cpp
+SleepHelper::instance()
+    .withShouldConnectFunction([](int &connectConviction, int &noConnectConviction) {
+        if (pinWakeMillis) {
+            // We probably don't want to connect if woken by pin
+            noConnectConviction = 60;
+        }
+        return true;
+    });
+```
+
+In this example we don't want to do a full wake on button press unless it's also the scheduled time to do a full wake. Using a should connect handler allows this behavior to be fine-tuned.
+
+```cpp
+SleepHelper::instance()
+    .withNoConnectionFunction([](SleepHelper::AppCallbackState &state) {
+        // If woken by pin, wait until button is released
+        if (pinWakeMillis) {
+            // return true to stay awake, false to allow sleep
+            return (digitalRead(BUTTON_PIN) == LOW);
+        }
+        else {
+            return false;
+        }
+    });
+```
+
+One minor thing: If doing a quick wake, the button cloud still be pressed when the device is ready to go to sleep. This special case is handled here. If the button is still pressed, it will wait for it to be released before trying to go to sleep.
+
+```cpp
+// Full wake and publish every 15 minutes
+SleepHelper::instance().getScheduleFull()
+    .withMinuteOfHour(15);
+```
+
+It's configured to connect to the cloud every 15 minutes and upload the timestamps of the button presses.
+
+```cpp
+void logButtonPress() {
+    Log.info("button press");
+    SleepHelper::instance().addEvent([](JSONWriter &writer) {
+        writer.name("b").value(Time.isValid() ? Time.now() : 0);
+    });
+}
+```
+
+Finally, button presses are logged using the Event History feature. Event History is data-efficient because it will store all of the events in mini-events, saved into a JSON array. This allows many data points to be uploaded via a single Particle.publish, saving data operations and also speeding the upload, since publishes are rate limited to approximately one per second.
+
+Event history also supports overflow, so if the data exceeds the publish limit of 1024 bytes, it will be spread across multiple events as necessary. This happens automatically.
+
+
+### 03-temperature example
+
+This example shows how to use data collection mode to periodically sense temperature. The actual code uses a TMP36 analog temperature sensor, but you could use it with any sensor by replacing the readTempC() function, and of course you could sample other kinds of data other than temperature. 
+
+```cpp
+SleepHelper::instance()
+    .withDataCaptureFunction([](SleepHelper::AppCallbackState &state) {
+        if (Time.isValid()) {
+            SleepHelper::instance().addEvent([](JSONWriter &writer) {
+                writer.name("t").value((int) Time.now());
+                writer.name("c").value(readTempC(), 1);
+            });
+        }
+        return false;
+    });
+```
+
+The most important thing in this example is the data capture function. It's called on a schedule to sample data, and this can occur after a short wake (no cellular connection), while connecting, or while connected to the cloud. 
+
+This example stores a timestamp ("t") and a temperature value ("c") but since it's JSON you could store more key/value pairs. For example, you might store temperature and humidity.
+
+
+```cpp
+// Full wake and publish every 15 minutes
+SleepHelper::instance().getScheduleFull()
+    .withMinuteOfHour(15);
+
+// Data capture every 2 minutes
+SleepHelper::instance().getScheduleDataCapture()
+    .withMinuteOfHour(2);
+```
+
+This schedule is simple: full wake and publish every 15 minutes, and capture temperature every 2 minutes. Since the schedule uses only minute of hour, this does not require a valid timezone to be set.
+
