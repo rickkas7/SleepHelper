@@ -19,22 +19,22 @@ SleepHelper &SleepHelper::instance() {
 }
 
 /**
- * @brief Structure that defines wake events and the JSON keys used for them
+ * @brief Structure that defines wake events and the JSON keys used for them (internal)
  */
 typedef struct {
     uint64_t flag;  //!< Flag bit for enabling
     String name;    //!< JSON key for the wake event
     int priority;   //!< priority (1 to 100) for inclusion in the wake event
-} WakeEvents;
+} SleepHelperWakeEvents;
 
-static WakeEvents _wakeEvents[] = {
+static SleepHelperWakeEvents _wakeEvents[] = {
     { SleepHelper::eventsEnabledWakeReason, "wr", 50 },
     { SleepHelper::eventsEnabledTimeToConnect, "ttc", 50 },
     { SleepHelper::eventsEnabledResetReason, "rr", 50 },
     { SleepHelper::eventsEnabledBatterySoC, "soc", 50 },
 };
 
-static const WakeEvents *_findWakeEvent(uint64_t flag) {
+static const SleepHelperWakeEvents *_findWakeEvent(uint64_t flag) {
     size_t numWakeEvents = sizeof(_wakeEvents) / sizeof(_wakeEvents[0]);
     for(size_t ii = 0; ii < numWakeEvents; ii++) {
         if (_wakeEvents[ii].flag == flag) {
@@ -46,7 +46,7 @@ static const WakeEvents *_findWakeEvent(uint64_t flag) {
 
 // [static]
 int SleepHelper::eventsEnablePriority(uint64_t flag) {
-    const WakeEvents *ev = _findWakeEvent(flag);
+    const SleepHelperWakeEvents *ev = _findWakeEvent(flag);
     if (ev) {
         return ev->priority;
     }
@@ -57,7 +57,7 @@ int SleepHelper::eventsEnablePriority(uint64_t flag) {
 
 // [static]
 const char *SleepHelper::eventsEnableName(uint64_t flag) {
-    const WakeEvents *ev = _findWakeEvent(flag);
+    const SleepHelperWakeEvents *ev = _findWakeEvent(flag);
     if (ev) {
         return ev->name;
     }

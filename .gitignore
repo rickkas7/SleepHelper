@@ -4,3 +4,4 @@ target
 *.bin
 lib
 .DS_Store
+docs-xml

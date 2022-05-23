@@ -8,6 +8,10 @@
 
 
 /**
+ *  @defgroup callbacks Callback functions you can register
+ */
+
+/**
  * This class is a singleton; you do not create one as a global, on the stack, or with new.
  * 
  * From global application setup you must call:
@@ -1601,6 +1605,8 @@ public:
      * some parameters like duration should be set via the sleepParameters.
      * - sleepParameters include both informational fields (like whether you're currently connected to cellular)
      * as well as fields you can change to modify the sleep behavior.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withSleepConfigurationFunction(std::function<bool(SystemSleepConfiguration &, SleepConfigurationParameters&)> fn) { 
         sleepConfigurationFunctions.add(fn); 
@@ -1620,6 +1626,8 @@ public:
      * - sleepResult is a const reference to the SystemSleepResult that was obtained right after wake.
      * 
      * You should return true in all cases from your callback.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withWakeFunction(std::function<bool(const SystemSleepResult &)> fn) { 
         wakeFunctions.add(fn); 
@@ -1664,6 +1672,8 @@ public:
      * 
      * You must register this callback before actually calling setup() for obvious
      * reasons. You will probably never need to use this, but it exists just in case.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withSetupFunction(std::function<bool()> fn) { 
         setupFunctions.add(fn);
@@ -1678,6 +1688,8 @@ public:
      * 
      * You will normally register a more specific function, such as a data capture function, no connect function, etc.
      * but this function is provided just in case.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withLoopFunction(std::function<bool()> fn) { 
         loopFunctions.add(fn); 
@@ -1701,6 +1713,7 @@ public:
      * This callback is called for quick wake, full wake, and while connected. It
      * runs in a parallel state machine to the connection state machine. 
      * 
+     * @ingroup callbacks
      */
     SleepHelper &withDataCaptureFunction(std::function<bool(AppCallbackState &state)> fn) {
         dataCaptureFunctions.add(fn);
@@ -1723,6 +1736,8 @@ public:
      * 
      * Return true if you still have things to do before it's OK to sleep. You callback will
      * continue to be called until it returns false.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withSleepReadyFunction(std::function<bool(AppCallbackState &, system_tick_t)> fn) {
         sleepReadyFunctions.add(fn); 
@@ -1750,6 +1765,8 @@ public:
      * conviction, then a connection will be attempted.
      * 
      * Your function should return true in all cases.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withShouldConnectFunction(std::function<bool(int &connectConviction, int &noConnectConviction)> fn) { 
         shouldConnectFunctions.add(fn); 
@@ -1770,6 +1787,8 @@ public:
      *   - SystemSleepWakeupReason::BY_RTC
      *   - SystemSleepWakeupReason::BY_BLE
      *   - SystemSleepWakeupReason::BY_NETWORK
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withWakeOrBootFunction(std::function<bool(int)> fn) { 
         wakeOrBootFunctions.add(fn); 
@@ -1816,6 +1835,8 @@ public:
      * 
      * If you have a priority < 50 and the event is full, then your data will be discarded to 
      * avoid generating another event.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withWakeEventFunction(std::function<bool(JSONWriter &, int &)> fn) {
         wakeEventFunctions.withCallback(fn);
@@ -1827,6 +1848,8 @@ public:
      * 
      * @param fn 
      * @return SleepHelper& 
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withWakeEventOneTimeFunction(std::function<bool(JSONWriter &, int &)> fn) {
         wakeEventFunctions.withOneTimeCallback(fn);
@@ -1915,6 +1938,8 @@ public:
      * 
      * The order of callbacks is sleepOrReset, sleepConfiguration, then the device goes to sleep.
      * When the device wakes, the wake callback is called.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withSleepOrResetFunction(std::function<bool(bool)> fn) { 
         sleepOrResetFunctions.add(fn); 
@@ -1935,6 +1960,8 @@ public:
      * 
      * All maximum time to connect functions are called on every loop call during the connecting phase,
      * until one return false. This provides a way to be called periodically during connection.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withMaximumTimeToConnectFunction(std::function<bool(system_tick_t ms)> fn) {
         maximumTimeToConnectFunctions.add(fn); 
@@ -1988,6 +2015,8 @@ public:
      * 
      * @param fn 
      * @return SleepHelper& 
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withNoConnectionFunction(std::function<bool(AppCallbackState &state)> fn) {
         noConnectionFunctions.add(fn); 
@@ -2033,6 +2062,8 @@ public:
      * You should return true from the function in all cases.
      * 
      * This is only called when the setting changes, not on every boot.
+     * 
+     * @ingroup callbacks
      */
     SleepHelper &withSettingChangeFunction(std::function<bool(const char *)> fn) { 
         settingsFile.withSettingChangeFunction(fn);
@@ -2136,7 +2167,7 @@ public:
         return *this;
     }
 
-    // When adding a constant here, be sure to update WakeEvents _wakeEvents[] as well!
+    // When adding a constant here, be sure to update SleepHelperWakeEvents _wakeEvents[] as well!
 
     static const uint64_t eventsEnabledWakeReason           = 0x0000000000000001ul;  //!< "wr" wake reason (int) event
     static const uint64_t eventsEnabledTimeToConnect        = 0x0000000000000002ul;  //!< "ttc" time to connect event

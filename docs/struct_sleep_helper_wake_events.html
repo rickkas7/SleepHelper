@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.2"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>SleepExample1: Data Fields</title>
+<title>SleepExample1: SleepHelperWakeEvents Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -46,7 +46,6 @@ $(function() {
 /* @license-end */
 </script>
 <div id="main-nav"></div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -61,15 +60,36 @@ $(function() {
 </iframe>
 </div>
 
+</div><!-- top -->
+<div class="header">
+  <div class="summary">
+<a href="#pub-attribs">Data Fields</a>  </div>
+  <div class="headertitle"><div class="title">SleepHelperWakeEvents Struct Reference</div></div>
+</div><!--header-->
 <div class="contents">
-<div class="textblock">Here is a list of all documented struct and union fields with links to the struct/union documentation for each field:</div>
 
-<h3><a id="index_f" name="index_f"></a>- f -</h3><ul>
-<li>firstRun&#160;:&#160;<a class="el" href="class_sleep_helper_1_1_event_history.html#a5143ef296f0d3c671069ac11723782fb">SleepHelper::EventHistory</a></li>
-<li>flag&#160;:&#160;<a class="el" href="struct_sleep_helper_wake_events.html#ac70b58ce9311712ace4889dc27d67bdb">SleepHelperWakeEvents</a></li>
-<li>flags&#160;:&#160;<a class="el" href="class_sleep_helper_1_1_publish_data.html#a57ef25839995447b18834bc5b78e59f3">SleepHelper::PublishData</a></li>
-<li>flush()&#160;:&#160;<a class="el" href="class_sleep_helper_1_1_persistent_data_file.html#a18a842937b6cb48ab01c9d1a188f4949">SleepHelper::PersistentDataFile</a></li>
-<li>forEach()&#160;:&#160;<a class="el" href="class_sleep_helper_1_1_app_callback.html#a420d79bd8b13cba2a00ffb9c9c428f49">SleepHelper::AppCallback&lt; Types &gt;</a></li>
+<p>Structure that defines wake events and the JSON keys used for them (internal)  
+ <a href="struct_sleep_helper_wake_events.html#details">More...</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Data Fields</h2></td></tr>
+<tr class="memitem:ac70b58ce9311712ace4889dc27d67bdb"><td class="memItemLeft" align="right" valign="top"><a id="ac70b58ce9311712ace4889dc27d67bdb" name="ac70b58ce9311712ace4889dc27d67bdb"></a>
+uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>flag</b></td></tr>
+<tr class="memdesc:ac70b58ce9311712ace4889dc27d67bdb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag bit for enabling. <br /></td></tr>
+<tr class="separator:ac70b58ce9311712ace4889dc27d67bdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b01ffff5b259d06800d565fe92db7cb"><td class="memItemLeft" align="right" valign="top"><a id="a2b01ffff5b259d06800d565fe92db7cb" name="a2b01ffff5b259d06800d565fe92db7cb"></a>
+String&#160;</td><td class="memItemRight" valign="bottom"><b>name</b></td></tr>
+<tr class="memdesc:a2b01ffff5b259d06800d565fe92db7cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">JSON key for the wake event. <br /></td></tr>
+<tr class="separator:a2b01ffff5b259d06800d565fe92db7cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f29d452690af399b8ae4edfe360e870"><td class="memItemLeft" align="right" valign="top"><a id="a8f29d452690af399b8ae4edfe360e870" name="a8f29d452690af399b8ae4edfe360e870"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>priority</b></td></tr>
+<tr class="memdesc:a8f29d452690af399b8ae4edfe360e870"><td class="mdescLeft">&#160;</td><td class="mdescRight">priority (1 to 100) for inclusion in the wake event <br /></td></tr>
+<tr class="separator:a8f29d452690af399b8ae4edfe360e870"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p >Structure that defines wake events and the JSON keys used for them (internal) </p>
+</div><hr/>The documentation for this struct was generated from the following file:<ul>
+<li>src/SleepHelper.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
