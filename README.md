@@ -4,7 +4,17 @@
 
 Note that this library is currently incomplete and may still contain bugs. I'm releasing it now to get initial feedback and feature suggestions.
 
-Especially important are any places where you think you'll need additional callback functions to customize behavior so that you can use the library without having to modify it.
+Especially important are:
+- Any places where you think you'll need additional callback functions to customize behavior so that you can use the library without having to modify it
+- Additional built-in wake events (optional)
+- Additional logging (optional)
+- Additional features needed for other use cases
+
+Repository details:
+
+- [Full browsable HTML documentation](https://rickkas7.github.io/SleepHelper/index.html).
+- License: MIT
+- Repository: https://github.com/rickkas7/SleepHelper/
 
 ## Example
 
@@ -249,7 +259,7 @@ For example, in the sleep ready function, in each sleep cycle, the state will st
 
 ## Callback functions
 
-The following functions are available to customize the behavior of the library:
+You can find the callback functions you can register functions for in the [browsable HTML documentation](https://rickkas7.github.io/SleepHelper/group__callbacks.html).
 
 
 ## Cloud-based configuration
