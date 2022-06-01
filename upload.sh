@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TEMPDIR="../SleepHelper-Temp"
-DIRS=("automated-test" "docs")
+DIRS=("automated-test" "docs" "more-examples")
 
 mkdir $TEMPDIR || set status 0
 

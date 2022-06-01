@@ -67,7 +67,18 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p ><a class="anchor" id="md_README"></a> <em>Library for simplifying Particle applications that use sleep modes</em></p>
 <p >Note that this library is currently incomplete and may still contain bugs. I'm releasing it now to get initial feedback and feature suggestions.</p>
-<p >Especially important are any places where you think you'll need additional callback functions to customize behavior so that you can use the library without having to modify it.</p>
+<p >Especially important are:</p><ul>
+<li>Any places where you think you'll need additional callback functions to customize behavior so that you can use the library without having to modify it</li>
+<li>Additional built-in wake events (optional)</li>
+<li>Additional logging (optional)</li>
+<li>Additional features needed for other use cases</li>
+</ul>
+<p >Repository details:</p>
+<ul>
+<li><a href="https://rickkas7.github.io/SleepHelper/index.html">Full browsable HTML documentation</a>.</li>
+<li>License: MIT</li>
+<li>Repository: <a href="https://github.com/rickkas7/SleepHelper/">https://github.com/rickkas7/SleepHelper/</a></li>
+</ul>
 <h1>Example</h1>
 <p >This is the simplest example, from the "01-simple" example directory:</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &quot;SleepHelper.h&quot;</span></div>
@@ -188,8 +199,8 @@ $(function() {
 <div class="line"><span class="comment">// Data capture every 2 minutes</span></div>
 <div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a59174d8e958315d585a89855f7ef87d2">getScheduleDataCapture</a>()</div>
 <div class="line">    .withMinuteOfHour(2);</div>
-<div class="ttc" id="aclass_sleep_helper_html_a192bde753499516571c45387d29f202b"><div class="ttname"><a href="class_sleep_helper.html#a192bde753499516571c45387d29f202b">SleepHelper::getScheduleFull</a></div><div class="ttdeci">LocalTimeSchedule &amp; getScheduleFull()</div><div class="ttdoc">Get the full wake schedule.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:2325</div></div>
-<div class="ttc" id="aclass_sleep_helper_html_a59174d8e958315d585a89855f7ef87d2"><div class="ttname"><a href="class_sleep_helper.html#a59174d8e958315d585a89855f7ef87d2">SleepHelper::getScheduleDataCapture</a></div><div class="ttdeci">LocalTimeSchedule &amp; getScheduleDataCapture()</div><div class="ttdoc">The data capture schedule determines when to call the data capture callback.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:2335</div></div>
+<div class="ttc" id="aclass_sleep_helper_html_a192bde753499516571c45387d29f202b"><div class="ttname"><a href="class_sleep_helper.html#a192bde753499516571c45387d29f202b">SleepHelper::getScheduleFull</a></div><div class="ttdeci">LocalTimeSchedule &amp; getScheduleFull()</div><div class="ttdoc">Get the full wake schedule.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:2376</div></div>
+<div class="ttc" id="aclass_sleep_helper_html_a59174d8e958315d585a89855f7ef87d2"><div class="ttname"><a href="class_sleep_helper.html#a59174d8e958315d585a89855f7ef87d2">SleepHelper::getScheduleDataCapture</a></div><div class="ttdeci">LocalTimeSchedule &amp; getScheduleDataCapture()</div><div class="ttdoc">The data capture schedule determines when to call the data capture callback.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:2386</div></div>
 </div><!-- fragment --><p >In the simplest case, you might have something like this; full wake and publish every 15 minutes and data capture every 2 minutes. This does not require any time zone information.</p>
 <div class="fragment"><div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>().<a class="code hl_function" href="class_sleep_helper.html#a192bde753499516571c45387d29f202b">getScheduleFull</a>()</div>
 <div class="line">    .withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS(<span class="stringliteral">&quot;09:00:00&quot;</span>), LocalTimeHMS(<span class="stringliteral">&quot;16:59:59&quot;</span>)))</div>
@@ -225,7 +236,7 @@ $(function() {
 <div class="line">};</div>
 </div><!-- fragment --><p >For example, in the sleep ready function, in each sleep cycle, the state will start at CALLBACK_STATE_START. Your callback is free to set the <code>callbackState</code> to any positive value so you can implement your own state machine. You can also store data in the <code>callbackData</code> pointer, if desired, or you can just store it in your own class or mutable lambda capture value.</p>
 <h1>Callback functions</h1>
-<p >The following functions are available to customize the behavior of the library:</p>
+<p >You can find the callback functions you can register functions for in the <a href="https://rickkas7.github.io/SleepHelper/group__callbacks.html">browsable HTML documentation</a>.</p>
 <h1>Cloud-based configuration</h1>
 <p >While the device-side code is in the library, the server-side code has not been written yet. When complete, this option feature will work like this:</p>
 <p >Cloud-based configuration allows JSON settings to be stored and configured on the cloud-side. When a device connects to the cloud, it will periodically ask the cloud if there is a new configuration, in case the configuration was updated while the device was asleep. This is done by sending a hash of the current settings so it's data-efficient.</p>
@@ -324,6 +335,10 @@ $(function() {
 <div class="line">    .withMinuteOfHour(2);</div>
 </div><!-- fragment --><p >This schedule is simple: full wake and publish every 15 minutes, and capture temperature every 2 minutes. Since the schedule uses only minute of hour, this does not require a valid timezone to be set.</p>
 <h1>Version History</h1>
+<h2>0.0.2 (2022-06-01)</h2>
+<ul>
+<li>Finished implementation of withPublishQueuePosixRK, added withAB1805_WDT</li>
+</ul>
 <h2>0.0.1 (2022-05-23)</h2>
 <ul>
 <li>Initial version (incomplete) </li>

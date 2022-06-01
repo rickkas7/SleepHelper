@@ -2106,20 +2106,71 @@ public:
     }
 #endif
 
-#ifdef __PUBLISHQUEUEPOSIXRK_H
+
+#if defined(__AB1805RK_H) || defined(DOXYGEN_DO_NOT_DOCUMENT)
+    /**
+     * @brief Stop and resume an AB1805 watchdog before sleep and reset
+     * 
+     * @param ab1805 A reference to the AB1805 object from the AB1805_RK library
+     * @return SleepHelper& 
+     * 
+     * You must include AB1805_RK.h before SleepHelper.h to enable this method!
+     */
+    SleepHelper &withAB1805_WDT(AB1805 &ab1805) {
+        withWakeFunction([&ab1805](const SystemSleepResult &) {
+            // Resume watchdog after sleep
+            ab1805.resumeWDT();
+            return true;
+        });
+        withSleepOrResetFunction([&ab1805](bool) {
+            ab1805.stopWDT();
+            return true;
+        });
+        return *this;
+    }
+#endif
+
+#if defined(__PUBLISHQUEUEPOSIXRK_H) || defined(DOXYGEN_DO_NOT_DOCUMENT)
+    /**
+     * @brief Connect the PublishQueuePosixRK library with this library
+     * 
+     * @param maxTimeToPublish The maximum time to allow PublishQueuePosixRK publishes before 
+     * forcing sleep with unsent events. Default: send all queued events
+     * @return SleepHelper& 
+     * 
+     * You must include PublishQueuePosixRK.h before SleepHelper.h to enable this method!
+     */
     SleepHelper &withPublishQueuePosixRK(std::chrono::milliseconds maxTimeToPublish = 0ms) {
-        return withSleepReadyFunction([maxTimeToPublish](AppCallbackState &state, system_tick_t ms) {
-            if (maxTimeToPublish.count() != 0 && ms >= maxTimeToPublish.count()) {
-                PublishQueuePosix::instance().setPausePublishing(true);
+        withWakeOrBootFunction([](int) {
+            // Default to paused queue on PublishQueuePosix
+            PublishQueuePosix::instance().setPausePublishing(true);
+            return true;
+        });
+
+        withSleepReadyFunction([maxTimeToPublish](AppCallbackState &state, system_tick_t ms) {
+            bool canSleep = false;
+
+            if (state.callbackState == AppCallbackState::CALLBACK_STATE_START) { 
+                // On first call to sleep ready, resume publishing
+                PublishQueuePosix::instance().setPausePublishing(false);
+                state.callbackState = 1;
             }
-            bool canSleep = PublishQueuePosix::instance().getCanSleep();
-            if (canSleep) {
-                PublishQueuePosix::instance().setPausePublishing(true);
-                PublishQueuePosix::instance().writeQueueToFiles();
+            else {
+                if (maxTimeToPublish.count() != 0 && ms >= maxTimeToPublish.count()) {
+                    PublishQueuePosix::instance().setPausePublishing(true);
+                }
+                canSleep = PublishQueuePosix::instance().getCanSleep();
+                if (canSleep) {
+                    PublishQueuePosix::instance().setPausePublishing(true);
+                    PublishQueuePosix::instance().writeQueueToFiles();
+                }
             }
+
             // This callback returns false when you can sleep, and true to stay awake, so reverse boolean
             return !canSleep;
         });
+
+        return *this;
     }
 #endif
 

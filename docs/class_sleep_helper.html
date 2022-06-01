@@ -203,6 +203,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a4ab2c66f32bb196cfc556953a07658e9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper.html#a4ab2c66f32bb196cfc556953a07658e9">withShouldConnectMinimumSoC</a> (float minSoC, int conviction=100)</td></tr>
 <tr class="memdesc:a4ab2c66f32bb196cfc556953a07658e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Require a minimum battery SoC to connect to cellular.  <a href="class_sleep_helper.html#a4ab2c66f32bb196cfc556953a07658e9">More...</a><br /></td></tr>
 <tr class="separator:a4ab2c66f32bb196cfc556953a07658e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9204854720f3fbd1b17ead4ac1e01ef2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper.html#a9204854720f3fbd1b17ead4ac1e01ef2">withAB1805_WDT</a> (AB1805 &amp;ab1805)</td></tr>
+<tr class="memdesc:a9204854720f3fbd1b17ead4ac1e01ef2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stop and resume an AB1805 watchdog before sleep and reset.  <a href="class_sleep_helper.html#a9204854720f3fbd1b17ead4ac1e01ef2">More...</a><br /></td></tr>
+<tr class="separator:a9204854720f3fbd1b17ead4ac1e01ef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8a341c2c724039fefbda0396596722a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper.html#af8a341c2c724039fefbda0396596722a">withPublishQueuePosixRK</a> (std::chrono::milliseconds maxTimeToPublish=0ms)</td></tr>
+<tr class="memdesc:af8a341c2c724039fefbda0396596722a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Connect the PublishQueuePosixRK library with this library.  <a href="class_sleep_helper.html#af8a341c2c724039fefbda0396596722a">More...</a><br /></td></tr>
+<tr class="separator:af8a341c2c724039fefbda0396596722a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa293cbbab40d07245d2006a71f696e6f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_sleep_helper.html#aa293cbbab40d07245d2006a71f696e6f">withTimeConfig</a> (const char *tzConfig)</td></tr>
 <tr class="memdesc:aa293cbbab40d07245d2006a71f696e6f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the time configuration string for local time calculations.  <a href="class_sleep_helper.html#aa293cbbab40d07245d2006a71f696e6f">More...</a><br /></td></tr>
 <tr class="separator:aa293cbbab40d07245d2006a71f696e6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1798,6 +1804,42 @@ false Logging disabled for this flag </dd></dl>
 
 </div>
 </div>
+<a id="a9204854720f3fbd1b17ead4ac1e01ef2" name="a9204854720f3fbd1b17ead4ac1e01ef2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9204854720f3fbd1b17ead4ac1e01ef2">&#9670;&nbsp;</a></span>withAB1805_WDT()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp; SleepHelper::withAB1805_WDT </td>
+          <td>(</td>
+          <td class="paramtype">AB1805 &amp;&#160;</td>
+          <td class="paramname"><em>ab1805</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Stop and resume an AB1805 watchdog before sleep and reset. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ab1805</td><td>A reference to the AB1805 object from the AB1805_RK library </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_sleep_helper.html">SleepHelper</a>&amp;</dd></dl>
+<p>You must include AB1805_RK.h before <a class="el" href="_sleep_helper_8h_source.html">SleepHelper.h</a> to enable this method! </p>
+
+</div>
+</div>
 <a id="a4fedea8e0b5d994ad886e32846e304b6" name="a4fedea8e0b5d994ad886e32846e304b6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4fedea8e0b5d994ad886e32846e304b6">&#9670;&nbsp;</a></span>withEventHistory()</h2>
 
@@ -2195,6 +2237,42 @@ false Logging disabled for this flag </dd></dl>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_sleep_helper.html">SleepHelper</a>&amp;</dd></dl>
 <p>If the time to sleep is less than that, we stay awake until the event occurs. </p>
+
+</div>
+</div>
+<a id="af8a341c2c724039fefbda0396596722a" name="af8a341c2c724039fefbda0396596722a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af8a341c2c724039fefbda0396596722a">&#9670;&nbsp;</a></span>withPublishQueuePosixRK()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp; SleepHelper::withPublishQueuePosixRK </td>
+          <td>(</td>
+          <td class="paramtype">std::chrono::milliseconds&#160;</td>
+          <td class="paramname"><em>maxTimeToPublish</em> = <code>0ms</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Connect the PublishQueuePosixRK library with this library. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">maxTimeToPublish</td><td>The maximum time to allow PublishQueuePosixRK publishes before forcing sleep with unsent events. Default: send all queued events </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_sleep_helper.html">SleepHelper</a>&amp;</dd></dl>
+<p>You must include PublishQueuePosixRK.h before <a class="el" href="_sleep_helper_8h_source.html">SleepHelper.h</a> to enable this method! </p>
 
 </div>
 </div>

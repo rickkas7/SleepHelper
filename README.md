@@ -166,6 +166,8 @@ SleepHelper::instance()
     })
 ```
 
+In other words, adding a wake event does not equal a single new publish. Wake events are a fragment of JSON that is added to other fragments of JSON to produce one or more JSON events. This reduces the number of data operations while also freeing you from having to worry about adding so many fragments that you exceed the size of a publish. This is all taken care of by the library.
+
 In addition to simple quick and full wake cycles, the library supports the concept of a data capture function. This function is called according to a schedule, such as every 30 seconds, or even more complicated scenarios. The difference is that the library will adjust the sleep timing so the data capture function is called, and also continues to call the function if the device is already connecting, or attempting to connect ot the cloud. This assures consistent data acquisition regardless of cellular conditions. The data is saved in the flash file system and is uploaded in a data operation efficient manner, explained below.
 
 ### Event history
@@ -273,6 +275,26 @@ If the cloud has newer settings, it will send them by a function call to the dev
 Code can register a callback function to be notified if the settings change.
 
 Settings include fleet defaults, group defaults, and device-specific settings.
+
+## Maximum connection time
+
+Some examples use a maximum time to connect:
+
+```cpp
+// EXAMPLE
+SleepHelper::instance()
+    .withShouldConnectMinimumSoC(9.0)
+    .withMaximumTimeToConnect(11min);
+
+// PROTOTYPE
+SleepHelper &withMaximumTimeToConnect(std::chrono::milliseconds timeMs); 
+```
+
+If the cloud connection starts but does not successfully complete, this can be safely done at 11 to 12 minutes. The reason is that around 10 minutes, the modem will be powered down, which can clear some temporary conditions in the modem.
+
+However, if you have a battery-sensitive situation (only battery or battery with solar), then you may not want to wait the full 11 minutes. As long as you are using sleep mode, and using it will cellular off, that is sufficient to reset the modem in the same way, so you can use a lower value, possibly as low as 4 minutes. If you are using a 2G/3G device cellular device, you may want to set it a bit longer, 5 to 6 minutes.
+
+If you use this technique to reduce the maximum time to connect, makes sure that you do not set withMinimumCellularOffTime, or set it to a value long enough to assure that the modem will be powered off to make sure it is reset. 
 
 ## Examples
 
@@ -413,6 +435,11 @@ SleepHelper::instance().getScheduleDataCapture()
 This schedule is simple: full wake and publish every 15 minutes, and capture temperature every 2 minutes. Since the schedule uses only minute of hour, this does not require a valid timezone to be set.
 
 ## Version History
+
+### 0.0.2 (2022-06-01)
+
+- Implementation of withPublishQueuePosixRK and withAB1805_WDT. Example usage in more-examples/50-publish-queue.
+- Added a new section "Maximum connection time" that describes how to set the value. 
 
 ### 0.0.1 (2022-05-23)
 
