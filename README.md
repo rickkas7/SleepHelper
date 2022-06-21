@@ -436,6 +436,13 @@ This schedule is simple: full wake and publish every 15 minutes, and capture tem
 
 ## Version History
 
+### 0.0.3 (2022-06-21)
+
+- Updated to PublishQueuePosix 0.0.4 to fix two bugs when using SleepHelper and PublishQueuePosixRK at the same time:
+  - Events in the file queue would not be sent in some cases
+  - After sending events, the device would not go back to sleep in some cases
+
+
 ### 0.0.2 (2022-06-01)
 
 - Implementation of withPublishQueuePosixRK and withAB1805_WDT. Example usage in more-examples/50-publish-queue.

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.2"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>SleepExample1: SleepHelper</title>
+<title>SleepHelper: SleepHelper</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -21,7 +21,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">SleepExample1
+   <div id="projectname">SleepHelper
    </div>
   </td>
  </tr>
@@ -181,7 +181,8 @@ $(function() {
 <div class="line">    })</div>
 <div class="ttc" id="aclass_sleep_helper_1_1_app_callback_state_html"><div class="ttname"><a href="class_sleep_helper_1_1_app_callback_state.html">SleepHelper::AppCallbackState</a></div><div class="ttdoc">State data for AppCallbackWithState.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:284</div></div>
 <div class="ttc" id="agroup__callbacks_html_ga9cdf24fe882a82663a70075aa6dd4a14"><div class="ttname"><a href="group__callbacks.html#ga9cdf24fe882a82663a70075aa6dd4a14">SleepHelper::withDataCaptureFunction</a></div><div class="ttdeci">SleepHelper &amp; withDataCaptureFunction(std::function&lt; bool(AppCallbackState &amp;state)&gt; fn)</div><div class="ttdoc">The data capture function is called on a schedule to capture data.</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1718</div></div>
-</div><!-- fragment --><p >In addition to simple quick and full wake cycles, the library supports the concept of a data capture function. This function is called according to a schedule, such as every 30 seconds, or even more complicated scenarios. The difference is that the library will adjust the sleep timing so the data capture function is called, and also continues to call the function if the device is already connecting, or attempting to connect ot the cloud. This assures consistent data acquisition regardless of cellular conditions. The data is saved in the flash file system and is uploaded in a data operation efficient manner, explained below.</p>
+</div><!-- fragment --><p >In other words, adding a wake event does not equal a single new publish. Wake events are a fragment of JSON that is added to other fragments of JSON to produce one or more JSON events. This reduces the number of data operations while also freeing you from having to worry about adding so many fragments that you exceed the size of a publish. This is all taken care of by the library.</p>
+<p >In addition to simple quick and full wake cycles, the library supports the concept of a data capture function. This function is called according to a schedule, such as every 30 seconds, or even more complicated scenarios. The difference is that the library will adjust the sleep timing so the data capture function is called, and also continues to call the function if the device is already connecting, or attempting to connect ot the cloud. This assures consistent data acquisition regardless of cellular conditions. The data is saved in the flash file system and is uploaded in a data operation efficient manner, explained below.</p>
 <h2>Event history</h2>
 <p >Event history allows small chunks of JSON data to be saved. For example, the data capture example above stores a timestamp (32 bit integer) and a floating point temperature value (with one decimal place).</p>
 <p >The event history data is uploaded as an array in an event, so it's data operation efficient. Many small data points can be uploaded in a single event. Additionally, the event history is combined with the wake event data, so you may be able to get both the wake event and event history data uploaded using a single data operation.</p>
@@ -243,6 +244,20 @@ $(function() {
 <p >If the cloud has newer settings, it will send them by a function call to the device, which will update the settings stored in the flash file system.</p>
 <p >Code can register a callback function to be notified if the settings change.</p>
 <p >Settings include fleet defaults, group defaults, and device-specific settings.</p>
+<h1>Maximum connection time</h1>
+<p >Some examples use a maximum time to connect:</p>
+<div class="fragment"><div class="line"><span class="comment">// EXAMPLE</span></div>
+<div class="line"><a class="code hl_function" href="class_sleep_helper.html#ad424c11c0781ea2ebbdd96a43521ea06">SleepHelper::instance</a>()</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#a4ab2c66f32bb196cfc556953a07658e9">withShouldConnectMinimumSoC</a>(9.0)</div>
+<div class="line">    .<a class="code hl_function" href="class_sleep_helper.html#a0e9735e119255ebb5b23a3e8baab6ad6">withMaximumTimeToConnect</a>(11min);</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// PROTOTYPE</span></div>
+<div class="line"><a class="code hl_class" href="class_sleep_helper.html">SleepHelper</a> &amp;withMaximumTimeToConnect(std::chrono::milliseconds timeMs); </div>
+<div class="ttc" id="aclass_sleep_helper_html"><div class="ttname"><a href="class_sleep_helper.html">SleepHelper</a></div><div class="ttdef"><b>Definition:</b> SleepHelper.h:23</div></div>
+<div class="ttc" id="aclass_sleep_helper_html_a0e9735e119255ebb5b23a3e8baab6ad6"><div class="ttname"><a href="class_sleep_helper.html#a0e9735e119255ebb5b23a3e8baab6ad6">SleepHelper::withMaximumTimeToConnect</a></div><div class="ttdeci">SleepHelper &amp; withMaximumTimeToConnect(system_tick_t timeMs)</div><div class="ttdoc">Sets the maximum time to connect to the cloud. If this limit is exceeded, the device will go to sleep...</div><div class="ttdef"><b>Definition:</b> SleepHelper.h:1981</div></div>
+</div><!-- fragment --><p >If the cloud connection starts but does not successfully complete, this can be safely done at 11 to 12 minutes. The reason is that around 10 minutes, the modem will be powered down, which can clear some temporary conditions in the modem.</p>
+<p >However, if you have a battery-sensitive situation (only battery or battery with solar), then you may not want to wait the full 11 minutes. As long as you are using sleep mode, and using it will cellular off, that is sufficient to reset the modem in the same way, so you can use a lower value, possibly as low as 4 minutes. If you are using a 2G/3G device cellular device, you may want to set it a bit longer, 5 to 6 minutes.</p>
+<p >If you use this technique to reduce the maximum time to connect, makes sure that you do not set withMinimumCellularOffTime, or set it to a value long enough to assure that the modem will be powered off to make sure it is reset.</p>
 <h1>Examples</h1>
 <h2>01-simple example</h2>
 <p >This is a minimal example that just shows how the callback functions are registered. It doesn't really do anything interesting.</p>
@@ -335,9 +350,18 @@ $(function() {
 <div class="line">    .withMinuteOfHour(2);</div>
 </div><!-- fragment --><p >This schedule is simple: full wake and publish every 15 minutes, and capture temperature every 2 minutes. Since the schedule uses only minute of hour, this does not require a valid timezone to be set.</p>
 <h1>Version History</h1>
+<h2>0.0.3 (2022-06-21)</h2>
+<ul>
+<li>Updated to PublishQueuePosix 0.0.4 to fix two bugs when using <a class="el" href="class_sleep_helper.html">SleepHelper</a> and PublishQueuePosixRK at the same time:<ul>
+<li>Events in the file queue would not be sent in some cases</li>
+<li>After sending events, the device would not go back to sleep in some cases</li>
+</ul>
+</li>
+</ul>
 <h2>0.0.2 (2022-06-01)</h2>
 <ul>
-<li>Finished implementation of withPublishQueuePosixRK, added withAB1805_WDT</li>
+<li>Implementation of withPublishQueuePosixRK and withAB1805_WDT. Example usage in more-examples/50-publish-queue.</li>
+<li>Added a new section "Maximum connection time" that describes how to set the value.</li>
 </ul>
 <h2>0.0.1 (2022-05-23)</h2>
 <ul>

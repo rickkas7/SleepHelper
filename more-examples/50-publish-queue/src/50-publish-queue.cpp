@@ -35,6 +35,8 @@ void setup() {
     // Initialize PublishQueuePosixRK
 	PublishQueuePosix::instance().setup();
 
+    // PublishQueuePosix::instance().clearQueues(); // TEMPORARY
+
 
     SleepHelper::instance()
         .withMinimumCellularOffTime(5min)
@@ -44,6 +46,20 @@ void setup() {
         .withAB1805_WDT(ab1805) // Stop the watchdog before sleep or reset, and resume after wake
         .withPublishQueuePosixRK() // Manage both internal publish queueing and PublishQueuePosixRK
         ;
+
+    // For testing purposes: test doing a PublishQueuePosix publish from a data capture function
+    SleepHelper::instance()
+        .withDataCaptureFunction([](SleepHelper::AppCallbackState &state) {
+            static int counter = 0;
+            char publishData[128];
+            snprintf(publishData, sizeof(publishData), "counter=%d millis=%lu", ++counter, millis());
+            PublishQueuePosix::instance().publish("testPublishQueue", publishData, PRIVATE);
+
+            // false = we have captured the data, do not call again for this data capture cycle
+            return false;
+        })
+        .getScheduleDataCapture().withMinuteOfHour(15);
+
 
     // Full wake and publish
     // - Every 15 minutes from 9:00 AM to 5:00 PM local time on weekdays (not Saturday or Sunday)

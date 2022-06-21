@@ -250,6 +250,12 @@ void SleepHelper::dataCaptureHandler() {
         return;
     }
 
+    if (scheduleManager.getScheduleByName("data").isEmpty()) {
+        // If there is no data capture schedule, don't attempt data capture
+        // since it will run continuously
+        return;
+    }
+
     if (dataCaptureActive) {
         // Previously started capture, waiting for callbacks to finish
         if (!dataCaptureFunctions.whileAnyTrue()) {
