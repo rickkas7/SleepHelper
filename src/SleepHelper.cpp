@@ -973,6 +973,7 @@ bool SleepHelper::PersistentDataBase::setValueString(size_t offset, size_t size,
             if (strcmp(value, p) != 0) {
                 memset(p, 0, size);
                 strcpy(p, value);
+                savedDataHeader->hash = getHash();
                 saveOrDefer();
             }
             result = true;
@@ -981,21 +982,37 @@ bool SleepHelper::PersistentDataBase::setValueString(size_t offset, size_t size,
     return result;
 }
 
+uint32_t SleepHelper::PersistentDataBase::getHash() const {
+    uint32_t hash;
+
+    WITH_LOCK(*this) {
+        // hash value is calculated over the whole data header and data, but with the hash field set to 0
+        uint32_t savedHash = savedDataHeader->hash;
+        savedDataHeader->hash = 0;
+        hash = CloudSettingsFile::murmur3_32((const uint8_t *)savedDataHeader, savedDataHeader->size, HASH_SEED);
+        savedDataHeader->hash = savedHash;
+    }
+    return hash;
+}
+
+
 bool SleepHelper::PersistentDataBase::validate(size_t dataSize) {
     bool isValid = false;
 
     if (dataSize >= 12 && 
         savedDataHeader->magic == savedDataMagic && 
         savedDataHeader->version == savedDataVersion &&
-        savedDataHeader->size <= (uint16_t) dataSize) {                
+        savedDataHeader->size <= (uint16_t) dataSize &&
+        savedDataHeader->hash == getHash()) {                
         if ((size_t)dataSize < savedDataSize) {
-            // Structure is larger than what's in the file; pad with zero bytes
+            // Current structure is larger than what's in the file; pad with zero bytes
             uint8_t *p = (uint8_t *)savedDataHeader;
             for(size_t ii = (size_t)dataSize; ii < savedDataSize; ii++) {
                 p[ii] = 0;
             }
         }
         savedDataHeader->size = (uint16_t) savedDataSize;
+        savedDataHeader->hash = getHash();
         isValid = true;
     }   
     return isValid;
@@ -1006,6 +1023,7 @@ void SleepHelper::PersistentDataBase::initialize() {
     savedDataHeader->magic = savedDataMagic;
     savedDataHeader->version = savedDataVersion;
     savedDataHeader->size = (uint16_t) savedDataSize;
+    savedDataHeader->hash = getHash();
 }
 
 //

@@ -800,7 +800,7 @@ public:
             uint32_t magic;                 //!< savedDataMagic, should rarely, if ever, change
             uint16_t version;               //!< savedDataVersion, should rarely, if ever, change
             uint16_t size;                  //!< size of the whole structure, including the user data after it
-            uint32_t reserved2;             //!< reserved for future use
+            uint32_t hash;                  //!< hash value for verifying data integrity
             uint32_t reserved1;             //!< reserved for future use
             // You cannot change the size of this structure without changing the version number!
         };
@@ -886,6 +886,7 @@ public:
                     T oldValue = *(T *)p;
                     if (oldValue != value) {
                         *(T *)p = value;
+                        savedDataHeader->hash = getHash();
                         saveOrDefer();
                     }
                 }
@@ -918,6 +919,13 @@ public:
          */
         bool setValueString(size_t offset, size_t size, const char *value);
         
+        /**
+         * @brief Get the hash valid for data integrity checking
+         */
+        uint32_t getHash() const;
+
+        static const uint32_t HASH_SEED = 0x851c2a3f;
+
     protected:
         /**
          * This class cannot be copied
@@ -933,15 +941,19 @@ public:
          * @brief Used to validate the saved data structure. Used internally by load(). 
          * 
          * @return true 
-         * @return false 
+         * @return false
+         * 
+         * If you subclass this, be sure to call the superclass validate() first. If it returns false,
+         * you should just return false and skip your own validation since the outer headers were not
+         * valid and the structure cannot be used until reinitialized. 
          */
         virtual bool validate(size_t dataSize);
 
         /**
-         * @brief Used to initialize the saved data structure. Used internally by load(). 
+         * @brief Used to allow subclasses to initialize the saved data structure. Called internally by load(). 
          * 
-         * @return true 
-         * @return false 
+         * If you subclass this, be sure to call the superclass initialize() after you update your fields short so
+         * the hash value can be updated.
          */
         virtual void initialize();
 
