@@ -441,6 +441,7 @@ public:
         }
     };
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Class for managing the SleepHelper settings file
      * 
@@ -666,7 +667,9 @@ public:
         String path; //!< Path to the settings file
         const char *defaultValues = 0; //!< Default values for settings (not used with cloud-based settings)
     };
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Cloud-based settings
      * 
@@ -746,6 +749,11 @@ public:
         uint32_t getHash() const;
 
         /**
+         * @brief The hash seed used for settings file changes
+         */
+        static const uint32_t HASH_SEED = 0x5b4ffa05;
+
+        /**
          * @brief Murmur3 hash algorithm implementation
          * 
          * @param buf Pointer to the buffer to hash (const uint8_t *) 
@@ -753,34 +761,17 @@ public:
          * @param seed hash seed value (uint32_t)
          * @return uint32_t 
          * 
-         * This generates a 32-bit hash of the specified buffer. This is a non-cryptographic hash
-         * but the code is very small and fast. It's used for detecting settings changes.
-         * 
-         * See: https://en.wikipedia.org/wiki/MurmurHash
+         * This implementation has been moved into the top-level SleepHelper
+         * class and you should use that directly.
          */
-        static uint32_t murmur3_32(const uint8_t* buf, size_t len, uint32_t seed);
-
-        /**
-         * @brief The hash seed used for settings file changes
-         */
-        static const uint32_t HASH_SEED = 0x5b4ffa05;
-
-    private:
-        /**
-         * @brief Part of the algorithm used by murmur3_32(). Used internally.
-         * 
-         * @param k 
-         * @return uint32_t 
-         */
-        static inline uint32_t murmur_32_scramble(uint32_t k) {
-            k *= 0xcc9e2d51;
-            k = (k << 15) | (k >> 17);
-            k *= 0x1b873593;
-            return k;
+        static uint32_t murmur3_32(const uint8_t* buf, size_t len, uint32_t seed) {
+            return SleepHelper::murmur3_32(buf, len, seed);
         }
 
-    };
+    private:
 
+    };
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     /**
      * @brief Base class for storing persistent binary data to a file or retained memory
@@ -816,7 +807,28 @@ public:
         PersistentDataBase(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
             savedDataHeader(savedDataHeader), savedDataSize(savedDataSize), savedDataMagic(savedDataMagic), savedDataVersion(savedDataVersion)  {
         };
-
+        
+        /**
+         * @brief Sets the wait to save delay. Default is 1000 milliseconds.
+         * 
+         * @param value Value is milliseconds, or 0
+         * @return PersistentData& 
+         * 
+         * Normally, if the value is changed by a set call, then about
+         * one second later the change will be saved to disk from the loop thread. The
+         * sleepHelperData is also saved before sleep or reset if changed.
+         * 
+         * You can change the save delay by using withSaveDelayMs(). If you set it to 0, then
+         * the data is saved within the setValue call immediately, which will make all set calls
+         * run more slowly.
+         */
+        PersistentDataBase &withSaveDelayMs(uint32_t value) {
+            saveDelayMs = value;
+            if (saveDelayMs == 0) {
+                flush(true);
+            }
+            return *this;
+        }
         /**
          * @brief Initialize this object for use in SleepHelper
          * 
@@ -841,12 +853,22 @@ public:
         virtual void save() {};
 
         /**
-         * @brief Save the persistent data file. You normally do not need to call this; it will be saved automatically.
+         * @brief Write the settings to disk if changed and the wait to save time has expired
          * 
-         * Save does nothing in this base class, but for PersistentDataFile uses it to determine whether to save immediately
-         * or defer until later.
+         * @param force Pass true to ignore the wait to save time and save immediately if necessary. This
+         * is used when you're about to sleep or reset, for example.
+         * 
+         * This call is fast if a save is not required so you can call it frequently, even every loop.
          */
-        virtual void saveOrDefer() {}
+        virtual void flush(bool force);
+
+       /**
+         * @brief Either saves data or immediately, or defers until later, based on saveDelayMs
+         * 
+         * If saveDelayMs == 0, then always saves immediately. Otherwise, waits that amount of time before saving
+         * to allow multiple saves to be batch and to not block the updating thread.
+         */
+        virtual void saveOrDefer();
 
         /**
          * @brief Templated class for getting integral values (uint32_t, float, double, etc.)
@@ -919,6 +941,7 @@ public:
          */
         bool setValueString(size_t offset, size_t size, const char *value);
         
+        
         /**
          * @brief Get the hash valid for data integrity checking
          */
@@ -929,6 +952,9 @@ public:
     protected:
         /**
          * This class cannot be copied
+         * 
+         * Note that subclasses don't need to do include a definition like this because as long as the base class is 
+         * copy-prevented subclasses by default cannot be copied.
          */
         PersistentDataBase(const PersistentDataBase&) = delete;
 
@@ -963,8 +989,63 @@ public:
         
         uint32_t savedDataMagic;        //!< Magic bytes for the saved data
         uint16_t savedDataVersion;      //!< Version number for the saved data
+
+        uint32_t lastUpdate = 0; //!< Last time the file was updated. 0 = file has not changed since writing to disk.
+        uint32_t saveDelayMs = 1000; //!< How long to wait to save before writing file to disk. Set to 0 to write immediately.
     };
 
+#ifndef UNITTEST
+    /**
+     * @brief Base class for persistent data stored in emulated EEPROM
+     * 
+     * This is only recommended for Gen 2 devices. On Gen 3 devices, EEPROM is implemented as a file in the file
+     * system anyway, so it's more efficient to just store your persistent data in its own file.
+     * 
+     */
+    class PersistentDataEEPROM : public PersistentDataBase {
+    public:
+        /**
+         * @brief Base class for persistent data saved in file
+         * 
+         * @param savedDataHeader Pointer to the saved data header
+         * @param savedDataSize size of the whole structure, including the user data after it 
+         * @param savedDataMagic Magic bytes to use for this data
+         * @param savedDataVersion Version to use for this data
+         */
+        PersistentDataEEPROM(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
+            PersistentDataBase(savedDataHeader, savedDataSize, savedDataMagic, savedDataVersion) {
+        };
+        
+        /**
+         * @brief Sets the offset into the EEPROM where the data will reside
+         * 
+         * @param eepromOffset
+         * @return PersistentDataFile& 
+         */
+        PersistentDataEEPROM &withEepromOffset(int eepromOffset) { 
+            this->eepromOffset = eepromOffset; 
+            return *this; 
+        };
+
+        /**
+         * @brief Load the persistent data file. You normally do not need to call this; it will be loaded automatically.
+         * 
+         * @return true 
+         * @return false 
+         */
+        virtual bool load();
+
+        /**
+         * @brief Save the persistent data file. You normally do not need to call this; it will be saved automatically.
+         */
+        virtual void save();
+    
+    protected:
+        int eepromOffset; //!< Offset into EEPROM to save the data
+    };
+    #endif // UNITTEST
+
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Base class for persistent data stored in a file 
      * 
@@ -994,35 +1075,6 @@ public:
             return *this; 
         };
 
-        /**
-         * @brief Sets the wait to save delay. Default is 1000 milliseconds.
-         * 
-         * @param value Value is milliseconds, or 0
-         * @return PersistentData& 
-         * 
-         * Normally, if the value is changed by a set call, then about
-         * one second later the change will be saved to disk from the loop thread. The
-         * sleepHelperData is also saved before sleep or reset if changed.
-         * 
-         * You can change the save delay by using withSaveDelayMs(). If you set it to 0, then
-         * the data is saved within the setValue call immediately, which will make all set calls
-         * run more slowly.
-         */
-        PersistentDataFile &withSaveDelayMs(uint32_t value) {
-            saveDelayMs = value;
-            if (saveDelayMs == 0) {
-                flush(true);
-            }
-            return *this;
-        }
-        
-        /**
-         * @brief Initialize this object for use in SleepHelper
-         * 
-         * This is used from SleepHelper::setup(). You should not use this if you are creating your
-         * own PersistentData object; this is only used to hook this class into SleepHelper/
-         */
-        virtual void setup();
 
         /**
          * @brief Load the persistent data file. You normally do not need to call this; it will be loaded automatically.
@@ -1037,48 +1089,12 @@ public:
          */
         virtual void save();
 
-        /**
-         * @brief Either saves data or immediately, or defers until later, based on saveDelayMs
-         * 
-         * If saveDelayMs == 0, then always saves immediately. Otherwise, waits that amount of time before saving
-         * to allow multiple saves to be batch and to not block the updating thread.
-         */
-        virtual void saveOrDefer() {
-            if (saveDelayMs) {
-                lastUpdate = millis();
-            }
-            else {
-                save();
-            }
-        }
-
-        /**
-         * @brief Write the settings to disk if changed and the wait to save time has expired
-         * 
-         * @param force Pass true to ignore the wait to save time and save immediately if necessary. This
-         * is used when you're about to sleep or reset, for example.
-         * 
-         * This call is fast if a save is not required so you can call it frequently, even every loop.
-         */
-        virtual void flush(bool force);
-    
     protected:
-        /**
-         * This class cannot be copied
-         */
-        PersistentDataFile(const PersistentDataFile&) = delete;
-
-        /**
-         * This class cannot be copied
-         */
-        PersistentDataFile& operator=(const PersistentDataFile&) = delete;
-        
-        uint32_t lastUpdate = 0; //!< Last time the file was updated. 0 = file has not changed since writing to disk.
-        uint32_t saveDelayMs = 1000; //!< How long to wait to save before writing file to disk. Set to 0 to write immediately.
-
         String path; //!< Path to data file
     };
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Class for storing small data used by SleepHelper in the flash file system
      * 
@@ -1212,8 +1228,9 @@ public:
     protected:
         SleepHelperData sleepHelperData; //!< Data stored in the persistent data file
     };
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
-
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Class to manage small events, typically used for time-series data
      * 
@@ -1337,7 +1354,9 @@ public:
         bool hasEvents = false; //!< True if there are events in the event history file
         size_t removeOffset = 0; //!< Where to remove events from
     };
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Class to handle building JSON events from multiple callbacks with priority 
      * and the ability to generate multiple events if necessary
@@ -1512,6 +1531,7 @@ public:
         EventHistory eventHistory; //!< Event history
         String eventHistoryKey; //!< Key to use when publishing the event history
     };
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     /**
      * @brief Class to hold data to be published by Particle.publish
@@ -1819,6 +1839,7 @@ public:
         return *this;
     }
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Add a callback to add to an event published on wake
      * 
@@ -1854,7 +1875,10 @@ public:
         wakeEventFunctions.withCallback(fn);
         return *this;
     }
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
+
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Add a callback to add to an event published on wake executed for a single wake publish
      * 
@@ -1867,7 +1891,9 @@ public:
         wakeEventFunctions.withOneTimeCallback(fn);
         return *this;
     }
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Simplified interface to create a one-time wake event with enable detection
      * 
@@ -1889,7 +1915,9 @@ public:
         }
         return *this;
     }
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Sets parameters for the EventHistory feature
      * 
@@ -1935,6 +1963,7 @@ public:
         wakeEventFunctions.addEvent(callback);
         return *this;
     }
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     /**
      * @brief Adds a function to be called right before sleep or reset.
@@ -2059,6 +2088,7 @@ public:
         }); 
     }
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Function to call when settings change
      * 
@@ -2081,6 +2111,7 @@ public:
         settingsFile.withSettingChangeFunction(fn);
         return *this;
     }
+#endif
 
     
 #if HAL_PLATFORM_POWER_MANAGEMENT
@@ -2350,6 +2381,7 @@ public:
      */
     void loop();
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     /**
      * @brief Class for managing the settings file
      * 
@@ -2364,6 +2396,7 @@ public:
      * Persistent data is stored as a file in the flash file system,
      */
     PersistentData persistentData;
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     /**
      * @brief Class for managing publish and wake schedules
@@ -2399,6 +2432,21 @@ public:
         return scheduleManager.getScheduleByName("data");
     }
 
+    /**
+     * @brief Murmur3 hash algorithm implementation
+     * 
+     * @param buf Pointer to the buffer to hash (const uint8_t *) 
+     * @param len Length of the data in bytes
+     * @param seed hash seed value (uint32_t)
+     * @return uint32_t 
+     * 
+     * This generates a 32-bit hash of the specified buffer. This is a non-cryptographic hash
+     * but the code is very small and fast. It's used for detecting settings changes.
+     * 
+     * See: https://en.wikipedia.org/wiki/MurmurHash
+     */
+    static uint32_t murmur3_32(const uint8_t* buf, size_t len, uint32_t seed);
+
     
     static const int WAKEUP_REASON_SETUP        = 0x10001; //!< Wakeup reason used on reset or cold boot, from setup()
     static const int WAKEUP_REASON_NO_SLEEP     = 0x10002; //!< Wakeup reason when we didn't actually sleep because the period was too short
@@ -2426,6 +2474,19 @@ protected:
      * This class is a singleton and cannot be copied
      */
     SleepHelper& operator=(const SleepHelper&) = delete;
+
+    /**
+     * @brief Part of the algorithm used by murmur3_32(). Used internally.
+     * 
+     * @param k 
+     * @return uint32_t 
+     */
+    static inline uint32_t murmur_32_scramble(uint32_t k) {
+        k *= 0xcc9e2d51;
+        k = (k << 15) | (k >> 17);
+        k *= 0x1b873593;
+        return k;
+    }
 
 #ifndef UNITTEST
     /**
@@ -2694,7 +2755,10 @@ protected:
     AppCallbackWithState<> noConnectionFunctions;
 
     String wakeEventName = "sleepHelper"; //!< Event name for wake events. Default: "sleepHelper"
+
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     EventCombiner wakeEventFunctions; //!< Handlers to create wake events
+#endif
     int wakeReasonInt = 0; //!< Wake reason after sleep
 
     std::vector<PublishData> publishData; //!< Wake event data to publish (JSON strings)

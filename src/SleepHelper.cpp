@@ -68,10 +68,12 @@ const char *SleepHelper::eventsEnableName(uint64_t flag) {
 
 
 SleepHelper::SleepHelper() : appLog("app.sleep") {
-    
+
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)    
     settingsFile.withPath("/usr/sleepSettings.json");
 
     persistentData.withPath("/usr/sleepData.dat");
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 }
 
 SleepHelper::~SleepHelper() {
@@ -79,13 +81,17 @@ SleepHelper::~SleepHelper() {
 
 #ifndef UNITTEST
 void SleepHelper::setup() {
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     int resetReason = (int) System.resetReason();
+    #endif
 
     // Register for system events
     System.on(firmware_update | firmware_update_pending | reset | out_of_memory, systemEventHandlerStatic);
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     settingsFile.setup();
     persistentData.setup();
+    #endif
 
     // Setup empty quick and full wake schedules to start. Data schedule is a quick wake, but also runs 
     // while the device is running, including while it's trying to connect.
@@ -111,10 +117,12 @@ void SleepHelper::setup() {
         return !Time.isValid();
     });
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     // If reset reason events are enabled, add to the wake event
     withWakeEventFlagOneTimeFunction(eventsEnabledResetReason, [resetReason](JSONWriter &writer, int &priority) {
         writer.value(resetReason);
     });
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     withShouldConnectFunction([this](int &connectConviction, int &noConnectConviction) {
         if (!Time.isValid()) {
@@ -124,7 +132,10 @@ void SleepHelper::setup() {
             return true;
         }
 
-        time_t t = SleepHelper::instance().persistentData.getValue_lastFullWake();
+        time_t t = 0;
+        #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
+        SleepHelper::instance().persistentData.getValue_lastFullWake();
+        #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
         if (t == 0) {
             t = Time.now();
         }
@@ -263,6 +274,7 @@ void SleepHelper::dataCaptureHandler() {
         }
     }
     else {
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
         bool updateSchedule = false;
 
         if (!persistentData.getValue_nextDataCapture()) {
@@ -287,8 +299,8 @@ void SleepHelper::dataCaptureHandler() {
                 persistentData.setValue_nextDataCapture(t);
             }
         }
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     }
-
 }
 
 void SleepHelper::stateHandlerStart() {
@@ -304,8 +316,10 @@ void SleepHelper::stateHandlerStart() {
     if (isQuickWake || !shouldConnectFunctions.shouldConnect()) {
         // We should not connect, so go into no connection state
         appLog.info("running in no connection mode");
+        #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
         SleepHelper::instance().persistentData.setValue_lastQuickWake(Time.now());
-
+        #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
+        
         noConnectionFunctions.setStartState();
         stateHandler = &SleepHelper::stateHandlerNoConnection;
         return;
@@ -356,14 +370,18 @@ void SleepHelper::stateHandlerTimeValidWait() {
 void SleepHelper::stateHandlerConnectedStart() {
     connectedStartMillis = millis();
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     SleepHelper::instance().persistentData.setValue_lastFullWake(Time.now());
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     system_tick_t elapsedMs = connectedStartMillis - connectAttemptStartMillis;
     appLog.info("connected to cloud in %lu ms", elapsedMs);
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     withWakeEventFlagOneTimeFunction(eventsEnabledTimeToConnect, [elapsedMs](JSONWriter &writer, int &priority) {
         writer.value((int)elapsedMs);
     });
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 #if HAL_PLATFORM_POWER_MANAGEMENT
     withWakeEventFlagOneTimeFunction(eventsEnabledBatterySoC, [](JSONWriter &writer, int &priority) {
@@ -387,8 +405,10 @@ void SleepHelper::stateHandlerConnectedWakeEvents() {
         return;
     }
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     // Call the wake event handlers to see if they have JSON data to publish
     wakeEventFunctions.generateEvents(wakeEventPayload);
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     lastEventHistoryCheckMillis = 0;
     sleepReadyFunctions.setStartState();
@@ -614,9 +634,11 @@ void SleepHelper::stateHandlerSleepDone() {
     // Wake or boot functions are called during setup(), after wake, or after an aborted sleep 
     wakeOrBootFunctions.forEach(wakeReasonInt);
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     withWakeEventFlagOneTimeFunction(eventsEnabledWakeReason, [this](JSONWriter &writer, int &priority) {
         writer.value(wakeReasonInt);
     });     
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 }
 
@@ -633,7 +655,7 @@ void SleepHelper::stateHandlerSleepShort() {
 //
 // SettingsFile
 //
-
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 void SleepHelper::SettingsFile::setup() {
 }
 
@@ -885,46 +907,12 @@ uint32_t SleepHelper::CloudSettingsFile::getHash() const {
     uint32_t hash;
 
     WITH_LOCK(*this) {
-        hash = murmur3_32((const uint8_t *)parser.getBuffer(), parser.getOffset(), HASH_SEED);
+        hash = SleepHelper::murmur3_32((const uint8_t *)parser.getBuffer(), parser.getOffset(), HASH_SEED);
     }
 
     return hash;
 }
-
-
-uint32_t SleepHelper::CloudSettingsFile::murmur3_32(const uint8_t* key, size_t len, uint32_t seed) {
-    // https://en.wikipedia.org/wiki/MurmurHash
-	uint32_t h = seed;
-    uint32_t k;
-    /* Read in groups of 4. */
-    for (size_t i = len >> 2; i; i--) {
-        // Here is a source of differing results across endiannesses.
-        // A swap here has no effects on hash properties though.
-        memcpy(&k, key, sizeof(uint32_t));
-        key += sizeof(uint32_t);
-        h ^= murmur_32_scramble(k);
-        h = (h << 13) | (h >> 19);
-        h = h * 5 + 0xe6546b64;
-    }
-    /* Read the rest. */
-    k = 0;
-    for (size_t i = len & 3; i; i--) {
-        k <<= 8;
-        k |= key[i - 1];
-    }
-    // A swap is *not* necessary here because the preceding loop already
-    // places the low bytes in the low places according to whatever endianness
-    // we use. Swaps only apply when the memory is copied in a chunk.
-    h ^= murmur_32_scramble(k);
-    /* Finalize. */
-	h ^= len;
-	h ^= h >> 16;
-	h *= 0x85ebca6b;
-	h ^= h >> 13;
-	h *= 0xc2b2ae35;
-	h ^= h >> 16;
-	return h;
-}
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 
 //
@@ -934,6 +922,17 @@ uint32_t SleepHelper::CloudSettingsFile::murmur3_32(const uint8_t* key, size_t l
 void SleepHelper::PersistentDataBase::setup() {
     // Load data at boot
     load();
+
+    SleepHelper::instance().withLoopFunction([this]() {
+        // Handle deferred save
+        flush(false);
+        return true;
+    });
+    SleepHelper::instance().withSleepOrResetFunction([this](bool) {
+        // Make sure data is saved before sleep or reset
+        flush(true);
+        return true;
+    });
 }
 
 bool SleepHelper::PersistentDataBase::load() {
@@ -944,6 +943,25 @@ bool SleepHelper::PersistentDataBase::load() {
     }
 
     return true;
+}
+
+
+void SleepHelper::PersistentDataBase::flush(bool force) {
+    if (lastUpdate) {
+        if (force || (millis() - lastUpdate >= saveDelayMs)) {
+            save();
+            lastUpdate = 0;
+        }
+    }
+}
+
+void SleepHelper::PersistentDataBase::saveOrDefer() {
+    if (saveDelayMs) {
+        lastUpdate = millis();
+    }
+    else {
+        save();
+    }
 }
 
 
@@ -989,7 +1007,7 @@ uint32_t SleepHelper::PersistentDataBase::getHash() const {
         // hash value is calculated over the whole data header and data, but with the hash field set to 0
         uint32_t savedHash = savedDataHeader->hash;
         savedDataHeader->hash = 0;
-        hash = CloudSettingsFile::murmur3_32((const uint8_t *)savedDataHeader, savedDataHeader->size, HASH_SEED);
+        hash = SleepHelper::murmur3_32((const uint8_t *)savedDataHeader, savedDataHeader->size, HASH_SEED);
         savedDataHeader->hash = savedHash;
     }
     return hash;
@@ -1026,26 +1044,35 @@ void SleepHelper::PersistentDataBase::initialize() {
     savedDataHeader->hash = getHash();
 }
 
+
+#ifndef UNITTEST
+//
+// PersistentDataEEPROM
+//
+bool SleepHelper::PersistentDataEEPROM::load() {
+    WITH_LOCK(*this) {
+        bool loaded = false;
+
+        HAL_EEPROM_Get(eepromOffset, savedDataHeader, savedDataSize);
+        if (!validate(savedDataHeader->size)) {
+            initialize();
+        }
+    }
+
+    return true;
+}
+
+void SleepHelper::PersistentDataEEPROM::save() {
+    WITH_LOCK(*this) {
+        HAL_EEPROM_Put(eepromOffset, savedDataHeader, savedDataSize);
+    }
+}
+#endif // UNITTEST
+
 //
 // PersistentDataFile
 //
-
-void SleepHelper::PersistentDataFile::setup() {
-    // Call parent class
-    SleepHelper::PersistentDataBase::setup();
-
-    SleepHelper::instance().withLoopFunction([this]() {
-        // Handle deferred save
-        flush(false);
-        return true;
-    });
-    SleepHelper::instance().withSleepOrResetFunction([this](bool) {
-        // Make sure data is saved before sleep or reset
-        flush(true);
-        return true;
-    });
-}
-
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 bool SleepHelper::PersistentDataFile::load() {
     WITH_LOCK(*this) {
         bool loaded = false;
@@ -1070,8 +1097,6 @@ bool SleepHelper::PersistentDataFile::load() {
     return true;
 }
 
-
-
 void SleepHelper::PersistentDataFile::save() {
     WITH_LOCK(*this) {
         int fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0666);
@@ -1081,21 +1106,13 @@ void SleepHelper::PersistentDataFile::save() {
         }
     }
 }
-
-void SleepHelper::PersistentDataFile::flush(bool force) {
-    if (lastUpdate) {
-        if (force || (millis() - lastUpdate >= saveDelayMs)) {
-            save();
-            lastUpdate = 0;
-        }
-    }
-}
-
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 //
 // EventHistory
 //
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 void SleepHelper::EventHistory::addEvent(const char *jsonObj) {
     // Log
@@ -1249,8 +1266,9 @@ bool SleepHelper::EventHistory::getHasEvents() {
     }
     return hasEvents; 
 };
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
-
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 //
 // EventCombiner
 //
@@ -1457,6 +1475,7 @@ void SleepHelper::EventCombiner::generateEventInternal(std::function<void(JSONWr
         }
     }
 }
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 // [static]
 void SleepHelper::JSONCopy(const char *src, JSONWriter &writer) {
@@ -1515,3 +1534,37 @@ void SleepHelper::JSONCopy(const JSONValue &src, JSONWriter &writer) {
 }
 
 
+
+uint32_t SleepHelper::murmur3_32(const uint8_t* key, size_t len, uint32_t seed) {
+    // https://en.wikipedia.org/wiki/MurmurHash
+	uint32_t h = seed;
+    uint32_t k;
+    /* Read in groups of 4. */
+    for (size_t i = len >> 2; i; i--) {
+        // Here is a source of differing results across endiannesses.
+        // A swap here has no effects on hash properties though.
+        memcpy(&k, key, sizeof(uint32_t));
+        key += sizeof(uint32_t);
+        h ^= murmur_32_scramble(k);
+        h = (h << 13) | (h >> 19);
+        h = h * 5 + 0xe6546b64;
+    }
+    /* Read the rest. */
+    k = 0;
+    for (size_t i = len & 3; i; i--) {
+        k <<= 8;
+        k |= key[i - 1];
+    }
+    // A swap is *not* necessary here because the preceding loop already
+    // places the low bytes in the low places according to whatever endianness
+    // we use. Swaps only apply when the memory is copied in a chunk.
+    h ^= murmur_32_scramble(k);
+    /* Finalize. */
+	h ^= len;
+	h ^= h >> 16;
+	h *= 0x85ebca6b;
+	h ^= h >> 13;
+	h *= 0xc2b2ae35;
+	h ^= h >> 16;
+	return h;
+}

@@ -263,6 +263,9 @@ For example, in the sleep ready function, in each sleep cycle, the state will st
 
 You can find the callback functions you can register functions for in the [browsable HTML documentation](https://rickkas7.github.io/SleepHelper/group__callbacks.html).
 
+## Persistent data
+
+There is a system for storing persistent data in retained memory, EEPROM, file system, etc. This is in its own topic: [Persistent Data](PersistentData.md).
 
 ## Cloud-based configuration
 
@@ -435,6 +438,9 @@ SleepHelper::instance().getScheduleDataCapture()
 This schedule is simple: full wake and publish every 15 minutes, and capture temperature every 2 minutes. Since the schedule uses only minute of hour, this does not require a valid timezone to be set.
 
 ## Version History
+
+### 0.0.4 (2022-07-15)
+
 
 ### 0.0.3 (2022-06-21)
 
