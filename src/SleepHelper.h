@@ -6,6 +6,10 @@
 #include "JsonParserGeneratorRK.h"
 #include <vector>
 
+#include <fcntl.h>
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
+#include <sys/stat.h>
+#endif
 
 /**
  *  @defgroup callbacks Callback functions you can register
@@ -38,7 +42,7 @@ public:
      * - The mutex is created on first lock, instead of from the constructor. This is done because it's
      * not save to call os_mutex_recursive_create from a global constructor, and by delaying 
      * construction it makes it possible to safely construct the class as a global object.
-     * - The lock/trylock/unlock methods are declared const and the mutex handle mutable. This allows the
+     * - The lock/trylock/unlock methods are declared const acd nd the mutex handle mutable. This allows the
      * mutex to be locked from a const method.
      */
     class SleepHelperRecursiveMutex
@@ -773,6 +777,414 @@ public:
     };
     #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
+
+    /**
+     * @brief Abstract base class for file system-based storage
+     */
+    class FileSystemBase {
+    public:
+        /**
+         * @brief Abstract base constructor. Doesn't do anything.
+         */
+        FileSystemBase() {
+        }
+
+        /**
+         * @brief Abstract base destructor. Doesn't do anything.
+         */
+        virtual ~FileSystemBase() {
+
+        }
+        /**
+         * @brief Open the events file
+         * 
+         * @param filename The name of the file to open
+         * 
+         * @param mode The open mode, such as O_RDWR | O_CREAT
+         */
+        virtual bool open(const char *filename, int mode) = 0;
+
+        /**
+         * @brief Close the events file
+         */
+        virtual bool close() = 0;
+
+        /**
+         * @brief Truncate a file to a specified length in bytes
+         *
+         * @param size Size is bytes. Must be <= the current length of the file.
+         *
+         * Note: Do not use truncate to make the file larger! While this works for POSIX, it
+         * does not work for SPIFFS so we just always assumes it does not work.
+         */
+        virtual bool truncate(size_t size) = 0;
+
+        /**
+         * @brief Read bytes from the file
+         *
+         * @param buffer Buffer to fill with data
+         *
+         * @param length Number of bytes to read. Can be > than the number of bytes in the file.
+         *
+         * @returns Number of bytes read. Returns 0 on error.
+         */
+        virtual size_t read(uint8_t *buffer, size_t length) = 0;
+
+        /**
+         * @brief Write bytes to the file
+         *
+         * @param buffer Buffer to write to the file
+         *
+         * @param length Number of bytes to write.
+         */
+        virtual size_t write(const uint8_t *buffer, size_t length) = 0;
+
+        /**
+         * @brief Get length of the file (or a negative error code on error)
+         */
+        virtual int getLength() = 0;
+
+    };
+
+    #if defined(__SPIFFSPARTICLERK_H) || defined(DOXYGEN_BUILD)
+
+    /**
+     * @brief Concrete subclass to store events on SPIFFS file system
+     */
+    class FileSystemSpiffs : public FileSystemBase {
+    public:
+        /**
+         * @brief Store events on a SPIFFS file system
+         *
+         * @param spiffs The SpiffsParticle object for the file system to store the data on
+         */
+        FileSystemSpiffs(SpiffsParticle &spiffs) : spiffs(spiffs) {
+        }
+
+        /**
+         * @brief Destructor
+         */
+        virtual ~FileSystemSpiffs() {
+        }
+
+        /**
+         * @brief Translate POSIX style mode flags into SPIFFS mode flags
+         * 
+         * @param mode 
+         * @return int 
+         */
+        int translateMode(int mode) {
+            int spiffsMode = 0;
+
+            if (mode & O_APPEND) {
+                spiffsMode |= SPIFFS_O_APPEND;
+            }
+            if (mode && O_TRUNC) {
+                spiffsMode |= SPIFFS_O_TRUNC;
+            }
+            if (mode && O_CREAT) {
+                spiffsMode |= SPIFFS_O_CREAT;
+            }
+            if (mode && O_RDONLY) {
+                spiffsMode |= SPIFFS_O_RDONLY;
+            }
+            if (mode && O_WRONLY) {
+                spiffsMode |= SPIFFS_O_WRONLY;
+            }
+            // O_RDWR is O_RDONLY | O_WRONLY
+
+            return spiffsMode;
+        }
+
+        /**
+         * @brief Open the events file
+         */
+        virtual bool open(const char *filename, int mode = O_RDWR | O_CREAT) {
+            file = spiffs.openFile(filename, translateMode(mode));
+            return true;
+        }
+
+        /**
+         * @brief Close the events file
+         */
+        virtual bool close() {
+            file.close();
+            return true;
+        }
+
+        /**
+         * @brief Set file position
+         *
+         * @param seekTo The file offset to seek to if >= 0. Must be <= file length. Or pass
+         * -1 to seek to the end of the file to append.
+         *
+         * @returns true on success or false on error
+         */
+        virtual bool seek(int seekTo) {
+            if (seekTo >= 0) {
+                return file.lseek(seekTo, SPIFFS_SEEK_SET) >= 0;
+            }
+            else {
+                return file.lseek(0, SPIFFS_SEEK_END) >= 0;
+            }
+        }
+
+        /**
+         * @brief Read bytes from the file
+         *
+         * @param buffer Buffer to fill with data
+         *
+         * @param length Number of bytes to read. Can be > than the number of bytes in the file.
+         *
+         * @returns Number of bytes read. Returns 0 on error.
+         */
+        virtual size_t read(uint8_t *buffer, size_t length) {
+            return file.readBytes((char *)buffer, length);
+        }
+
+        /**
+         * @brief Write bytes to the file
+         *
+         * @param buffer Buffer to write to the file
+         *
+         * @param length Number of bytes to write.
+         */
+        virtual size_t write(const uint8_t *buffer, size_t length) {
+            return file.write(buffer, length);
+        }
+
+        /**
+         * @brief Get length of the file or a negative error code
+         */
+        virtual int getLength() {
+            return (int) file.length();
+        }
+
+        /**
+         * @brief Truncate a file to a specified length in bytes
+         *
+         * Note: Do not use truncate to make the file larger! While this works for POSIX, it
+         * does not work for SPIFFS so we just always assumes it does not work.
+         */
+        virtual bool truncate(size_t size) {
+            return file.truncate((s32_t)size) == SPIFFS_OK;
+        }
+
+
+    protected:
+        SpiffsParticle &spiffs;		//!< SpiffsParticle object for the file system to store events on
+        SpiffsParticleFile file;	//!< Object for the events file
+    };
+
+    #endif /* __SPIFFSPARTICLERK_H */
+
+
+    #if defined(SdFat_h) || defined(DOXYGEN_BUILD)
+
+    /**
+     * @brief Concrete subclass for storing events on a SdFat file system
+     */
+    class FileSystemSdFat : public FileSystemBase {
+    public:
+        /**
+         * @brief Store events on a SdFat file system
+         *
+         * @param sdFat The SdFat object for the file system to store the data on
+         */
+        FileSystemSdFat(SdFat &sdFat) : sdFat(sdFat){
+        }
+
+        virtual ~FileSystemSdFat() {
+        }
+
+        /**
+         * @brief Open the events file
+         * 
+         * @param filename The filename to store the events in should be 8.3 format (events.dat, for example)
+         */
+        virtual bool open(const char *filename, int mode = O_RDWR | O_CREAT) {
+            return file.open(filename, mode) != 0;
+        }
+
+        /**
+         * @brief Close the events file
+         */
+        virtual bool close() {
+            file.close();
+            return true;
+        }
+
+        /**
+         * @brief Set file position
+         */
+        virtual bool seek(int seekTo) {
+            if (seekTo >= 0) {
+                return file.seekSet(seekTo);
+            }
+            else {
+                return file.seekEnd();
+            }
+        }
+
+        /**
+         * @brief Read bytes from the file
+         *
+         * @param buffer Buffer to fill with data
+         *
+         * @param length Number of bytes to read. Can be > than the number of bytes in the file.
+         *
+         * @returns Number of bytes read. Returns 0 on error.
+         */
+        virtual size_t read(uint8_t *buffer, size_t length) {
+            return file.read((char *)buffer, length);
+        }
+
+        /**
+         * @brief Write bytes to the file
+         *
+         * @param buffer Buffer to write to the file
+         *
+         * @param length Number of bytes to write.
+         */
+        virtual size_t write(int seekTo, const uint8_t *buffer, size_t length) {
+            return file.write(buffer, length);
+        }
+
+        /**
+         * @brief Get length of the file or a negative error code
+         */
+        virtual int getLength() {
+            return (int) file.fileSize();
+        }
+
+        /**
+         * @brief Truncate a file to a specified length in bytes
+         *
+         * Note: Do not use truncate to make the file larger! While this works for POSIX, it
+         * does not work for SPIFFS so we just always assumes it does not work.
+         */
+        virtual bool truncate(size_t size) {
+            return file.truncate((uint32_t)size);
+        }
+
+
+    protected:
+        SdFat &sdFat;			//!< SdFat object for the file system to store the events on
+        SdFile file;			//!< SdFat file object for the events file
+    };
+    #endif /* SdFat_h */
+
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
+    /**
+     * @brief Concrete subclass for storing events on a Particle Gen 3 LittleFS POSIX file system
+     */
+    class FileSystemPosix : public FileSystemBase {
+    public:
+        /**
+         * @brief Store events on a SdFat file system
+         *
+         * @param filename The filename to store the events in
+         */
+        FileSystemPosix() {
+        }
+
+        virtual ~FileSystemPosix() {
+        }
+
+        /**
+         * @brief Open the events file
+         */
+        virtual bool open(const char *filename, int mode = O_RDWR | O_CREAT) {
+            fd = ::open(filename, mode, 0666);
+
+            return (fd != -1);
+        }
+
+        /**
+         * @brief Close the events file
+         */
+        virtual bool close() {
+            if (fd != -1) {
+                ::close(fd);
+                fd = -1;
+            }
+            return true;
+        }
+
+        /**
+         * @brief Set file position
+         */
+        virtual bool seek(int seekTo) {
+            if (seekTo >= 0) {
+                return lseek(fd, seekTo, SEEK_SET) >= 0;
+            }
+            else {
+                return lseek(fd, 0, SEEK_END) >= 0;
+            }
+        }
+
+        /**
+         * @brief Read bytes from the file
+
+         * @param buffer Buffer to fill with data
+         *
+         * @param length Number of bytes to read. Can be > than the number of bytes in the file.
+         *
+         * @returns Number of bytes read. Returns 0 on error.
+         */
+        virtual size_t read(uint8_t *buffer, size_t length) {
+            int count = ::read(fd, buffer, length);
+            if (count > 0) {
+                return count;
+            }
+            else {
+                return 0;
+            }
+        }
+
+        /**
+         * @brief Write bytes to the file
+         *
+         * @param buffer Buffer to write to the file
+         *
+         * @param length Number of bytes to write.
+         */
+        virtual size_t write(const uint8_t *buffer, size_t length) {
+            int count = ::write(fd, buffer, length);
+            if (count > 0) {
+                return count;
+            }
+            else {
+                return 0;
+            }
+        }
+
+        /**
+         * @brief Get length of the file or a negative error code
+         */
+        virtual int getLength() {
+            struct stat sb;
+
+            fstat(fd, &sb);
+            return sb.st_size;
+        }
+
+        /**
+         * @brief Truncate a file to a specified length in bytes
+         *
+         */
+        virtual bool truncate(size_t size) {
+            // Note: This requires Device OS 2.0.0-rc.3 or later!
+            return ftruncate(fd, (int)size) == 0;
+        }
+
+
+    protected:
+        int fd = -1;			//!< File descriptor for the events file
+    };
+
+    #endif /* HAL_PLATFORM_FILESYSTEM || defined(UNITTEST) */
+
     /**
      * @brief Base class for storing persistent binary data to a file or retained memory
      * 
@@ -1045,36 +1457,39 @@ public:
     };
     #endif // UNITTEST
 
-    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
-    /**
-     * @brief Base class for persistent data stored in a file 
-     * 
-     */
-    class PersistentDataFile : public PersistentDataBase {
+    class PersistentDataFileSystem : public PersistentDataBase {
     public:
         /**
-         * @brief Base class for persistent data saved in file
+         * @brief Class for persistent data saved to a file system
          * 
+         * @param fs The FileSystemBase object subclass to use (Posix, SdFat, SPIFFS, etc.) 
          * @param savedDataHeader Pointer to the saved data header
          * @param savedDataSize size of the whole structure, including the user data after it 
          * @param savedDataMagic Magic bytes to use for this data
          * @param savedDataVersion Version to use for this data
-         */
-        PersistentDataFile(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
-            PersistentDataBase(savedDataHeader, savedDataSize, savedDataMagic, savedDataVersion) {
-        };
-        
-        /**
-         * @brief Sets the path to the persistent data file on the file system
          * 
-         * @param path 
-         * @return PersistentDataFile& 
+         * The fs object passed into this constructor is deleted when this object is destructed.
+         * 
+         * You will probably want to use the withFilename() method to set the filename to save the data to.
          */
-        PersistentDataFile &withPath(const char *path) { 
-            this->path = path; 
-            return *this; 
+        PersistentDataFileSystem(FileSystemBase *fs, SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
+            PersistentDataBase(savedDataHeader, savedDataSize, savedDataMagic, savedDataVersion), fs(fs) {
         };
 
+        virtual ~PersistentDataFileSystem() {
+            delete fs;
+        }
+
+        /**
+         * @brief Sets the filename to use to store the data
+         * 
+         * @param filename 
+         * @return PersistentDataFileSystem& 
+         */
+        PersistentDataFileSystem &withFilename(const char *filename) {
+            this->filename = filename;
+            return *this;
+        }
 
         /**
          * @brief Load the persistent data file. You normally do not need to call this; it will be loaded automatically.
@@ -1089,8 +1504,44 @@ public:
          */
         virtual void save();
 
+ 
+
     protected:
-        String path; //!< Path to data file
+        FileSystemBase *fs;
+        String filename;
+    };
+
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
+    /**
+     * @brief Base class for persistent data stored in a file on the POSIX file system
+     * 
+     */
+    class PersistentDataFile : public PersistentDataFileSystem {
+    public:
+        /**
+         * @brief Base class for persistent data saved in file
+         * 
+         * @param savedDataHeader Pointer to the saved data header
+         * @param savedDataSize size of the whole structure, including the user data after it 
+         * @param savedDataMagic Magic bytes to use for this data
+         * @param savedDataVersion Version to use for this data
+         */
+        PersistentDataFile(SavedDataHeader *savedDataHeader, size_t savedDataSize, uint32_t savedDataMagic, uint16_t savedDataVersion) : 
+            PersistentDataFileSystem(new FileSystemPosix(), savedDataHeader, savedDataSize, savedDataMagic, savedDataVersion) {
+        };
+        
+        /**
+         * @brief Sets the path to the persistent data file on the file system
+         * 
+         * @param path 
+         * @return PersistentDataFile& 
+         */
+        PersistentDataFile &withPath(const char *path) { 
+            PersistentDataFileSystem::withFilename(path);
+            return *this; 
+        };
+
+    protected:
     };
     #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
@@ -2368,6 +2819,30 @@ public:
 
 
     /**
+     * @brief Sets the sleep enabled flag
+     * 
+     * @param sleepEnabled 
+     * @return SleepHelper& 
+     * 
+     * The default is true (sleep is allowed). You can set it to false to prevent sleep.
+     */
+    SleepHelper &withSleepEnabled(bool sleepEnabled) {
+        this->sleepEnabled = sleepEnabled;
+        return *this;
+    }
+
+    /**
+     * @brief Get the sleep enabled flag value. Default is true.
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool getSleepEnabled() const {
+        return sleepEnabled;
+    }
+
+
+    /**
      * @brief Perform setup operations; call this from global application setup()
      * 
      * You typically use SleepHelper::instance().setup();
@@ -2769,6 +3244,11 @@ protected:
      * See constants such as eventsEnabledWakeReason, eventsEnabledTimeToConnect for flag values
      */
     uint64_t eventsEnabled = 0xfffffffffffffffful;
+
+    /**
+     * @brief Flag to indicate if sleep is allowed (default) or if it has been disabled.
+     */
+    bool sleepEnabled = true;
 
     /**
      * @brief Which logging messages to enable

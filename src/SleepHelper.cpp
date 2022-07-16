@@ -470,9 +470,12 @@ void SleepHelper::stateHandlerConnected() {
 
     system_tick_t elapsedMs = millis() - connectedStartMillis;
     if (!sleepReadyFunctions.whileAnyTrue(elapsedMs)) {
-        // Ready to sleep, go into prepare to sleep state
-        stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
-        return;
+        // All sleep ready functions are ready. One last check of the sleep enabled flag before sleep
+        if (getSleepEnabled()) {
+            // Ready to sleep, go into prepare to sleep state
+            stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
+            return;
+        }
     }
     
 
@@ -520,10 +523,12 @@ void SleepHelper::stateHandlerNoConnection() {
     
     if (!noConnectionFunctions.whileAnyTrue()) {
         // No more noConnectionFunctions need time, so go to sleep now
-        appLog.info("done with no connection mode, preparing to sleep");
-        calculateSleepSettings(false);
-        stateHandler = &SleepHelper::stateHandlerSleep;
-        return;
+        if (getSleepEnabled()) {
+            appLog.info("done with no connection mode, preparing to sleep");
+            calculateSleepSettings(false);
+            stateHandler = &SleepHelper::stateHandlerSleep;
+            return;
+        }
     }
     
     // Stay in this state while any noConnectionFunction returns true
@@ -1069,24 +1074,26 @@ void SleepHelper::PersistentDataEEPROM::save() {
 }
 #endif // UNITTEST
 
-//
-// PersistentDataFile
-//
-#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
-bool SleepHelper::PersistentDataFile::load() {
+bool SleepHelper::PersistentDataFileSystem::load() {
     WITH_LOCK(*this) {
         bool loaded = false;
 
         int dataSize = 0;
 
-        int fd = open(path, O_RDONLY);
+        int fd = fs->open(filename, O_RDONLY);
         if (fd != -1) {
-            dataSize = read(fd, savedDataHeader, savedDataSize);
+            dataSize = fs->read((uint8_t *)savedDataHeader, savedDataSize);
             if (validate(dataSize)) {
                 loaded = true;
             }
-
-            close(fd);
+            else {
+                SleepHelper::instance().appLog.trace("file data failed validation");
+                SleepHelper::instance().appLog.dump(savedDataHeader, savedDataSize);
+            }
+            fs->close();
+        }
+        else {
+            SleepHelper::instance().appLog.trace("did not open file %s", filename.c_str());
         }
         
         if (!loaded) {
@@ -1097,17 +1104,15 @@ bool SleepHelper::PersistentDataFile::load() {
     return true;
 }
 
-void SleepHelper::PersistentDataFile::save() {
+void SleepHelper::PersistentDataFileSystem::save() {
     WITH_LOCK(*this) {
-        int fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0666);
+        int fd = fs->open(filename, O_RDWR | O_CREAT | O_TRUNC);
         if (fd != -1) {            
-            write(fd, savedDataHeader, savedDataSize);
-            close(fd);
+            fs->write((const uint8_t *)savedDataHeader, savedDataSize);
+            fs->close();
         }
     }
 }
-#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
-
 //
 // EventHistory
 //
