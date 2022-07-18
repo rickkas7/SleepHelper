@@ -344,9 +344,9 @@ void settingsTest() {
 void persistentDataTest() {
 	const char *persistentDataPath = "./temp01.dat";
 	{
-		SleepHelper::PersistentData data;
+		SleepHelper::PersistentData data(persistentDataPath);
 		unlink(persistentDataPath);
-		data.withPath(persistentDataPath).withSaveDelayMs(0);
+		data.withSaveDelayMs(0);
 		data.load();
 		data.save();
 
@@ -361,12 +361,12 @@ void persistentDataTest() {
 	unlink(persistentDataPath);
 }
 
-class MyPersistentData : public SleepHelper::PersistentDataFile {
+class MyPersistentData : public StorageHelperRK::PersistentDataFile {
 public:
 	class MyData {
 	public:
 		// This structure must always begin with the header (16 bytes)
-		SleepHelper::PersistentDataBase::SavedDataHeader header;
+		StorageHelperRK::PersistentDataBase::SavedDataHeader header;
 		// Your fields go here. Once you've added a field you cannot add fields
 		// (except at the end), insert fields, remove fields, change size of a field.
 		// Doing so will cause the data to be corrupted!
@@ -381,7 +381,7 @@ public:
 	static const uint32_t DATA_MAGIC = 0x20a99e73;
 	static const uint16_t DATA_VERSION = 1;
 
-	MyPersistentData() : PersistentDataFile(&myData.header, sizeof(MyData), DATA_MAGIC, DATA_VERSION) {};
+	MyPersistentData(const char *filename) : StorageHelperRK::PersistentDataFile(filename, &myData.header, sizeof(MyData), DATA_MAGIC, DATA_VERSION) {};
 
 	int getValue_test1() const {
 		return getValue<int>(offsetof(MyData, test1));
@@ -422,12 +422,12 @@ public:
 
 
 
-class MyPersistentData2 : public SleepHelper::PersistentDataFile {
+class MyPersistentData2 : public StorageHelperRK::PersistentDataFile {
 public:
 	class MyData {
 	public:
 		// This structure must always begin with the header (16 bytes)
-		SleepHelper::PersistentDataBase::SavedDataHeader header;
+		StorageHelperRK::PersistentDataBase::SavedDataHeader header;
 		// Your fields go here. Once you've added a field you cannot add fields
 		// (except at the end), insert fields, remove fields, change size of a field.
 		// Doing so will cause the data to be corrupted!
@@ -443,7 +443,7 @@ public:
 	static const uint32_t DATA_MAGIC = 0x20a99e73;
 	static const uint16_t DATA_VERSION = 1;
 
-	MyPersistentData2() : PersistentDataFile(&myData.header, sizeof(MyData), DATA_MAGIC, DATA_VERSION) {};
+	MyPersistentData2(const char *filename) : StorageHelperRK::PersistentDataFile(filename, &myData.header, sizeof(MyData), DATA_MAGIC, DATA_VERSION) {};
 
 	int getValue_test1() const {
 		return getValue<int>(offsetof(MyData, test1));
@@ -494,8 +494,7 @@ void customPersistentDataTest() {
 	const char *persistentDataPath = "./temp02.dat";
 	unlink(persistentDataPath);
 
-	MyPersistentData data;
-	data.withPath(persistentDataPath);
+	MyPersistentData data(persistentDataPath);
 	bool bResult;
 	String s;
 
@@ -532,8 +531,7 @@ void customPersistentDataTest() {
 	data.save();
 
 
-	MyPersistentData data2;
-	data2.withPath(persistentDataPath);
+	MyPersistentData data2(persistentDataPath);
 	data2.load();
 
 	assertInt("", data2.getValue_test1(), 0x55aa55aa);
@@ -542,8 +540,7 @@ void customPersistentDataTest() {
 	assertStr("", data2.getValue_test4(), "testing1!");
 
 	// Simulate a new version that adds a new field without changing the version or magic
-	MyPersistentData2 data2b;
-	data2b.withPath(persistentDataPath);
+	MyPersistentData2 data2b(persistentDataPath);
 	data2b.load();
 
 	assertInt("", data2b.getValue_test1(), 0x55aa55aa);
@@ -557,8 +554,7 @@ void customPersistentDataTest() {
 
 	data2b.save();
 
-	MyPersistentData2 data2c;
-	data2c.withPath(persistentDataPath);
+	MyPersistentData2 data2c(persistentDataPath);
 	data2c.load();
 
 	assertInt("", data2c.getValue_test5(), 12345);
@@ -568,12 +564,12 @@ void customPersistentDataTest() {
 }
 
 
-class RetainedDataTest : public SleepHelper::PersistentDataBase {
+class RetainedDataTest : public StorageHelperRK::PersistentDataBase {
 public:
 	class MyData {
 	public:
 		// This structure must always begin with the header (16 bytes)
-		SleepHelper::PersistentDataBase::SavedDataHeader header;
+		StorageHelperRK::PersistentDataBase::SavedDataHeader header;
 		// Your fields go here. Once you've added a field you cannot add fields
 		// (except at the end), insert fields, remove fields, change size of a field.
 		// Doing so will cause the data to be corrupted!
@@ -588,7 +584,7 @@ public:
 	static const uint32_t DATA_MAGIC = 0xd971e39b;
 	static const uint16_t DATA_VERSION = 1;
 
-	RetainedDataTest(SleepHelper::PersistentDataBase::SavedDataHeader *header) : SleepHelper::PersistentDataBase(header, sizeof(MyData), DATA_MAGIC, DATA_VERSION) {};
+	RetainedDataTest(StorageHelperRK::PersistentDataBase::SavedDataHeader *header) : StorageHelperRK::PersistentDataBase(header, sizeof(MyData), DATA_MAGIC, DATA_VERSION) {};
 
 	int getValue_test1() const {
 		return getValue<int>(offsetof(MyData, test1));
@@ -628,6 +624,7 @@ public:
 void customRetainedDataTest() {
 
 	RetainedDataTest::MyData retainedData; // Simulating retained data
+	memset(&retainedData, 0, sizeof(retainedData));
 
 
 	RetainedDataTest data(&retainedData.header);

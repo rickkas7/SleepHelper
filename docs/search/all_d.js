@@ -1,8 +1,7 @@
 var searchData=
 [
-  ['name_0',['name',['../struct_sleep_helper_wake_events.html#a2b01ffff5b259d06800d565fe92db7cb',1,'SleepHelperWakeEvents']]],
-  ['networkconnectedmillis_1',['networkConnectedMillis',['../class_sleep_helper.html#af965737c47641547795d9956da609e14',1,'SleepHelper']]],
-  ['nextdatacapture_2',['nextDataCapture',['../class_sleep_helper_1_1_persistent_data_1_1_sleep_helper_data.html#a75d1b20e029bfaba10393bd1d4cfd257',1,'SleepHelper::PersistentData::SleepHelperData']]],
-  ['nextfullwaketime_3',['nextFullWakeTime',['../class_sleep_helper_1_1_sleep_configuration_parameters.html#a2dea56d54563dffb853d36c2f28d93fd',1,'SleepHelper::SleepConfigurationParameters']]],
-  ['noconnectionfunctions_4',['noConnectionFunctions',['../class_sleep_helper.html#abba9753723ae55106df460a3b5bae4e9',1,'SleepHelper']]]
+  ['priority_0',['priority',['../struct_sleep_helper_wake_events.html#a8f29d452690af399b8ae4edfe360e870',1,'SleepHelperWakeEvents']]],
+  ['publishdata_1',['PublishData',['../class_sleep_helper_1_1_publish_data.html#a763445cc257d0f4dd0ec1a4bd505540e',1,'SleepHelper::PublishData::PublishData()'],['../class_sleep_helper_1_1_publish_data.html#a364d423587f430ac2b0885a2d17161eb',1,'SleepHelper::PublishData::PublishData(const char *eventName)'],['../class_sleep_helper_1_1_publish_data.html#a8930cb67261e4a0039e5312f6963448a',1,'SleepHelper::PublishData::PublishData(const char *eventName, const char *eventData)'],['../class_sleep_helper_1_1_publish_data.html#a332e513b51f26727ad96d143358935ec',1,'SleepHelper::PublishData::PublishData(const char *eventName, const char *eventData, PublishFlags flags)']]],
+  ['publishdata_2',['publishData',['../class_sleep_helper.html#aff3f29183087973b925e04186e73165b',1,'SleepHelper']]],
+  ['publishdata_3',['PublishData',['../class_sleep_helper_1_1_publish_data.html',1,'SleepHelper']]]
 ];

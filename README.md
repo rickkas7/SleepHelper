@@ -265,7 +265,9 @@ You can find the callback functions you can register functions for in the [brows
 
 ## Persistent data
 
-There is a system for storing persistent data in retained memory, EEPROM, file system, etc. This is in its own topic: [Persistent Data](PersistentData.md).
+There is a system for storing persistent data in retained memory, EEPROM, file system, etc. This is used internally by SleepHelper to hold its settings, however it can also be used by user code for maintaining settings. It also has a simple file system abstraction to allow data to be stored on the POSIX file system (Gen 3, P2, and Photon 2), SdFat (SD card), SPIFFS (SPI Flash), FRAM, retained memory, emulated EEPROM, or other user-defined methods.
+
+Note that SleepHelper requires the Gen 3 POSIX file system and does not take advantage of other storage methods, though you can use other methods for your own persistent data.
 
 ## Cloud-based configuration
 
@@ -441,6 +443,8 @@ This schedule is simple: full wake and publish every 15 minutes, and capture tem
 
 ### 0.0.4 (2022-07-15)
 
+- Refactor the PersistentData class into a new library, StorageHelperRK. 
+- Add withSleepEnabled() and getSleepEnabled() methods as an easy-to-use switch for turning sleep on and off without requiring a canSleep function. Default is enabled.
 
 ### 0.0.3 (2022-06-21)
 

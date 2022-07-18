@@ -1,5 +1,28 @@
 var searchData=
 [
-  ['removeall_0',['removeAll',['../class_sleep_helper_1_1_app_callback.html#a2c991e67a5341f63edae20b133bb1a13',1,'SleepHelper::AppCallback']]],
-  ['removeevents_1',['removeEvents',['../class_sleep_helper_1_1_event_history.html#a908b9dcadeca2e01300af7b704614112',1,'SleepHelper::EventHistory']]]
+  ['setstartstate_0',['setStartState',['../class_sleep_helper_1_1_app_callback_with_state.html#ae982af384ee39f8bc5011c80373ac79d',1,'SleepHelper::AppCallbackWithState']]],
+  ['setstate_1',['setState',['../class_sleep_helper_1_1_app_callback_with_state.html#a9ec4ef1aa0621b529690173478db393a',1,'SleepHelper::AppCallbackWithState']]],
+  ['setup_2',['setup',['../class_sleep_helper.html#aa55dc9d8e2627cf697ac1bd6a1db9c2d',1,'SleepHelper']]],
+  ['shouldconnect_3',['shouldConnect',['../class_sleep_helper_1_1_should_connect_app_callback.html#a6c6304ffbbd78c1dca79d8afbc2c97e1',1,'SleepHelper::ShouldConnectAppCallback']]],
+  ['sleephelper_4',['SleepHelper',['../class_sleep_helper.html#a89399adf4c228cd258637ae45465418f',1,'SleepHelper::SleepHelper()'],['../class_sleep_helper.html#af61ceb6581809f8166c32e1eb5bbda92',1,'SleepHelper::SleepHelper(const SleepHelper &amp;)=delete']]],
+  ['sleephelperrecursivemutex_5',['SleepHelperRecursiveMutex',['../class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#af25f1073f79d12bb4f57a7c1f6629aa8',1,'SleepHelper::SleepHelperRecursiveMutex::SleepHelperRecursiveMutex(os_mutex_recursive_t handle)'],['../class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#acb7f25e9fab9e82496908e5726b7e812',1,'SleepHelper::SleepHelperRecursiveMutex::SleepHelperRecursiveMutex()']]],
+  ['statehandlerconnected_6',['stateHandlerConnected',['../class_sleep_helper.html#a0ba6f6f8f9abfe688f507a0ca8aa058a',1,'SleepHelper']]],
+  ['statehandlerconnectedstart_7',['stateHandlerConnectedStart',['../class_sleep_helper.html#a840f89607df17011b35f88d34ca50006',1,'SleepHelper']]],
+  ['statehandlerconnectedwakeevents_8',['stateHandlerConnectedWakeEvents',['../class_sleep_helper.html#a27c48dd60d8247f0b0c80b8513846f9e',1,'SleepHelper']]],
+  ['statehandlerconnectwait_9',['stateHandlerConnectWait',['../class_sleep_helper.html#a16a9f4aba72174b61fd4a117c40c0151',1,'SleepHelper']]],
+  ['statehandlerdisconnectbeforesleep_10',['stateHandlerDisconnectBeforeSleep',['../class_sleep_helper.html#a551daa4717dfcaad8405f06e49d3e424',1,'SleepHelper']]],
+  ['statehandlerdisconnectwait_11',['stateHandlerDisconnectWait',['../class_sleep_helper.html#ad338934b32aafb7f6141d07a3ae355d0',1,'SleepHelper']]],
+  ['statehandlernoconnection_12',['stateHandlerNoConnection',['../class_sleep_helper.html#a3a773d6e7b996a7b37e9bac67caf2bdc',1,'SleepHelper']]],
+  ['statehandlerpublishratelimit_13',['stateHandlerPublishRateLimit',['../class_sleep_helper.html#afec89c5736eb07f854b533b29744fac0',1,'SleepHelper']]],
+  ['statehandlerpublishwait_14',['stateHandlerPublishWait',['../class_sleep_helper.html#aab84d72584bff5a35e58d71356a912e6',1,'SleepHelper']]],
+  ['statehandlerreconnectwait_15',['stateHandlerReconnectWait',['../class_sleep_helper.html#a671842ec813a228dee90ffa8bef692dc',1,'SleepHelper']]],
+  ['statehandlersleep_16',['stateHandlerSleep',['../class_sleep_helper.html#afcecc44c588e31bccb746f375f69a4c0',1,'SleepHelper']]],
+  ['statehandlersleepdone_17',['stateHandlerSleepDone',['../class_sleep_helper.html#a69ff746df17fe13ab5bc9077a5d24696',1,'SleepHelper']]],
+  ['statehandlersleepshort_18',['stateHandlerSleepShort',['../class_sleep_helper.html#a072cc1738e239a694d637b539c667170',1,'SleepHelper']]],
+  ['statehandlerstart_19',['stateHandlerStart',['../class_sleep_helper.html#ae458f2222f1fb920f5ea59976ec5f758',1,'SleepHelper']]],
+  ['statehandlertimevalidwait_20',['stateHandlerTimeValidWait',['../class_sleep_helper.html#a4d6df4931aa0dd4b1730f3d9e445833b',1,'SleepHelper']]],
+  ['statehandlerwaitcellulardisconnected_21',['stateHandlerWaitCellularDisconnected',['../class_sleep_helper.html#a50a756892217ee6c6216f42f0204b311',1,'SleepHelper']]],
+  ['statehandlerwaitcellularoff_22',['stateHandlerWaitCellularOff',['../class_sleep_helper.html#a6aee8fb9ac620eaf73764692b7150d2f',1,'SleepHelper']]],
+  ['systemeventhandler_23',['systemEventHandler',['../class_sleep_helper.html#a2652c1019e156dbcaa5b1fa83a59f059',1,'SleepHelper']]],
+  ['systemeventhandlerstatic_24',['systemEventHandlerStatic',['../class_sleep_helper.html#a7fd366a7d2fc5519300713a75675c3cd',1,'SleepHelper']]]
 ];

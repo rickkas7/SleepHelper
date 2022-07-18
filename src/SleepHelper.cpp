@@ -67,12 +67,11 @@ const char *SleepHelper::eventsEnableName(uint64_t flag) {
 }
 
 
-SleepHelper::SleepHelper() : appLog("app.sleep") {
+SleepHelper::SleepHelper() : appLog("app.sleep"), persistentData("/usr/sleepData.dat") {
 
     #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)    
     settingsFile.withPath("/usr/sleepSettings.json");
 
-    persistentData.withPath("/usr/sleepData.dat");
     #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 }
 
@@ -912,7 +911,7 @@ uint32_t SleepHelper::CloudSettingsFile::getHash() const {
     uint32_t hash;
 
     WITH_LOCK(*this) {
-        hash = SleepHelper::murmur3_32((const uint8_t *)parser.getBuffer(), parser.getOffset(), HASH_SEED);
+        hash = StorageHelperRK::murmur3_32((const uint8_t *)parser.getBuffer(), parser.getOffset(), HASH_SEED);
     }
 
     return hash;
@@ -920,199 +919,6 @@ uint32_t SleepHelper::CloudSettingsFile::getHash() const {
 #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 
-//
-// PersistentDataBase
-//
-
-void SleepHelper::PersistentDataBase::setup() {
-    // Load data at boot
-    load();
-
-    SleepHelper::instance().withLoopFunction([this]() {
-        // Handle deferred save
-        flush(false);
-        return true;
-    });
-    SleepHelper::instance().withSleepOrResetFunction([this](bool) {
-        // Make sure data is saved before sleep or reset
-        flush(true);
-        return true;
-    });
-}
-
-bool SleepHelper::PersistentDataBase::load() {
-    WITH_LOCK(*this) {
-        if (!validate(savedDataSize)) {
-            initialize();
-        }
-    }
-
-    return true;
-}
-
-
-void SleepHelper::PersistentDataBase::flush(bool force) {
-    if (lastUpdate) {
-        if (force || (millis() - lastUpdate >= saveDelayMs)) {
-            save();
-            lastUpdate = 0;
-        }
-    }
-}
-
-void SleepHelper::PersistentDataBase::saveOrDefer() {
-    if (saveDelayMs) {
-        lastUpdate = millis();
-    }
-    else {
-        save();
-    }
-}
-
-
-
-bool SleepHelper::PersistentDataBase::getValueString(size_t offset, size_t size, String &value) const {
-    bool result = false;
-
-    WITH_LOCK(*this) {
-        if (offset <= (savedDataSize - (size - 1))) {
-            const char *p = (const char *)savedDataHeader;
-            p += offset;
-            value = p; // copies string
-            result = true;
-        }
-    }
-    return result;
-}
-
-bool SleepHelper::PersistentDataBase::setValueString(size_t offset, size_t size, const char *value) {
-    bool result = false;
-
-    WITH_LOCK(*this) {
-        if (offset <= (savedDataSize - (size - 1)) && strlen(value) < size) {
-            char *p = (char *)savedDataHeader;
-            p += offset;
-
-            if (strcmp(value, p) != 0) {
-                memset(p, 0, size);
-                strcpy(p, value);
-                savedDataHeader->hash = getHash();
-                saveOrDefer();
-            }
-            result = true;
-        }
-    }
-    return result;
-}
-
-uint32_t SleepHelper::PersistentDataBase::getHash() const {
-    uint32_t hash;
-
-    WITH_LOCK(*this) {
-        // hash value is calculated over the whole data header and data, but with the hash field set to 0
-        uint32_t savedHash = savedDataHeader->hash;
-        savedDataHeader->hash = 0;
-        hash = SleepHelper::murmur3_32((const uint8_t *)savedDataHeader, savedDataHeader->size, HASH_SEED);
-        savedDataHeader->hash = savedHash;
-    }
-    return hash;
-}
-
-
-bool SleepHelper::PersistentDataBase::validate(size_t dataSize) {
-    bool isValid = false;
-
-    if (dataSize >= 12 && 
-        savedDataHeader->magic == savedDataMagic && 
-        savedDataHeader->version == savedDataVersion &&
-        savedDataHeader->size <= (uint16_t) dataSize &&
-        savedDataHeader->hash == getHash()) {                
-        if ((size_t)dataSize < savedDataSize) {
-            // Current structure is larger than what's in the file; pad with zero bytes
-            uint8_t *p = (uint8_t *)savedDataHeader;
-            for(size_t ii = (size_t)dataSize; ii < savedDataSize; ii++) {
-                p[ii] = 0;
-            }
-        }
-        savedDataHeader->size = (uint16_t) savedDataSize;
-        savedDataHeader->hash = getHash();
-        isValid = true;
-    }   
-    return isValid;
-}
-
-void SleepHelper::PersistentDataBase::initialize() {
-    memset(savedDataHeader, 0, savedDataSize);
-    savedDataHeader->magic = savedDataMagic;
-    savedDataHeader->version = savedDataVersion;
-    savedDataHeader->size = (uint16_t) savedDataSize;
-    savedDataHeader->hash = getHash();
-}
-
-
-#ifndef UNITTEST
-//
-// PersistentDataEEPROM
-//
-bool SleepHelper::PersistentDataEEPROM::load() {
-    WITH_LOCK(*this) {
-        bool loaded = false;
-
-        HAL_EEPROM_Get(eepromOffset, savedDataHeader, savedDataSize);
-        if (!validate(savedDataHeader->size)) {
-            initialize();
-        }
-    }
-
-    return true;
-}
-
-void SleepHelper::PersistentDataEEPROM::save() {
-    WITH_LOCK(*this) {
-        HAL_EEPROM_Put(eepromOffset, savedDataHeader, savedDataSize);
-    }
-}
-#endif // UNITTEST
-
-bool SleepHelper::PersistentDataFileSystem::load() {
-    WITH_LOCK(*this) {
-        bool loaded = false;
-
-        int dataSize = 0;
-
-        int fd = fs->open(filename, O_RDONLY);
-        if (fd != -1) {
-            dataSize = fs->read((uint8_t *)savedDataHeader, savedDataSize);
-            if (validate(dataSize)) {
-                loaded = true;
-            }
-            else {
-                SleepHelper::instance().appLog.trace("file data failed validation");
-                SleepHelper::instance().appLog.dump(savedDataHeader, savedDataSize);
-            }
-            fs->close();
-        }
-        else {
-            SleepHelper::instance().appLog.trace("did not open file %s", filename.c_str());
-        }
-        
-        if (!loaded) {
-            initialize();
-        }
-    }
-
-    return true;
-}
-
-void SleepHelper::PersistentDataFileSystem::save() {
-    WITH_LOCK(*this) {
-        int fd = fs->open(filename, O_RDWR | O_CREAT | O_TRUNC);
-        if (fd != -1) {            
-            fs->write((const uint8_t *)savedDataHeader, savedDataSize);
-            fs->close();
-        }
-    }
-}
 //
 // EventHistory
 //
@@ -1539,37 +1345,3 @@ void SleepHelper::JSONCopy(const JSONValue &src, JSONWriter &writer) {
 }
 
 
-
-uint32_t SleepHelper::murmur3_32(const uint8_t* key, size_t len, uint32_t seed) {
-    // https://en.wikipedia.org/wiki/MurmurHash
-	uint32_t h = seed;
-    uint32_t k;
-    /* Read in groups of 4. */
-    for (size_t i = len >> 2; i; i--) {
-        // Here is a source of differing results across endiannesses.
-        // A swap here has no effects on hash properties though.
-        memcpy(&k, key, sizeof(uint32_t));
-        key += sizeof(uint32_t);
-        h ^= murmur_32_scramble(k);
-        h = (h << 13) | (h >> 19);
-        h = h * 5 + 0xe6546b64;
-    }
-    /* Read the rest. */
-    k = 0;
-    for (size_t i = len & 3; i; i--) {
-        k <<= 8;
-        k |= key[i - 1];
-    }
-    // A swap is *not* necessary here because the preceding loop already
-    // places the low bytes in the low places according to whatever endianness
-    // we use. Swaps only apply when the memory is copied in a chunk.
-    h ^= murmur_32_scramble(k);
-    /* Finalize. */
-	h ^= len;
-	h ^= h >> 16;
-	h *= 0x85ebca6b;
-	h ^= h >> 13;
-	h *= 0xc2b2ae35;
-	h ^= h >> 16;
-	return h;
-}

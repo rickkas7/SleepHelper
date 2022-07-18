@@ -94,12 +94,6 @@ Functions</h2></td></tr>
 <tr class="memitem:gaf9c61f27340b819a67a6cb4c2c1c1115"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__callbacks.html#gaf9c61f27340b819a67a6cb4c2c1c1115">SleepHelper::withWakeOrBootFunction</a> (std::function&lt; bool(int)&gt; fn)</td></tr>
 <tr class="memdesc:gaf9c61f27340b819a67a6cb4c2c1c1115"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called during setup, after sleep, or an aborted sleep because duration was too short.  <a href="group__callbacks.html#gaf9c61f27340b819a67a6cb4c2c1c1115">More...</a><br /></td></tr>
 <tr class="separator:gaf9c61f27340b819a67a6cb4c2c1c1115"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga0d2ea01e4c0d13adc81c038b33ea8871"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__callbacks.html#ga0d2ea01e4c0d13adc81c038b33ea8871">SleepHelper::withWakeEventFunction</a> (std::function&lt; bool(JSONWriter &amp;, int &amp;)&gt; fn)</td></tr>
-<tr class="memdesc:ga0d2ea01e4c0d13adc81c038b33ea8871"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a callback to add to an event published on wake.  <a href="group__callbacks.html#ga0d2ea01e4c0d13adc81c038b33ea8871">More...</a><br /></td></tr>
-<tr class="separator:ga0d2ea01e4c0d13adc81c038b33ea8871"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac1ecffeea0b4ac6e703cc332be1ee7e6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__callbacks.html#gac1ecffeea0b4ac6e703cc332be1ee7e6">SleepHelper::withWakeEventOneTimeFunction</a> (std::function&lt; bool(JSONWriter &amp;, int &amp;)&gt; fn)</td></tr>
-<tr class="memdesc:gac1ecffeea0b4ac6e703cc332be1ee7e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a callback to add to an event published on wake executed for a single wake publish.  <a href="group__callbacks.html#gac1ecffeea0b4ac6e703cc332be1ee7e6">More...</a><br /></td></tr>
-<tr class="separator:gac1ecffeea0b4ac6e703cc332be1ee7e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga48f3f028336fae8f9b7b56335a2af98f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__callbacks.html#ga48f3f028336fae8f9b7b56335a2af98f">SleepHelper::withSleepOrResetFunction</a> (std::function&lt; bool(bool)&gt; fn)</td></tr>
 <tr class="memdesc:ga48f3f028336fae8f9b7b56335a2af98f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a function to be called right before sleep or reset.  <a href="group__callbacks.html#ga48f3f028336fae8f9b7b56335a2af98f">More...</a><br /></td></tr>
 <tr class="separator:ga48f3f028336fae8f9b7b56335a2af98f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -109,9 +103,6 @@ Functions</h2></td></tr>
 <tr class="memitem:gae5024de1d0301a413314ae08f1676399"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__callbacks.html#gae5024de1d0301a413314ae08f1676399">SleepHelper::withNoConnectionFunction</a> (std::function&lt; bool(<a class="el" href="class_sleep_helper_1_1_app_callback_state.html">AppCallbackState</a> &amp;state)&gt; fn)</td></tr>
 <tr class="memdesc:gae5024de1d0301a413314ae08f1676399"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a callback for when in the no connection state.  <a href="group__callbacks.html#gae5024de1d0301a413314ae08f1676399">More...</a><br /></td></tr>
 <tr class="separator:gae5024de1d0301a413314ae08f1676399"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga805abcdae1dd42163191a9edcb69660f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__callbacks.html#ga805abcdae1dd42163191a9edcb69660f">SleepHelper::withSettingChangeFunction</a> (std::function&lt; bool(const char *)&gt; fn)</td></tr>
-<tr class="memdesc:ga805abcdae1dd42163191a9edcb69660f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to call when settings change.  <a href="group__callbacks.html#ga805abcdae1dd42163191a9edcb69660f">More...</a><br /></td></tr>
-<tr class="separator:ga805abcdae1dd42163191a9edcb69660f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Function Documentation</h2>
@@ -264,48 +255,6 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_sleep_helper.html">SleepHelper</a>&amp; </dd></dl>
-
-</div>
-</div>
-<a id="ga805abcdae1dd42163191a9edcb69660f" name="ga805abcdae1dd42163191a9edcb69660f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga805abcdae1dd42163191a9edcb69660f">&#9670;&nbsp;</a></span>withSettingChangeFunction()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp; SleepHelper::withSettingChangeFunction </td>
-          <td>(</td>
-          <td class="paramtype">std::function&lt; bool(const char *)&gt;&#160;</td>
-          <td class="paramname"><em>fn</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Function to call when settings change. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">fn</td><td>The function or C++ lambda to call </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_sleep_helper.html">SleepHelper</a>&amp;</dd></dl>
-<p>The setting change callback has the prototype:</p>
-<p >bool callback(const char *key)</p>
-<ul>
-<li>key is the settings key that was modified</li>
-</ul>
-<p >You should return true from the function in all cases.</p>
-<p >This is only called when the setting changes, not on every boot. </p>
 
 </div>
 </div>
@@ -500,84 +449,6 @@ Functions</h2></td></tr>
 <p >bool callback(AppCallbackState &amp;state, system_tick_t connecteTimeMs)</p>
 <p >Return false if your situation is OK to sleep now. This does not guaranteed that sleep will actually occur, because there can be many sleep ready functions and other calculations. Once you return false your callback will no longe be called until the next wake cycle.</p>
 <p >Return true if you still have things to do before it's OK to sleep. You callback will continue to be called until it returns false. </p>
-
-</div>
-</div>
-<a id="ga0d2ea01e4c0d13adc81c038b33ea8871" name="ga0d2ea01e4c0d13adc81c038b33ea8871"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga0d2ea01e4c0d13adc81c038b33ea8871">&#9670;&nbsp;</a></span>withWakeEventFunction()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp; SleepHelper::withWakeEventFunction </td>
-          <td>(</td>
-          <td class="paramtype">std::function&lt; bool(JSONWriter &amp;, int &amp;)&gt;&#160;</td>
-          <td class="paramname"><em>fn</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Add a callback to add to an event published on wake. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">fn</td><td>Callback function </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_sleep_helper.html">SleepHelper</a>&amp;</dd></dl>
-<p>This is used to efficiently publish data on each full wake with cloud connect. You can register a callback to add data to a JSON object. There is a priority ordering and the ability to split JSON data across multiple publishes if it does not fit, or discard unimportant data. This allows multiple parts of your code to efficiently combine data into a single publish without having to worry about size limits.</p>
-<p >Wake event functions are only called when a full cloud connect is already planned, you can influence this using a shouldConnect callback.</p>
-<p >The callback function has this prototype:</p>
-<p >bool callback(JSONWriter &amp;writer, int &amp;priority)</p>
-<p >The return value is ignored; you should return true.</p>
-<p >writer is the JSONWriter to store the data into priority should be set to a value from 1 to 100. If you leave it at zero your data will not be saved!</p>
-<p >Items are added to the event in priority order, largest first.</p>
-<p >If you have a priority &lt; 50 and the event is full, then your data will be discarded to avoid generating another event. </p>
-
-</div>
-</div>
-<a id="gac1ecffeea0b4ac6e703cc332be1ee7e6" name="gac1ecffeea0b4ac6e703cc332be1ee7e6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gac1ecffeea0b4ac6e703cc332be1ee7e6">&#9670;&nbsp;</a></span>withWakeEventOneTimeFunction()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="class_sleep_helper.html">SleepHelper</a> &amp; SleepHelper::withWakeEventOneTimeFunction </td>
-          <td>(</td>
-          <td class="paramtype">std::function&lt; bool(JSONWriter &amp;, int &amp;)&gt;&#160;</td>
-          <td class="paramname"><em>fn</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Add a callback to add to an event published on wake executed for a single wake publish. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">fn</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_sleep_helper.html">SleepHelper</a>&amp; </dd></dl>
 
 </div>
 </div>
