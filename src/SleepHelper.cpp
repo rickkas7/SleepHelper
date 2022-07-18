@@ -67,11 +67,12 @@ const char *SleepHelper::eventsEnableName(uint64_t flag) {
 }
 
 
-SleepHelper::SleepHelper() : appLog("app.sleep") {
-    
+SleepHelper::SleepHelper() : appLog("app.sleep"), persistentData("/usr/sleepData.dat") {
+
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)    
     settingsFile.withPath("/usr/sleepSettings.json");
 
-    persistentData.withPath("/usr/sleepData.dat");
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 }
 
 SleepHelper::~SleepHelper() {
@@ -79,13 +80,17 @@ SleepHelper::~SleepHelper() {
 
 #ifndef UNITTEST
 void SleepHelper::setup() {
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     int resetReason = (int) System.resetReason();
+    #endif
 
     // Register for system events
     System.on(firmware_update | firmware_update_pending | reset | out_of_memory, systemEventHandlerStatic);
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     settingsFile.setup();
     persistentData.setup();
+    #endif
 
     // Setup empty quick and full wake schedules to start. Data schedule is a quick wake, but also runs 
     // while the device is running, including while it's trying to connect.
@@ -111,10 +116,12 @@ void SleepHelper::setup() {
         return !Time.isValid();
     });
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     // If reset reason events are enabled, add to the wake event
     withWakeEventFlagOneTimeFunction(eventsEnabledResetReason, [resetReason](JSONWriter &writer, int &priority) {
         writer.value(resetReason);
     });
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     withShouldConnectFunction([this](int &connectConviction, int &noConnectConviction) {
         if (!Time.isValid()) {
@@ -124,7 +131,10 @@ void SleepHelper::setup() {
             return true;
         }
 
-        time_t t = SleepHelper::instance().persistentData.getValue_lastFullWake();
+        time_t t = 0;
+        #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
+        SleepHelper::instance().persistentData.getValue_lastFullWake();
+        #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
         if (t == 0) {
             t = Time.now();
         }
@@ -263,6 +273,7 @@ void SleepHelper::dataCaptureHandler() {
         }
     }
     else {
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
         bool updateSchedule = false;
 
         if (!persistentData.getValue_nextDataCapture()) {
@@ -287,8 +298,8 @@ void SleepHelper::dataCaptureHandler() {
                 persistentData.setValue_nextDataCapture(t);
             }
         }
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     }
-
 }
 
 void SleepHelper::stateHandlerStart() {
@@ -304,8 +315,10 @@ void SleepHelper::stateHandlerStart() {
     if (isQuickWake || !shouldConnectFunctions.shouldConnect()) {
         // We should not connect, so go into no connection state
         appLog.info("running in no connection mode");
+        #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
         SleepHelper::instance().persistentData.setValue_lastQuickWake(Time.now());
-
+        #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
+        
         noConnectionFunctions.setStartState();
         stateHandler = &SleepHelper::stateHandlerNoConnection;
         return;
@@ -356,14 +369,18 @@ void SleepHelper::stateHandlerTimeValidWait() {
 void SleepHelper::stateHandlerConnectedStart() {
     connectedStartMillis = millis();
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     SleepHelper::instance().persistentData.setValue_lastFullWake(Time.now());
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     system_tick_t elapsedMs = connectedStartMillis - connectAttemptStartMillis;
     appLog.info("connected to cloud in %lu ms", elapsedMs);
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     withWakeEventFlagOneTimeFunction(eventsEnabledTimeToConnect, [elapsedMs](JSONWriter &writer, int &priority) {
         writer.value((int)elapsedMs);
     });
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 #if HAL_PLATFORM_POWER_MANAGEMENT
     withWakeEventFlagOneTimeFunction(eventsEnabledBatterySoC, [](JSONWriter &writer, int &priority) {
@@ -387,8 +404,10 @@ void SleepHelper::stateHandlerConnectedWakeEvents() {
         return;
     }
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     // Call the wake event handlers to see if they have JSON data to publish
     wakeEventFunctions.generateEvents(wakeEventPayload);
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
     lastEventHistoryCheckMillis = 0;
     sleepReadyFunctions.setStartState();
@@ -450,9 +469,12 @@ void SleepHelper::stateHandlerConnected() {
 
     system_tick_t elapsedMs = millis() - connectedStartMillis;
     if (!sleepReadyFunctions.whileAnyTrue(elapsedMs)) {
-        // Ready to sleep, go into prepare to sleep state
-        stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
-        return;
+        // All sleep ready functions are ready. One last check of the sleep enabled flag before sleep
+        if (getSleepEnabled()) {
+            // Ready to sleep, go into prepare to sleep state
+            stateHandler = &SleepHelper::stateHandlerDisconnectBeforeSleep;
+            return;
+        }
     }
     
 
@@ -500,10 +522,12 @@ void SleepHelper::stateHandlerNoConnection() {
     
     if (!noConnectionFunctions.whileAnyTrue()) {
         // No more noConnectionFunctions need time, so go to sleep now
-        appLog.info("done with no connection mode, preparing to sleep");
-        calculateSleepSettings(false);
-        stateHandler = &SleepHelper::stateHandlerSleep;
-        return;
+        if (getSleepEnabled()) {
+            appLog.info("done with no connection mode, preparing to sleep");
+            calculateSleepSettings(false);
+            stateHandler = &SleepHelper::stateHandlerSleep;
+            return;
+        }
     }
     
     // Stay in this state while any noConnectionFunction returns true
@@ -614,9 +638,11 @@ void SleepHelper::stateHandlerSleepDone() {
     // Wake or boot functions are called during setup(), after wake, or after an aborted sleep 
     wakeOrBootFunctions.forEach(wakeReasonInt);
 
+    #if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
     withWakeEventFlagOneTimeFunction(eventsEnabledWakeReason, [this](JSONWriter &writer, int &priority) {
         writer.value(wakeReasonInt);
     });     
+    #endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 }
 
@@ -633,7 +659,7 @@ void SleepHelper::stateHandlerSleepShort() {
 //
 // SettingsFile
 //
-
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 void SleepHelper::SettingsFile::setup() {
 }
 
@@ -885,199 +911,19 @@ uint32_t SleepHelper::CloudSettingsFile::getHash() const {
     uint32_t hash;
 
     WITH_LOCK(*this) {
-        hash = murmur3_32((const uint8_t *)parser.getBuffer(), parser.getOffset(), HASH_SEED);
+        hash = StorageHelperRK::murmur3_32((const uint8_t *)parser.getBuffer(), parser.getOffset(), HASH_SEED);
     }
 
     return hash;
 }
-
-
-uint32_t SleepHelper::CloudSettingsFile::murmur3_32(const uint8_t* key, size_t len, uint32_t seed) {
-    // https://en.wikipedia.org/wiki/MurmurHash
-	uint32_t h = seed;
-    uint32_t k;
-    /* Read in groups of 4. */
-    for (size_t i = len >> 2; i; i--) {
-        // Here is a source of differing results across endiannesses.
-        // A swap here has no effects on hash properties though.
-        memcpy(&k, key, sizeof(uint32_t));
-        key += sizeof(uint32_t);
-        h ^= murmur_32_scramble(k);
-        h = (h << 13) | (h >> 19);
-        h = h * 5 + 0xe6546b64;
-    }
-    /* Read the rest. */
-    k = 0;
-    for (size_t i = len & 3; i; i--) {
-        k <<= 8;
-        k |= key[i - 1];
-    }
-    // A swap is *not* necessary here because the preceding loop already
-    // places the low bytes in the low places according to whatever endianness
-    // we use. Swaps only apply when the memory is copied in a chunk.
-    h ^= murmur_32_scramble(k);
-    /* Finalize. */
-	h ^= len;
-	h ^= h >> 16;
-	h *= 0x85ebca6b;
-	h ^= h >> 13;
-	h *= 0xc2b2ae35;
-	h ^= h >> 16;
-	return h;
-}
-
-
-//
-// PersistentDataBase
-//
-
-void SleepHelper::PersistentDataBase::setup() {
-    // Load data at boot
-    load();
-}
-
-bool SleepHelper::PersistentDataBase::load() {
-    WITH_LOCK(*this) {
-        if (!validate(savedDataSize)) {
-            initialize();
-        }
-    }
-
-    return true;
-}
-
-
-
-bool SleepHelper::PersistentDataBase::getValueString(size_t offset, size_t size, String &value) const {
-    bool result = false;
-
-    WITH_LOCK(*this) {
-        if (offset <= (savedDataSize - (size - 1))) {
-            const char *p = (const char *)savedDataHeader;
-            p += offset;
-            value = p; // copies string
-            result = true;
-        }
-    }
-    return result;
-}
-
-bool SleepHelper::PersistentDataBase::setValueString(size_t offset, size_t size, const char *value) {
-    bool result = false;
-
-    WITH_LOCK(*this) {
-        if (offset <= (savedDataSize - (size - 1)) && strlen(value) < size) {
-            char *p = (char *)savedDataHeader;
-            p += offset;
-
-            if (strcmp(value, p) != 0) {
-                memset(p, 0, size);
-                strcpy(p, value);
-                saveOrDefer();
-            }
-            result = true;
-        }
-    }
-    return result;
-}
-
-bool SleepHelper::PersistentDataBase::validate(size_t dataSize) {
-    bool isValid = false;
-
-    if (dataSize >= 12 && 
-        savedDataHeader->magic == savedDataMagic && 
-        savedDataHeader->version == savedDataVersion &&
-        savedDataHeader->size <= (uint16_t) dataSize) {                
-        if ((size_t)dataSize < savedDataSize) {
-            // Structure is larger than what's in the file; pad with zero bytes
-            uint8_t *p = (uint8_t *)savedDataHeader;
-            for(size_t ii = (size_t)dataSize; ii < savedDataSize; ii++) {
-                p[ii] = 0;
-            }
-        }
-        savedDataHeader->size = (uint16_t) savedDataSize;
-        isValid = true;
-    }   
-    return isValid;
-}
-
-void SleepHelper::PersistentDataBase::initialize() {
-    memset(savedDataHeader, 0, savedDataSize);
-    savedDataHeader->magic = savedDataMagic;
-    savedDataHeader->version = savedDataVersion;
-    savedDataHeader->size = (uint16_t) savedDataSize;
-}
-
-//
-// PersistentDataFile
-//
-
-void SleepHelper::PersistentDataFile::setup() {
-    // Call parent class
-    SleepHelper::PersistentDataBase::setup();
-
-    SleepHelper::instance().withLoopFunction([this]() {
-        // Handle deferred save
-        flush(false);
-        return true;
-    });
-    SleepHelper::instance().withSleepOrResetFunction([this](bool) {
-        // Make sure data is saved before sleep or reset
-        flush(true);
-        return true;
-    });
-}
-
-bool SleepHelper::PersistentDataFile::load() {
-    WITH_LOCK(*this) {
-        bool loaded = false;
-
-        int dataSize = 0;
-
-        int fd = open(path, O_RDONLY);
-        if (fd != -1) {
-            dataSize = read(fd, savedDataHeader, savedDataSize);
-            if (validate(dataSize)) {
-                loaded = true;
-            }
-
-            close(fd);
-        }
-        
-        if (!loaded) {
-            initialize();
-        }
-    }
-
-    return true;
-}
-
-
-
-void SleepHelper::PersistentDataFile::save() {
-    WITH_LOCK(*this) {
-        int fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0666);
-        if (fd != -1) {            
-            write(fd, savedDataHeader, savedDataSize);
-            close(fd);
-        }
-    }
-}
-
-void SleepHelper::PersistentDataFile::flush(bool force) {
-    if (lastUpdate) {
-        if (force || (millis() - lastUpdate >= saveDelayMs)) {
-            save();
-            lastUpdate = 0;
-        }
-    }
-}
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 
 //
 // EventHistory
 //
 
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 void SleepHelper::EventHistory::addEvent(const char *jsonObj) {
     // Log
@@ -1231,8 +1077,9 @@ bool SleepHelper::EventHistory::getHasEvents() {
     }
     return hasEvents; 
 };
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
-
+#if HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 //
 // EventCombiner
 //
@@ -1439,6 +1286,7 @@ void SleepHelper::EventCombiner::generateEventInternal(std::function<void(JSONWr
         }
     }
 }
+#endif // HAL_PLATFORM_FILESYSTEM || defined(UNITTEST)
 
 // [static]
 void SleepHelper::JSONCopy(const char *src, JSONWriter &writer) {

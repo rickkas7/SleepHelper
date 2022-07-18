@@ -76,20 +76,6 @@ $(function() {
  <a href="class_sleep_helper_1_1_sleep_helper_recursive_mutex.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="_sleep_helper_8h_source.html">SleepHelper.h</a>&gt;</code></p>
-<div class="dynheader">
-Inheritance diagram for SleepHelper::SleepHelperRecursiveMutex:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="class_sleep_helper_1_1_sleep_helper_recursive_mutex.png" usemap="#SleepHelper::SleepHelperRecursiveMutex_map" alt=""/>
-  <map id="SleepHelper::SleepHelperRecursiveMutex_map" name="SleepHelper::SleepHelperRecursiveMutex_map">
-<area href="class_sleep_helper_1_1_event_history.html" title="Class to manage small events, typically used for time-series data." alt="SleepHelper::EventHistory" shape="rect" coords="0,56,249,80"/>
-<area href="class_sleep_helper_1_1_persistent_data_base.html" title="Base class for storing persistent binary data to a file or retained memory." alt="SleepHelper::PersistentDataBase" shape="rect" coords="259,56,508,80"/>
-<area href="class_sleep_helper_1_1_settings_file.html" title="Class for managing the SleepHelper settings file." alt="SleepHelper::SettingsFile" shape="rect" coords="518,56,767,80"/>
-<area href="class_sleep_helper_1_1_persistent_data_file.html" title="Base class for persistent data stored in a file." alt="SleepHelper::PersistentDataFile" shape="rect" coords="259,112,508,136"/>
-<area href="class_sleep_helper_1_1_cloud_settings_file.html" title="Cloud-based settings." alt="SleepHelper::CloudSettingsFile" shape="rect" coords="518,112,767,136"/>
-<area href="class_sleep_helper_1_1_persistent_data.html" title="Class for storing small data used by SleepHelper in the flash file system." alt="SleepHelper::PersistentData" shape="rect" coords="259,168,508,192"/>
-  </map>
-</div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -126,7 +112,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>dispose</b> ()</td></
 <p >There are two differences:</p>
 <ul>
 <li>The mutex is created on first lock, instead of from the constructor. This is done because it's not save to call os_mutex_recursive_create from a global constructor, and by delaying construction it makes it possible to safely construct the class as a global object.</li>
-<li>The lock/trylock/unlock methods are declared const and the mutex handle mutable. This allows the mutex to be locked from a const method. </li>
+<li>The lock/trylock/unlock methods are declared const acd nd the mutex handle mutable. This allows the mutex to be locked from a const method. </li>
 </ul>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="af25f1073f79d12bb4f57a7c1f6629aa8" name="af25f1073f79d12bb4f57a7c1f6629aa8"></a>

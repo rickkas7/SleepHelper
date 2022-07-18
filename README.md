@@ -263,6 +263,11 @@ For example, in the sleep ready function, in each sleep cycle, the state will st
 
 You can find the callback functions you can register functions for in the [browsable HTML documentation](https://rickkas7.github.io/SleepHelper/group__callbacks.html).
 
+## Persistent data
+
+There is a system for storing persistent data in retained memory, EEPROM, file system, etc. This is used internally by SleepHelper to hold its settings, however it can also be used by user code for maintaining settings. It also has a simple file system abstraction to allow data to be stored on the POSIX file system (Gen 3, P2, and Photon 2), SdFat (SD card), SPIFFS (SPI Flash), FRAM, retained memory, emulated EEPROM, or other user-defined methods.
+
+Note that SleepHelper requires the Gen 3 POSIX file system and does not take advantage of other storage methods, though you can use other methods for your own persistent data.
 
 ## Cloud-based configuration
 
@@ -435,6 +440,11 @@ SleepHelper::instance().getScheduleDataCapture()
 This schedule is simple: full wake and publish every 15 minutes, and capture temperature every 2 minutes. Since the schedule uses only minute of hour, this does not require a valid timezone to be set.
 
 ## Version History
+
+### 0.0.4 (2022-07-15)
+
+- Refactor the PersistentData class into a new library, StorageHelperRK. 
+- Add withSleepEnabled() and getSleepEnabled() methods as an easy-to-use switch for turning sleep on and off without requiring a canSleep function. Default is enabled.
 
 ### 0.0.3 (2022-06-21)
 
